@@ -1,4 +1,4 @@
-function [f_nonlinear,E_nonlinear,H_nonlinear,n_x,n_u] = Generate_Dynamics_Nonlinear(free_wrench)
+function [f_nonlinear,E_nonlinear,H_nonlinear,n_x,n_u] = Generate_Dynamics_Nonlinear()
 import casadi.*
 %% CasADi symbolic setup
 % Symbolic state variables [x,z,roty,q1R,q2R,q1L,q2L]. y axis points into
@@ -33,7 +33,6 @@ u = [u_q1R; u_q2R; u_q1L; u_q2L];
 n_u = length(u);
 
 %% ODE Formualation
-if ~free_wrench % Wrench calculated from foot acceleration constraint
     % Dynamics (Mmat*ddq + G = B*u)~ ignoring coriolis for now
     Mmat = Mmat_notorso(x,z,rotY,q1R,q2R,q1L,q2L); % 7x7
     G = GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
@@ -56,8 +55,6 @@ if ~free_wrench % Wrench calculated from foot acceleration constraint
     E_nonlinear = 0;
     H_nonlinear = 0;
     
-else % Include Wrench as decision variable
-    % TODO
     
 end
 
