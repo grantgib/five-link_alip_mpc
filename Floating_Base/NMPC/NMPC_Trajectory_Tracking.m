@@ -49,14 +49,14 @@ disp("Reference Trajectory Loaded and Initial Condition Set!");
 %% Generate Dynamics Functions
 free_wrench = 0;    % Equals 1 if wrench vector is decision variable
 tic
-[f_nonlinear,E_nonlinear,H_nonlinear,n_x,n_u] = Generate_Dynamics_Nonlinear(free_wrench);
+[f_nonlinear,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear();
 disp("Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
 use_descriptor = 0;     % Equals 1 if using descriptor ODE form for dynamics equality propogation
 disp("Begin NLP formulation...");
 tic
-[mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param);
+[mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param);
 disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ***********************************************************************

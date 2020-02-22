@@ -1,4 +1,4 @@
-function [f_nonlinear_partial,ddq_func,J_c,dJ_c,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear_FreeWrench()
+function [f_nonlinear_partial,ddq_func,lambda_func,J_c,dJ_c,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear_FreeWrench()
 import casadi.*
 %% CasADi symbolic setup
 % Symbolic state variables [x,z,roty,q1R,q2R,q1L,q2L,fx,fz,my]. y axis points into
@@ -21,8 +21,7 @@ dq2L = SX.sym('dq2L');
 % Symbolic wrench
 fx = SX.sym('fx'); % linear force x
 fz = SX.sym('fz'); % linear force z
-my = SX.sym('my'); % moment y
-w = [fx; fz; my];
+w = [fx; fz];
 
 % Generalized coordinates
 q = [x; z; rotY; q1R; q2R; q1L; q2L];
@@ -48,8 +47,10 @@ J_c = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);  % contact jacobian
 dJ_c = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
 
 ddq_sym = D\(-G + B*u + J_c'*w);
+lambda = -J_c*(D\J_c') \ (dJ_c*dq + J_c*(D\(G + B*u)));
 rhs_par = [dq; ddq_sym]; % system r.h.s
 f_nonlinear_partial = Function('f',{x,u},{rhs_par});  % nonlinear mapping function f(x,u)
+lambda_func = Function('lambda_func',{q,dq,u},{lambda});
 ddq_func = Function('ddq_func',{x,u},{ddq_sym});
 % Descriptor System
 E_nonlinear = 0;

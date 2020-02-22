@@ -1,11 +1,9 @@
-function args = Update_Args_Nonlinear_FreeWrench(x_init,N,n_q,n_x,n_u,X_REF,U_REF,param)
+function args = Update_Args_Nonlinear(x_init,N,n_x,n_u,X_REF,U_REF,param)
 % Relax bounds from trajectory generation for control
 x_lb = [param.bounds.RightStance.states.x.lb - 0.5*param.bounds.RightStance.states.x.lb,...
-    param.bounds.RightStance.states.dx.lb - 0.5*param.bounds.RightStance.states.dx.lb,...
-    -inf,-inf,-inf];
+    param.bounds.RightStance.states.dx.lb - 0.5*param.bounds.RightStance.states.dx.lb];
 x_ub = [param.bounds.RightStance.states.x.ub + 0.5*param.bounds.RightStance.states.x.ub,...
-    param.bounds.RightStance.states.dx.ub + 0.5*param.bounds.RightStance.states.dx.ub,...
-    inf,inf,inf];
+    param.bounds.RightStance.states.dx.ub + 0.5*param.bounds.RightStance.states.dx.ub];
 
 
 % Set control bounds
@@ -25,8 +23,8 @@ end
 
 %% Equality Constraints
 % simulation later so it is an output of this function]
-args.lbg(1:(n_x)*(N+1)) = 0; % Equality constraints
-args.ubg(1:(n_x)*(N+1)) = 0; % Equality constraints
+args.lbg(1:n_x*(N+1)) = 0; % Equality constraints
+args.ubg(1:n_x*(N+1)) = 0; % Equality constraints
 
 %% State and control bounds
 for i = 1:n_x

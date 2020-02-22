@@ -1,6 +1,6 @@
 function [x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
     Simulate_Nonlinear_TrajectoryTracking_FreeWrench(x_init,X_REF_Original,U_REF_Original,param,...
-    f_nonlinear,n_x,n_u,mpc_info)
+    f_nonlinear,lambda_func,n_q,n_x,n_u,mpc_info)
 import casadi.*
 
 % Extract data from mpc_info
@@ -16,7 +16,7 @@ t_final = DT * (size(X_REF_Original,2)-1);
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
 
-x_init = [x_init; zeros(3,1)];
+
 X0 = repmat(x_init,1,N+1)'; % initialization of the states decision variables
 U0 = zeros(N+1,n_u);
 
@@ -40,7 +40,7 @@ while(mpciter < sim_time / DT)
     end
     
     % Set Parameter vector and Decision Variables
-    args = Update_Args_Nonlinear_FreeWrench(x_init,N,n_x,n_u,X_REF,U_REF,param);
+    args = Update_Args_Nonlinear_FreeWrench(x_init,N,n_q,n_x,n_u,X_REF,U_REF,param);
     args.x0  = [reshape(X0(1:N+1,:)',n_x*(N+1),1);reshape(U0(1:N+1,:)',n_u*(N+1),1)];
     
     %% Solve MPC NLP solver (uses IPOPT)
@@ -62,7 +62,7 @@ while(mpciter < sim_time / DT)
     t_all(mpciter) = t_current;
     
     % Predict next step with Forward Euler Discretization
-    [t_next, x_next, u_next_guess] = Update_State(DT, t_current, x_init, u, f_nonlinear);
+    [t_next, x_next, u_next_guess] = Update_State_FreeWrench(DT,n_q,t_current, x_init, u, f_nonlinear,lambda_func);
     t_current = t_next;
     x_init = x_next;
     U0 = u_next_guess;

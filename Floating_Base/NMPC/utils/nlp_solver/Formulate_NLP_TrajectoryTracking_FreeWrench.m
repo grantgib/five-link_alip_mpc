@@ -1,4 +1,4 @@
-function [mpc_info] = Formulate_NLP_TrajectoryTracking_FreeWrench(mpc_info,n_q,n_x,n_u,f_nonlinear_partial,ddq_func,J_c,dJ_c,E_nonlinear,H_nonlinear,use_descriptor,param)
+function [mpc_info] = Formulate_NLP_TrajectoryTracking_FreeWrench(mpc_info,n_q,n_x,n_u,f_nonlinear_partial,ddq_func,lambda_func,J_c,dJ_c,E_nonlinear,H_nonlinear,use_descriptor,param)
 % Formulate NLP
 %   * Symbolically create the objective function and equality constraints
 %   (dynamics)
@@ -34,7 +34,7 @@ solver_NL_all = cell(N,1);
 % problem that we don't want)
 for i = 1:mpc_info.N
     % Compute symbolic variables of quadratic program
-    [X_dec_all{i},U_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = Objective_Constraints_Nonlinear_FreeWrench(DT,N,n_q,n_x,n_u,f_nonlinear_partial,ddq_func,J_c,dJ_c,E_nonlinear,H_nonlinear,use_descriptor,param);
+    [X_dec_all{i},U_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = Objective_Constraints_Nonlinear_FreeWrench(DT,N,n_q,n_x,n_u,f_nonlinear_partial,ddq_func,lambda_func,J_c,dJ_c,E_nonlinear,H_nonlinear,use_descriptor,param);
     
     % Settings
     % Decision variables to optimize

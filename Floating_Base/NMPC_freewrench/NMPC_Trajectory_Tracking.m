@@ -4,7 +4,6 @@
 %   Continuous Dynamics ~ no impact considered
 clear; clc;
 
-
 %% Path setup
 restoredefaultpath;
 if isunix
@@ -21,7 +20,7 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 1;
+mpc_info.N = 10;
 mpc_info.sim_time = 1;
 
 %% Load Desired Reference Trajectory
@@ -30,34 +29,37 @@ stpheight = 0.05;
 dir = 'ascend';
 trajName = string(stpheight) + '_' + dir + '.mat';
 if isequal(dir,'ascend')
-    param = load(fullfile('Reference_Trajectories\variousStepHeightsAscend\',trajName));
+    full_ref = load(fullfile('Reference_Trajectories\variousStepHeightsAscend\',trajName));
 else
-    param = load(fullfile('Reference_Trajectories\variousStepHeightsDescend\',trajName));
+    full_ref = load(fullfile('Reference_Trajectories\variousStepHeightsDescend\',trajName));
 end
 % Interpolate trajectory (*** This could be a problem ****)
-trajRef = calculations.referenceTrajBez(param.gait,mpc_info.DT);
-X_REF_Original = [trajRef.x; trajRef.dx; zeros(2,201)]; % traj of forces unknown and not used
+trajRef = calculations.referenceTrajBez(full_ref.gait,mpc_info.DT);
+X_REF_Original = [trajRef.x; trajRef.dx];
 U_REF_Original = trajRef.u;
-X_REF = X_REF_Original;
-U_REF = U_REF_Original;
 
-x_ref_init = [param.gait(1).states.x(:,1); param.gait(1).states.dx(:,1)];
+x_ref_init = [full_ref.gait(1).states.x(:,1); full_ref.gait(1).states.dx(:,1)];
 delta_x_init = 0.02*x_ref_init; % initial condition. 14X1
-x_init = [param.gait(1).states.x(:,1); param.gait(1).states.dx(:,1); param.gait(1).inputs.fRightToe([1,3],1)];
+x_init = [full_ref.gait(1).states.x(:,3); full_ref.gait(1).states.dx(:,3)];
+
+ref_info = struct;
+ref_info.xRef = X_REF_Original;
+ref_info.uRef = U_REF_Original;
+ref_info.fullRef = full_ref;
 
 disp("Reference Trajectory Loaded and Initial Condition Set!");
 
 %% Generate Dynamics Functions
-free_wrench = 1;    % Equals 1 if wrench vector is decision variable
+free_wrench = 0;    % Equals 1 if wrench vector is decision variable
 tic
-[f_nonlinear_partial,ddq_func,lambda_func,J_c,dJ_c,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear_FreeWrench();
+[dyn_info,f_nonlinear,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear();
 disp("Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
 use_descriptor = 0;     % Equals 1 if using descriptor ODE form for dynamics equality propogation
 disp("Begin NLP formulation...");
 tic
-[mpc_info] = Formulate_NLP_TrajectoryTracking_FreeWrench(mpc_info,n_q,n_x,n_u,f_nonlinear_partial,ddq_func,lambda_func,J_c,dJ_c,E_nonlinear,H_nonlinear,use_descriptor,param);
+[mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,full_ref);
 disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ***********************************************************************
@@ -65,8 +67,8 @@ disp("Finished formulating NLP!  (" + toc + " sec)");
 %*************************************************************************
 disp("Begin simulation...");
 [x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
-    Simulate_Nonlinear_TrajectoryTracking_FreeWrench(x_init,X_REF_Original,U_REF_Original,param,...
-    f_nonlinear_partial,lambda_func,n_q,n_x,n_u,mpc_info);
+    Simulate_Nonlinear_TrajectoryTracking(x_init,X_REF_Original,U_REF_Original,full_ref,...
+    f_nonlinear,n_x,n_u,mpc_info);
 disp("Finished simulation!");
 
 %% Save Simulation
@@ -85,7 +87,7 @@ end
 
 %% Animate
 animateSettings = struct;
-animateSettings.traj = 0;
+animateSettings.traj = 1;
 animateSettings.ref = 0;
 Animate_MPC_Traj(t_all,X_REF_Original,x_traj,animateSettings)
 
