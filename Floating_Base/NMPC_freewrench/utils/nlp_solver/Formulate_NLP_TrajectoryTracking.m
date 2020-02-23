@@ -1,4 +1,5 @@
-function [mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param)
+function [mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info,use_descriptor)
+import casadi.*
 % Formulate NLP
 %   * Symbolically create the objective function and equality constraints
 %   (dynamics)
@@ -6,10 +7,17 @@ function [mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_no
 %   * Set numerical bounds on the decision variables and equality
 %   constraints
 
-% Initialize Symbolics
-import casadi.*
+%% Extract input variables
+% dyn_info
+n_x = dyn_info.dim.n_x;
+n_u = dyn_info.dim.n_u;
+n_w = dyn_info.dim.n_w;
 
-% IPOPT settings
+% mpc_info
+N = mpc_info.N;
+DT = mpc_info.DT;
+
+%% IPOPT settings
 mpc_info.opts = struct;
 % opts.ipopt.max_iter = 2000;
 mpc_info.opts.ipopt.print_level =0;%0,3
@@ -18,11 +26,11 @@ mpc_info.opts.print_time = 0;
 % opts.ipopt.acceptable_obj_change_tol = 1e-6;
 
 %% Nonlinear Formulation
-N = mpc_info.N;
-DT = mpc_info.DT;
+
 DEC_variables = cell(N,1);
 X_dec_all = cell(N,1);
 U_dec_all = cell(N,1);
+W_dec_all = cell(N,1);
 P_dec_all = cell(N,1);
 obj_all = cell(N,1);
 g_dec_all = cell(N,1);
@@ -34,14 +42,18 @@ solver_NL_all = cell(N,1);
 % problem that we don't want)
 for i = 1:mpc_info.N
     % Compute symbolic variables of quadratic program
-    [X_dec_all{i},U_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = Objective_Constraints_Nonlinear(DT,N,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param);
+    [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = ...
+        Objective_Constraints_Nonlinear(dyn_info,ref_info,DT,N,use_descriptor); % DT and N may change each loop so no mpc_info input
     
     % Settings
     % Decision variables to optimize
-    DEC_variables{i} = [reshape(X_dec_all{i},n_x*(N+1),1);reshape(U_dec_all{i},n_u*(N+1),1)];
+    DEC_variables{i} = [reshape(X_dec_all{i},n_x*(N+1),1);
+        reshape(U_dec_all{i},n_u*(N+1),1);
+        reshape(W_dec_all{i},n_w*(N+1),1)];
     
     % Formulate nlp
-    nlp_prob = struct('f', obj_all{i}, 'x', DEC_variables{i}, 'g', g_dec_all{i}, 'p', P_dec_all{i});
+    nlp_prob = struct('f', obj_all{i},'x',DEC_variables{i},...
+        'g',g_dec_all{i},'p', P_dec_all{i});
     
     % Setup solver
     solver_NL_all{i} = nlpsol('solver', 'ipopt', nlp_prob, mpc_info.opts);

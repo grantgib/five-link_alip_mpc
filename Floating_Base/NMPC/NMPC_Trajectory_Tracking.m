@@ -20,7 +20,7 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 10;
+mpc_info.N = 1;
 mpc_info.sim_time = 1;
 
 %% Load Desired Reference Trajectory

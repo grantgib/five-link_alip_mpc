@@ -1,4 +1,20 @@
-function [] = Plot_TrajectoryTracking(t_all,x_traj,u_traj,X_REF_Original,U_REF_Original,plotSettings,plot_title,args)
+function [] = Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings,plot_title)
+%% Extract variables from inputs
+% dyn info
+n_q = dyn_info.dim.n_q;
+n_u = dyn_info.dim.n_u;
+
+% mpc_info
+args = mpc_info.args;
+
+% ref_info
+X_REF_Original = ref_info.x_ref(:,1:end-1);
+U_REF_Original = ref_info.u_ref(:,1:end-1);
+
+% traj_info
+x_traj = traj_info.x_traj;
+u_traj = traj_info.u_traj;
+
 %% Plot variables
 q_header = {'$x$','$z$','$rot_Y$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
 dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{rot}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';

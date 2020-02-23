@@ -47,7 +47,7 @@ J_c = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);  % contact jacobian
 dJ_c = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
 
 ddq_sym = D\(-G + B*u + J_c'*w);
-lambda = -J_c*(D\J_c') \ (dJ_c*dq + J_c*(D\(G + B*u)));
+lambda = -J_c*(D\J_c') \ (dJ_c*dq + J_c*(D\(-G + B*u)));
 rhs_par = [dq; ddq_sym]; % system r.h.s
 f_nonlinear_partial = Function('f',{x,u},{rhs_par});  % nonlinear mapping function f(x,u)
 lambda_func = Function('lambda_func',{q,dq,u},{lambda});

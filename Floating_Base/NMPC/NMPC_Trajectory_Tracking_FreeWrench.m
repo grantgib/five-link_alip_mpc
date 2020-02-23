@@ -36,7 +36,7 @@ else
 end
 % Interpolate trajectory (*** This could be a problem ****)
 trajRef = calculations.referenceTrajBez(param.gait,mpc_info.DT);
-X_REF_Original = [trajRef.x; trajRef.dx; zeros(2,201)]; % traj of forces unknown and not used
+X_REF_Original = [trajRef.x; trajRef.dx; zeros(2,size(trajRef.x,2))]; % traj of forces unknown and not used
 U_REF_Original = trajRef.u;
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
@@ -85,12 +85,17 @@ end
 
 %% Animate
 animateSettings = struct;
-animateSettings.traj = 0;
+animateSettings.traj = 1;
 animateSettings.ref = 0;
 Animate_MPC_Traj(t_all,X_REF_Original,x_traj,animateSettings)
 
-
-
+%% Animate single optimization solution
+% animateSettings.traj = 1;
+% animateSettings.ref = 0;
+% x_traj_single = x_traj_all(:,:,1)';
+% x_traj_single = x_traj_single(1:n_x,:);
+% t_all_single = linspace(0,(mpc_info.N+1)*0.005,mpc_info.N);
+% Animate_MPC_Traj(t_all_single,randn,x_traj_single,animateSettings);
 
 
 

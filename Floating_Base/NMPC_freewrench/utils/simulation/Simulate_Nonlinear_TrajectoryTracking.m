@@ -1,15 +1,26 @@
-function [x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,X_REF_Original,U_REF_Original,param,...
-    f_nonlinear,n_x,n_u,mpc_info)
+function [traj_info,mpc_info] = ...
+    Simulate_Nonlinear_TrajectoryTracking(x_init,dyn_info,mpc_info,ref_info)
 import casadi.*
 
-% Extract data from mpc_info
+%% Extract data from inputs
+% dyn_info
+n_x = dyn_info.dim.n_x;
+n_u = dyn_info.dim.n_u;
+f_nonlinear = dyn_info.func.f_nonlinear;
+
+% mpc_info
 DT = mpc_info.DT;
 N = mpc_info.N;
 sim_time = mpc_info.sim_time;
 solver = mpc_info.solvers_NL{1};
 
-% Initialize Variables
+% ref_info
+X_REF_Original = ref_info.x_ref;
+U_REF_Original = ref_info.u_ref;
+full_ref = ref_info.full_ref;
+
+
+%% Initialize Variables
 t_current = 0;          % current time step (sec)
 t_all(1) = t_current;
 t_final = DT * (size(X_REF_Original,2)-1);
@@ -39,7 +50,7 @@ while(mpciter < sim_time / DT)
     end
     
     % Set Parameter vector and Decision Variables
-    args = Update_Args_Nonlinear(x_init,N,n_x,n_u,X_REF,U_REF,param);
+    args = Update_Args_Nonlinear(x_init,N,n_x,n_u,X_REF,U_REF,full_ref);
     args.x0  = [reshape(X0(1:N+1,:)',n_x*(N+1),1);reshape(U0(1:N+1,:)',n_u*(N+1),1)];
     
     %% Solve MPC NLP solver (uses IPOPT)
@@ -97,5 +108,12 @@ disp("Trajectory error (2-norm) = ")
 disp(traj_error');
 disp("Final trajectory error (2-norm) = " + x_traj_end_error);
 disp("Average MPC Calculation Time = " + average_mpc_time);
+
+%% Outputs
+traj_info.t_all = t_all;
+traj_info.x_traj = x_traj;
+traj_info.u_traj = u_traj;
+traj_info.x_traj_all = x_traj_all;
+mpc_info.args = args;
 
 end

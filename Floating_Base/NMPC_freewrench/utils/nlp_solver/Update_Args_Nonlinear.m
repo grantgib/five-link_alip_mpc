@@ -13,10 +13,11 @@ u_ub = param.bounds.RightStance.inputs.Control.u.ub;
 %% Compute parameters vector
 args = struct;
 args.p(1:n_x) = x_init; % initial condition of the robot posture
+args.p(n_x+1:n_x+n_w) = param.gait(1).inputs.fRightToe([1,3],1);
 for k = 1:N+1 %new - set the reference to          track
-    args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
+    args.p((k-1)*(n_x+n_u)+(n_x+n_w+1):(k-1)*(n_x+n_u)+(n_x+n_w+n_x)) = ...
         X_REF(:,k);
-    args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
+    args.p((k-1)*(n_x+n_u)+(n_x+n_x+n_w+1):(k-1)*(n_x+n_u)+(n_x+n_w+n_x+n_u)) =...
         U_REF(:,k);
 end
 

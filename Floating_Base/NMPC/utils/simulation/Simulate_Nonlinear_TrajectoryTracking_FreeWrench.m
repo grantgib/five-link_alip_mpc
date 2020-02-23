@@ -49,10 +49,11 @@ while(mpciter < sim_time / DT)
     
     % Extract solutions
     u = reshape(full(sol.x(n_x*(N+1)+1:end))',n_u,N+1)';
-    
+    lambda_sol = full(sol.x(n_x+2*n_q+1:2*n_x));
     % Store Entire time step trajectory
-    %     x_traj_all(:,1:n_x,mpciter)= reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1)';
-    
+    if round(t_all(end) + DT * N,3) < t_final
+        x_traj_all(:,1:n_x,mpciter)= reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1)';
+    end
     % controller trajectory only uses first control input (could be
     % modified)
     u_traj= [u_traj ; u(1,:)];
@@ -62,7 +63,7 @@ while(mpciter < sim_time / DT)
     t_all(mpciter) = t_current;
     
     % Predict next step with Forward Euler Discretization
-    [t_next, x_next, u_next_guess] = Update_State_FreeWrench(DT,n_q,t_current, x_init, u, f_nonlinear,lambda_func);
+    [t_next, x_next, u_next_guess] = Update_State_FreeWrench(DT,n_q,t_current, x_init, u, f_nonlinear,lambda_func,lambda_sol);
     t_current = t_next;
     x_init = x_next;
     U0 = u_next_guess;

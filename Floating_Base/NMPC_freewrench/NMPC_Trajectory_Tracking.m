@@ -20,7 +20,7 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 10;
+mpc_info.N = 1;
 mpc_info.sim_time = 1;
 
 %% Load Desired Reference Trajectory
@@ -43,32 +43,31 @@ delta_x_init = 0.02*x_ref_init; % initial condition. 14X1
 x_init = [full_ref.gait(1).states.x(:,3); full_ref.gait(1).states.dx(:,3)];
 
 ref_info = struct;
-ref_info.xRef = X_REF_Original;
-ref_info.uRef = U_REF_Original;
-ref_info.fullRef = full_ref;
+ref_info.x_ref = X_REF_Original;
+ref_info.u_ref = U_REF_Original;
+ref_info.full_ref = full_ref;
 
 disp("Reference Trajectory Loaded and Initial Condition Set!");
 
 %% Generate Dynamics Functions
 free_wrench = 0;    % Equals 1 if wrench vector is decision variable
 tic
-[dyn_info,f_nonlinear,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear();
+[dyn_info] = Generate_Dynamics_Nonlinear();
 disp("Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
 use_descriptor = 0;     % Equals 1 if using descriptor ODE form for dynamics equality propogation
 disp("Begin NLP formulation...");
 tic
-[mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,full_ref);
+[mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info,use_descriptor);
 disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ***********************************************************************
 %       Run Simulation
 %*************************************************************************
 disp("Begin simulation...");
-[x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,X_REF_Original,U_REF_Original,full_ref,...
-    f_nonlinear,n_x,n_u,mpc_info);
+[traj_info,mpc_info] = ...
+    Simulate_Nonlinear_TrajectoryTracking(x_init,dyn_info,mpc_info,ref_info);
 disp("Finished simulation!");
 
 %% Save Simulation
@@ -80,16 +79,16 @@ plotSettings.q = 1;
 plotSettings.dq = 1;
 plotSettings.u = 1;
 
-traj = string(stpheight)+'m '+dir;
+traj_title = string(stpheight)+'m '+dir;
 if (true)
-    Plot_TrajectoryTracking(t_all,x_traj,u_traj,X_REF_Original(:,1:end-1),U_REF_Original(:,1:end-1),plotSettings,traj,args);
+    Plot_TrajectoryTracking(traj_info,mpc_info,plotSettings,traj_title);
 end
 
 %% Animate
 animateSettings = struct;
 animateSettings.traj = 1;
 animateSettings.ref = 0;
-Animate_MPC_Traj(t_all,X_REF_Original,x_traj,animateSettings)
+Animate_MPC_Traj(ref_info,traj_info,animateSettings)
 
 
 
