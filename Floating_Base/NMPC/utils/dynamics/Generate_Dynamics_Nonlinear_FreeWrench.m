@@ -41,13 +41,13 @@ n_u = length(u);
 %% ODE Formualation
 % Dynamics (Mmat*ddq + G = B*u)~ ignoring coriolis for now
 D = Mmat_notorso(x,z,rotY,q1R,q2R,q1L,q2L); % 7x7
-G = GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
+G = -GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
 B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
 J_c = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);  % contact jacobian
 dJ_c = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
 
 ddq_sym = D\(-G + B*u + J_c'*w);
-lambda = -J_c*(D\J_c') \ (dJ_c*dq + J_c*(D\(-G + B*u)));
+lambda = -((J_c/D)*J_c') \ (dJ_c*dq + J_c*(D\(-G + B*u)));
 rhs_par = [dq; ddq_sym]; % system r.h.s
 f_nonlinear_partial = Function('f',{x,u},{rhs_par});  % nonlinear mapping function f(x,u)
 lambda_func = Function('lambda_func',{q,dq,u},{lambda});

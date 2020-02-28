@@ -41,7 +41,7 @@ n_w = length(w);
 %% ODE Formualation
 % Dynamics (Mmat*ddq + G = B*u + Jc'*w)~ ignoring coriolis for now
 D = Mmat_notorso(x,z,rotY,q1R,q2R,q1L,q2L); % 7x7
-G = GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
+G = -GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1  %FROST gravity vector is -G
 % C = Coriolis(D,q,dq);
 B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
 Jc = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);
@@ -49,6 +49,10 @@ dJc = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq
 % rhs = [dq; D\(-C*dq -G + B*u + Jac'*w)]; % system r.h.s
 rhs = [dq; D\(-G + B*u + Jc'*w)]; % system r.h.s
 f_nonlinear = Function('f',{x,u,w},{rhs});  % nonlinear mapping function f(x,u)
+
+% Wrench as decision variable
+lambda = -Jc*(D\Jc') \ (dJc*dq + Jc*(D\(-G + B*u)));
+f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
 % Descriptor System
 % E_nonlinear = 0;
@@ -68,7 +72,7 @@ dyn_info.mat.G = G;
 dyn_info.mat.B = B;
 dyn_info.mat.Jc = Jc;
 dyn_info.mat.dJc = dJc;
-
+dyn_info.func.f_lambda = f_lambda;
 end
 
 

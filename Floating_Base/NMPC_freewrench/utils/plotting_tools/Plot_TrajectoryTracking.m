@@ -3,6 +3,7 @@ function [] = Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotS
 % dyn info
 n_q = dyn_info.dim.n_q;
 n_u = dyn_info.dim.n_u;
+n_w = dyn_info.dim.n_w;
 
 % mpc_info
 args = mpc_info.args;
@@ -14,13 +15,14 @@ U_REF_Original = ref_info.u_ref(:,1:end-1);
 % traj_info
 x_traj = traj_info.x_traj;
 u_traj = traj_info.u_traj;
+w_traj = traj_info.w_traj;
+t_all = traj_info.t_all;
 
 %% Plot variables
 q_header = {'$x$','$z$','$rot_Y$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
 dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{rot}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
 u_header = {'$u_{q_{1R}}$','$u_{q_{2R}}$','$u_{q_{1L}}$','$u_{q_{2L}}$'};
-n_q = length(q_header);
-n_u = length(u_header);
+w_header = {'$f_x$','$f_z$'};
 
 blue = [0, 0.4470, 0.7410];
 width_ref = 2;
@@ -90,5 +92,15 @@ if plotSettings.u
     sgtitle(plot_title+" control inputs");
 end
 
+%% Wrench values
+if plotSettings.w
+    figure
+    for i = 1:n_w
+        subplot(1,2,i);
+        plot(t_all(1:size(w_traj,2)),w_traj(i,:));
+        title(w_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz);
+    end
+    sgtitle(plot_title + " wrench");
 end
 

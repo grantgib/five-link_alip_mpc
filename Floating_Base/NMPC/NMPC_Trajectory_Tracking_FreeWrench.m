@@ -4,7 +4,6 @@
 %   Continuous Dynamics ~ no impact considered
 clear; clc;
 
-
 %% Path setup
 restoredefaultpath;
 if isunix
@@ -41,8 +40,8 @@ U_REF_Original = trajRef.u;
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
 
-x_ref_init = [param.gait(1).states.x(:,1); param.gait(1).states.dx(:,1)];
-delta_x_init = 0.02*x_ref_init; % initial condition. 14X1
+% x_ref_init = [param.gait(1).states.x(:,1); param.gait(1).states.dx(:,1)];
+% delta_x_init = 0.02*x_ref_init; % initial condition. 14X1
 x_init = [param.gait(1).states.x(:,1); param.gait(1).states.dx(:,1); param.gait(1).inputs.fRightToe([1,3],1)];
 
 disp("Reference Trajectory Loaded and Initial Condition Set!");

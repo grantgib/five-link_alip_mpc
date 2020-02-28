@@ -1,11 +1,12 @@
 function [traj_info,mpc_info] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,dyn_info,mpc_info,ref_info)
+    Simulate_Nonlinear_TrajectoryTracking(x_init,w_init,dyn_info,mpc_info,ref_info)
 import casadi.*
 
 %% Extract data from inputs
 % dyn_info
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
+n_w = dyn_info.dim.n_w;
 f_nonlinear = dyn_info.func.f_nonlinear;
 
 % mpc_info
@@ -17,8 +18,6 @@ solver = mpc_info.solvers_NL{1};
 % ref_info
 X_REF_Original = ref_info.x_ref;
 U_REF_Original = ref_info.u_ref;
-full_ref = ref_info.full_ref;
-
 
 %% Initialize Variables
 t_current = 0;          % current time step (sec)
@@ -29,10 +28,12 @@ U_REF = U_REF_Original;
 
 X0 = repmat(x_init,1,N+1)'; % initialization of the states decision variables
 U0 = zeros(N+1,n_u);
+W0 = repmat(w_init,1,N+1)';
 
 x_traj(:,1) = x_init;   % true trajectory states
 x_traj_all = [];    % Contains predicted trajectories for each time step
-u_traj=[];          % Control input trajectories
+u_traj = [];          % Control input trajectories
+w_traj = [];
 
 mpciter = 1;        % simulation iteration number (proportional to t_current)
 main_loop = tic;    % Begin timer
@@ -50,32 +51,37 @@ while(mpciter < sim_time / DT)
     end
     
     % Set Parameter vector and Decision Variables
-    args = Update_Args_Nonlinear(x_init,N,n_x,n_u,X_REF,U_REF,full_ref);
-    args.x0  = [reshape(X0(1:N+1,:)',n_x*(N+1),1);reshape(U0(1:N+1,:)',n_u*(N+1),1)];
+    args = Update_Args_Nonlinear(x_init,w_init,N,dyn_info,ref_info);
+    args.x0  = [reshape(X0(1:N+1,:)',n_x*(N+1),1);
+        reshape(U0(1:N+1,:)',n_u*(N+1),1);
+        reshape(W0(1:N+1,:)',n_w*(N+1),1)];
     
     %% Solve MPC NLP solver (uses IPOPT)
     sol = solver('x0', args.x0, 'lbx', args.lbx, 'ubx', args.ubx,...
         'lbg', args.lbg, 'ubg', args.ubg,'p',args.p);
     
     % Extract solutions
-    u = reshape(full(sol.x(n_x*(N+1)+1:end))',n_u,N+1)';
+    u_sol = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1)';
+    w_sol = reshape(full(sol.x((n_x+n_u)*(N+1)+1:end))',n_w,N+1)';
     
     % Store Entire time step trajectory
     %     x_traj_all(:,1:n_x,mpciter)= reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1)';
     
-    % controller trajectory only uses first control input (could be
-    % modified)
-    u_traj= [u_traj ; u(1,:)];
+    % store solution into trajectory
+    u_traj= [u_traj ; u_sol(1,:)];
+    w_traj = [w_traj; w_sol(1,:)];
     
     %% Apply the control and guess next solution by shifting
     % vector containing all time steps
     t_all(mpciter) = t_current;
     
     % Predict next step with Forward Euler Discretization
-    [t_next, x_next, u_next_guess] = Update_State(DT, t_current, x_init, u, f_nonlinear);
+    [t_next, x_next, u_next_guess, w_next_guess] = Update_State(DT, t_current, x_init, u_sol, w_sol, f_nonlinear);
+    U0 = u_next_guess;
+    W0 = w_next_guess;
     t_current = t_next;
     x_init = x_next;
-    U0 = u_next_guess;
+    w_init = w_next_guess(1,:)';
     
     % Update trajectory
     x_traj(:,mpciter+1) = x_init;
@@ -88,17 +94,19 @@ while(mpciter < sim_time / DT)
     % Shift X_REF and U_REF ** Only for trajectory tracking**
     X_REF = [X_REF(:,2:end),X_REF(:,end)];
     U_REF = [U_REF(:,2:end),U_REF(:,end)];
-    % Print every n iterations
-    if mod(mpciter,50) == 0
-        disp("MPC iteration = " + mpciter);
-    end
-    
+
     % Update iteration counter
     mpciter = mpciter + 1;
+       
+    % Print every n iterations
+    if mod(mpciter-1,50) == 0
+        disp("MPC iteration = " + (mpciter-1));
+    end
 end
 main_loop_time = toc(main_loop);
 t_all(end+1) = t_all(end) + DT;     % update time since you simulated forward last control input
 u_traj = u_traj';
+w_traj = w_traj';
 
 %% Final Calculations
 x_traj_end_error = norm((x_traj(:,end)-X_REF),2);
@@ -114,6 +122,7 @@ traj_info.t_all = t_all;
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
 traj_info.x_traj_all = x_traj_all;
+traj_info.w_traj = w_traj;
 mpc_info.args = args;
 
 end

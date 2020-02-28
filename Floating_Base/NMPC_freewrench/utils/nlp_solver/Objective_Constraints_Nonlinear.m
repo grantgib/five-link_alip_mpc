@@ -12,6 +12,7 @@ B = dyn_info.mat.B;
 Jc = dyn_info.mat.Jc;
 dJc = dyn_info.mat.dJc;
 f = dyn_info.func.f_nonlinear;
+f_lambda = dyn_info.func.f_lambda;
 % E = dyn_info.func.E_nonlinear;
 % H = dyn_info.func.H_nonlinear;
 
@@ -23,8 +24,8 @@ full_ref = ref_info.full_ref;
 Udec = SX.sym('U',n_u,N+1);      % controls in R^N-1. subset of the decision variables
 Xdec = SX.sym('X',n_x,N+1);  % A vector that represents the states over the optimization problem.
 Wdec = SX.sym('W',n_w,N+1);
-P = SX.sym('P',n_x + n_w + (N+1)*(n_x + n_u));
-% P = [xinit | x_0ref | u_0ref | x_1ref | u_1ref | ... | x_Nref | u_Nref]
+P = SX.sym('P',n_x+n_w+(N+1)*(n_x + n_u));
+% P = [xinit | winit| x_0ref | u_0ref | x_1ref | u_1ref | ... | x_Nref | u_Nref]
 % parameters (which include the initial state and the reference along the
 % predicted trajectory (reference states and reference controls))
 
@@ -32,7 +33,7 @@ P = SX.sym('P',n_x + n_w + (N+1)*(n_x + n_u));
 % Bryson's rule
 Q_vector = zeros(2*n_q,1);
 for i = 1:n_q
-    Q_vector(i) = 1/full_ref.bounds.RightStance.states.x.ub(i);
+    Q_vector(i) = 10/full_ref.bounds.RightStance.states.x.ub(i);
     Q_vector(n_q+i) = 1/full_ref.bounds.RightStance.states.dx.ub(i);
 end
 Q_weights = diag([1, 1, 1, 1, 1, 1, 1,...
@@ -47,7 +48,7 @@ R_q2L = 1/full_ref.bounds.RightStance.inputs.Control.u.ub(4);
 R = diag([R_q1R,R_q2R,R_q1L,R_q2L]);                    % control penalty
 
 % Force penalty
-Q_w = diag([1,1]);
+Q_w = 0*diag([1,1]);
 %% Objective Function
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
 for k = 1:N+1
@@ -63,7 +64,7 @@ for k = 1:N+1
 end
 obj = sum(obj_vector);
 %% Equality Constraints (Dynamics)
-g = [];                           % initialize equality constraints vector
+g = [];                          % initialize equality constraints vector
 g = [g; Xdec(:,1) - P(1:n_x)];    % initial condition constraints
 g = [g; Wdec(:,1) - P(n_x+1:n_x+n_w)];
 for k = 1:N+1
@@ -74,7 +75,8 @@ for k = 1:N+1
     w_k = Wdec(:,k);
     
     % Contact constraint
-    g = [g; w_k - ((Jc/D)*Jc')\((Jc/D)*(G - B*u_k)-dJc*dq_k)];
+    lambda_k = f_lambda(q_k,dq_k,u_k);
+    g = [g; w_k - lambda_k];
     
     % Forward Integration dynamics constraint
     if k < N+1

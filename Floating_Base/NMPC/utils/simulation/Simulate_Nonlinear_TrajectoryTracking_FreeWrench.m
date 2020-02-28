@@ -95,6 +95,7 @@ u_traj = u_traj';
 ss_error = norm((x_traj(:,end)-X_REF),2);
 average_mpc_time = main_loop_time/(mpciter+1);
 traj_error = vecnorm((x_traj - X_REF_Original(:,1:size(x_traj,2)))');
+traj_error = traj_error(1:n_x);
 disp("Trajectory error (2-norm) = ")
 disp(traj_error');
 disp("Steady-state error (2-norm) = " + ss_error);
