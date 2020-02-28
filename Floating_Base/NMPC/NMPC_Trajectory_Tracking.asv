@@ -28,23 +28,21 @@ cur = pwd;
 stpheight = 0.05;
 dir = 'ascend';
 traj_name = string(stpheight) + '_' + dir + '.mat';
-% Compute reference
 ref_info = Load_Reference_Trajectory(mpc_info,dir,traj_name);
-% IC
 x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
 ref_info.x_init = x_init;
 disp("Reference Trajectory Loaded and Initial Condition Set!");
 
 %% Generate Dynamics Functions
 tic
-[dyn_info] = Generate_Dynamics_Nonlinear();
+[f_nonlinear,E_nonlinear,H_nonlinear,n_q,n_x,n_u] = Generate_Dynamics_Nonlinear();
 disp("Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
 use_descriptor = 0;     % Equals 1 if using descriptor ODE form for dynamics equality propogation
 disp("Begin NLP formulation...");
 tic
-[mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+[mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,ref_info.full_ref);
 disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ***********************************************************************
@@ -53,7 +51,7 @@ disp("Finished formulating NLP!  (" + toc + " sec)");
 disp("Begin simulation...");
 [x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
     Simulate_Nonlinear_TrajectoryTracking(ref_info.x_init,ref_info.x_ref,ref_info.u_ref,ref_info.full_ref,...
-    dyn_info.func.f_NL,dyn_info.dim.n_x,dyn_info.dim.n_u,mpc_info);
+    f_nonlinear,n_x,n_u,mpc_info);
 disp("Finished simulation!");
 
 %% Save Simulation

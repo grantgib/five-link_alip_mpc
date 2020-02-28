@@ -1,15 +1,26 @@
-function [mpc_info] = Formulate_NLP_TrajectoryTracking(mpc_info,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param)
+function [mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info)
 % Formulate NLP
 %   * Symbolically create the objective function and equality constraints
 %   (dynamics)
 %   * Set the settings for the IPOPT solver
 %   * Set numerical bounds on the decision variables and equality
 %   constraints
-
-% Initialize Symbolics
 import casadi.*
 
-% IPOPT settings
+%% Extract
+% dyn_info
+n_q = dyn_info.dim.n_q;
+n_x = dyn_info.dim.n_x;
+n_u = dyn_info.dim.n_u;
+f_nonlinear = dyn_info.func.f_NL;
+E_nonlinear = dyn_info.func.E_NL;
+H_nonlinear = dyn_info.func.H_NL;
+use_descriptor = dyn_info.descriptor;
+
+% ref_info
+param = ref_info.full_ref;
+
+%% IPOPT settings
 mpc_info.opts = struct;
 % opts.ipopt.max_iter = 2000;
 mpc_info.opts.ipopt.print_level =0;%0,3
