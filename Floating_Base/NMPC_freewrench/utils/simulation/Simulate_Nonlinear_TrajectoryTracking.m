@@ -1,5 +1,5 @@
 function [traj_info,mpc_info] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,w_init,dyn_info,mpc_info,ref_info)
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info)
 import casadi.*
 
 %% Extract data from inputs
@@ -18,6 +18,8 @@ solver = mpc_info.solvers_NL{1};
 % ref_info
 X_REF_Original = ref_info.x_ref;
 U_REF_Original = ref_info.u_ref;
+x_init = ref_info.x_init;
+w_init = ref_info.w_init;
 
 %% Initialize Variables
 t_current = 0;          % current time step (sec)
@@ -65,8 +67,11 @@ while(mpciter < sim_time / DT)
     w_sol = reshape(full(sol.x((n_x+n_u)*(N+1)+1:end))',n_w,N+1)';
     
     % Store Entire time step trajectory
-    %     x_traj_all(:,1:n_x,mpciter)= reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1)';
-    
+    if (N == mpc_info.N)   % before shrinking horizon zone
+        x_traj_all(1:n_x,:,mpciter) = reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1);
+        u_traj_all(1:n_u,:,mpciter) = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1);
+        w_traj_all(1:n_w,:,mpciter) = reshape(full(sol.x((n_u+n_x)*(N+1)+1:end))',n_w,N+1);
+    end
     % store solution into trajectory
     u_traj= [u_traj ; u_sol(1,:)];
     w_traj = [w_traj; w_sol(1,:)];
@@ -121,8 +126,10 @@ disp("Average MPC Calculation Time = " + average_mpc_time);
 traj_info.t_all = t_all;
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
-traj_info.x_traj_all = x_traj_all;
 traj_info.w_traj = w_traj;
+traj_info.x_traj_all = x_traj_all;
+traj_info.u_traj_all = u_traj_all;
+traj_info.w_traj_all = w_traj_all;
 mpc_info.args = args;
 
 end

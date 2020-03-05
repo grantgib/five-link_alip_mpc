@@ -1,5 +1,8 @@
-function [] = Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings,plot_title)
+function [] = Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings)
 %% Extract variables from inputs
+% plotSettings
+plot_title = plotSettings.traj_title;
+
 % dyn info
 n_q = dyn_info.dim.n_q;
 n_u = dyn_info.dim.n_u;
@@ -7,16 +10,26 @@ n_w = dyn_info.dim.n_w;
 
 % mpc_info
 args = mpc_info.args;
+N = mpc_info.N;
+DT = mpc_info.DT;
+sim_time = mpc_info.sim_time;
 
 % ref_info
 X_REF_Original = ref_info.x_ref(:,1:end-1);
 U_REF_Original = ref_info.u_ref(:,1:end-1);
 
 % traj_info
-x_traj = traj_info.x_traj;
-u_traj = traj_info.u_traj;
-w_traj = traj_info.w_traj;
-t_all = traj_info.t_all;
+if plotSettings.single_sol
+    x_traj = traj_info.x_traj_all(:,:,1);
+    u_traj = traj_info.u_traj_all(:,:,1);
+    w_traj = traj_info.w_traj_all(:,:,1);
+    t_all = linspace(0,DT*N,N+1);
+else
+    x_traj = traj_info.x_traj;
+    u_traj = traj_info.u_traj;
+    w_traj = traj_info.w_traj;
+    t_all = traj_info.t_all;
+end
 
 %% Plot variables
 q_header = {'$x$','$z$','$rot_Y$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
@@ -38,7 +51,7 @@ if plotSettings.q
     figure % plot q
     for i = 1:n_q
         subplot(3,3,i);
-        plot(t_all(1:size(X_REF_Original,2)),X_REF_Original(i,1:size(X_REF_Original,2)),'--g','LineWidth',width_ref);
+        plot(t_all,X_REF_Original(i,1:size(t_all,2)),'--g','LineWidth',width_ref);
         hold on; plot(t_all,x_traj(i,:),'color',blue,'LineWidth',width_traj);
         hold on; yline(args.lbx(i),'--r','LineWidth',width_ref);
         %         hold on; yline(args.ubx(i),'--r','LineWidth',width_ref);
@@ -66,7 +79,7 @@ if plotSettings.dq
     figure % plot q
     for i = 1:length(q_header)
         subplot(3,3,i);
-        plot(t_all(1:size(X_REF_Original,2)),X_REF_Original(n_q+i,1:size(X_REF_Original,2)),'--g','LineWidth',width_ref);
+        plot(t_all,X_REF_Original(n_q+i,1:size(t_all,2)),'--g','LineWidth',width_ref);
         hold on; plot(t_all,x_traj(n_q+i,:),'color',blue,'LineWidth',width_traj);
         %         hold on; yline(args.lbx(n_q+i),'--r','LineWidth',wdr);
         %         hold on; yline(args.ubx(n_q+i),'--r','LineWidth',wdr);
@@ -83,8 +96,8 @@ if plotSettings.u
     figure
     for i = 1:n_u
         subplot(2,2,i);
-        plot(t_all(1:size(U_REF_Original,2)),U_REF_Original(i,1:size(U_REF_Original,2)),'--g','LineWidth',width_ref);
-        hold on; plot(t_all(1:end-1),u_traj(i,:),'color',blue,'LineWidth',width_traj);
+        plot(t_all,U_REF_Original(i,1:size(t_all,2)),'--g','LineWidth',width_ref);
+        hold on; plot(t_all(1:end-1),u_traj(i,1:size(t_all(1:end-1),2)),'color',blue,'LineWidth',width_traj);
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end

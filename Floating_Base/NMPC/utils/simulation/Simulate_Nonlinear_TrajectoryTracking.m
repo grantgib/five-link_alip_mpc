@@ -1,15 +1,26 @@
-function [x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,X_REF_Original,U_REF_Original,param,...
-    f_nonlinear,n_x,n_u,mpc_info)
+function [mpc_info,traj_info] = ...
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info)
 import casadi.*
 
-% Extract data from mpc_info
+%% Extract data
+% dyn_info
+n_x = dyn_info.dim.n_x;
+n_u = dyn_info.dim.n_u;
+f_nonlinear = dyn_info.func.f_NL;
+
+% mpc_info
 DT = mpc_info.DT;
 N = mpc_info.N;
 sim_time = mpc_info.sim_time;
 solver = mpc_info.solvers_NL{1};
 
-% Initialize Variables
+% ref_info
+x_init = ref_info.x_init;
+X_REF_Original = ref_info.x_ref;
+U_REF_Original = ref_info.u_ref;
+param = ref_info.full_ref;
+
+%% Initialize Variables
 t_current = 0;          % current time step (sec)
 t_all(1) = t_current;
 t_final = DT * (size(X_REF_Original,2)-1);
@@ -97,5 +108,13 @@ disp("Trajectory error (2-norm) = ")
 disp(traj_error');
 disp("Final trajectory error (2-norm) = " + x_traj_end_error);
 disp("Average MPC Calculation Time = " + average_mpc_time);
+
+
+%% Return
+mpc_info.args = args;
+traj_info = struct;
+traj_info.x_traj = x_traj;
+traj_info.u_traj = u_traj;
+traj_info.t_all = t_all;
 
 end

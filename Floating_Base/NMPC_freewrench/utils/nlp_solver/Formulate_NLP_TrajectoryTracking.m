@@ -19,7 +19,7 @@ DT = mpc_info.DT;
 
 %% IPOPT settings
 mpc_info.opts = struct;
-% opts.ipopt.max_iter = 2000;
+mpc_info.opts.ipopt.max_iter = 20000;
 mpc_info.opts.ipopt.print_level =0;%0,3
 mpc_info.opts.print_time = 0;
 % opts.ipopt.acceptable_tol =1e-8;

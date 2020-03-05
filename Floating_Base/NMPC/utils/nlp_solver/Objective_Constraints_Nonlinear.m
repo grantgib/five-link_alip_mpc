@@ -1,8 +1,22 @@
-function [Xdec,Udec,P,obj,g,obj_vector] = Objective_Constraints_Nonlinear(DT,N,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param)
+function [Xdec,Udec,P,obj,g,obj_vector] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N)
 import casadi.*
-f = f_nonlinear;
-E = E_nonlinear;
-H = H_nonlinear;
+
+%% Extract inputs
+% dyn_info
+f = dyn_info.func.f_NL;
+E = dyn_info.func.E_NL;
+H = dyn_info.func.H_NL;
+n_x = dyn_info.dim.n_x;
+n_q = dyn_info.dim.n_q;
+n_u = dyn_info.dim.n_u;
+use_descriptor = dyn_info.descriptor;
+
+% mpc_info
+DT = mpc_info.DT;
+
+% ref_info
+param = ref_info.full_ref;
+
 %% Symbolics
 Udec = SX.sym('U',n_u,N+1);      % controls in R^N-1. subset of the decision variables
 Xdec = SX.sym('X',n_x,N+1);  % A vector that represents the states over the optimization problem.
@@ -11,14 +25,13 @@ P = SX.sym('P',n_x + (N+1)*(n_x + n_u));
 % parameters (which include the initial state and the reference along the
 % predicted trajectory (reference states and reference controls))
 
-%% Define Penalties
-% Bryson's rule
+%% Define Penalties (Bryson's Rule)
+% State penalty
 Q_vector = zeros(2*n_q,1);
 for i = 1:n_q
 Q_vector(i) = 10/param.bounds.RightStance.states.x.ub(i);
 Q_vector(n_q+i) = 1/param.bounds.RightStance.states.dx.ub(i);
 end
-
 Q_weights = diag([1, 1, 10, 1, 1, 1, 1,...
                   1, 1, 1, 1, 1, 1, 1]);
 Q = Q_weights*diag(Q_vector);
@@ -28,19 +41,41 @@ R_q1R = 1/param.bounds.RightStance.inputs.Control.u.ub(1);
 R_q2R = 1/param.bounds.RightStance.inputs.Control.u.ub(2);
 R_q1L = 1/param.bounds.RightStance.inputs.Control.u.ub(3);
 R_q2L = 1/param.bounds.RightStance.inputs.Control.u.ub(4);
-
-% Diagonal matrix form
 R = diag([R_q1R,R_q2R,R_q1L,R_q2L]);                    % control penalty
+
+% Output penalty
+Qy = 10*diag([1 0 1]);
+
 %% Objective Function
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
-for k = 1:N+1
-    x_k = Xdec(:,k);   % current state
-    u_k = Udec(:,k);   % current control
-    % Running stage and control cost
-    obj_vector(k) = (x_k-P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)))'*Q*(x_k-P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x))) + ...
-        (u_k-P((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)))'*R*(u_k-P((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)));
+if mpc_info.type == "output"
+    disp('*** Output tracking enabled! ***');
+    for k = 1:N+1
+        x_k = Xdec(:,k);   % current state
+        u_k = Udec(:,k);   % current control
+        y_k = leftToePos(x_k(1:n_q,k));
+        x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x));
+        u_ref_k = P((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u));
+        y_ref_k = leftToePos(x_ref_k(1:n_q,k));
+        % Running stage and control cost
+        obj_vector(k) = (x_k - x_ref_k)'*Q*(x_k - x_ref_k) + ...
+            (u_k - u_ref_k)'*R*(u_k - u_ref_k) + ...
+            (y_k - y_ref_k)'*Qy*(y_k - y_ref_k);
+    end
+elseif mpc_info.type == "traj_track"
+    disp('*** State trajectory tracking enabled! ***');
+    for k = 1:N+1
+        x_k = Xdec(:,k);   % current state
+        u_k = Udec(:,k);   % current control
+        x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x));
+        u_ref_k = P((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u));
+        % Running stage and control cost
+        obj_vector(k) = (x_k-x_ref_k)'*Q*(x_k-x_ref_k) + ...
+            (u_k-u_ref_k)'*R*(u_k-u_ref_k);
+    end
 end
 obj = sum(obj_vector);
+
 %% Equality Constraints (Dynamics)
 g = [];                     % initialize equality constraints vector
 g = [g; Xdec(:,1)-P(1:n_x)];   % initial condition constraints

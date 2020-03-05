@@ -20,7 +20,7 @@ u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
 u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
 
 % Set Wrench bounds
-w_lb = [-inf; -inf];
+w_lb = [-inf; 50];
 w_ub = [inf; inf];
 
 %% Compute parameters vector
@@ -36,8 +36,8 @@ end
 
 %% Equality Constraints
 % simulation later so it is an output of this function]
-args.lbg(1:(n_x+n_w)*(N+1)+n_w) = 0; % Equality constraints
-args.ubg(1:(n_x+n_w)*(N+1)+n_w) = 0; % Equality constraints
+args.lbg(1:(n_x)*(N+1)+n_w*(N+1)) = 0; % Equality constraints
+args.ubg(1:(n_x)*(N+1)+n_w*(N+1)) = 0; % Equality constraints
 
 %% State and control bounds
 % state

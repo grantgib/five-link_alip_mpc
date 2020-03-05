@@ -51,7 +51,7 @@ rhs = [dq; D\(-G + B*u + Jc'*w)]; % system r.h.s
 f_nonlinear = Function('f',{x,u,w},{rhs});  % nonlinear mapping function f(x,u)
 
 % Wrench as decision variable
-lambda = -Jc*(D\Jc') \ (dJc*dq + Jc*(D\(-G + B*u)));
+lambda = -((Jc/D)*Jc') \ (dJc*dq + (Jc/D)*(-G + B*u));
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
 % Descriptor System

@@ -45,7 +45,7 @@ solver_NL_all = cell(N,1);
 % problem that we don't want)
 for i = 1:mpc_info.N
     % Compute symbolic variables of quadratic program
-    [X_dec_all{i},U_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = Objective_Constraints_Nonlinear(DT,N,n_q,n_x,n_u,f_nonlinear,E_nonlinear,H_nonlinear,use_descriptor,param);
+    [X_dec_all{i},U_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N);
     
     % Settings
     % Decision variables to optimize

@@ -2,7 +2,7 @@
 %   Trajectory Tracking
 %   Floating Base (multi-shooting with Wrench Included)
 %   Continuous Dynamics ~ no impact considered
-clear; clc;
+clear; clc; close all;
 
 %% Path setup
 restoredefaultpath;
@@ -25,29 +25,12 @@ mpc_info.sim_time = 1;
 
 %% Load Desired Reference Trajectory
 cur = pwd;
-stpheight = 0.05;
-dir = 'ascend';
-trajName = string(stpheight) + '_' + dir + '.mat';
-if isequal(dir,'ascend')
-    full_ref = load(fullfile('Reference_Trajectories\variousStepHeightsAscend\',trajName));
-else
-    full_ref = load(fullfile('Reference_Trajectories\variousStepHeightsDescend\',trajName));
-end
-% Interpolate trajectory (*** This could be a problem ****)
-trajRef = calculations.referenceTrajBez(full_ref.gait,mpc_info.DT);
-X_REF_Original = [trajRef.x; trajRef.dx];
-U_REF_Original = trajRef.u;
-
-% x_ref_init = [full_ref.gait(1).states.x(:,1); full_ref.gait(1).states.dx(:,1)];
-% delta_x_init = 0.02*x_ref_init; % initial condition. 14X1
-x_init = [full_ref.gait(1).states.x(:,1); full_ref.gait(1).states.dx(:,1)];
-w_init = full_ref.gait(1).inputs.fRightToe([1,3],1);
-
-ref_info = struct;
-ref_info.x_ref = X_REF_Original;
-ref_info.u_ref = U_REF_Original;
-ref_info.full_ref = full_ref;
-
+stpheight = 0.04;
+dir = 'descend';
+traj_name = string(stpheight) + '_' + dir + '.mat';
+ref_info = Load_Reference_Trajectory(mpc_info,dir,traj_name);
+ref_info.x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
+ref_info.w_init = ref_info.full_ref.gait(1).inputs.fRightToe([1,3],1);
 disp("Reference Trajectory Loaded and Initial Condition Set!");
 
 %% Generate Dynamics Functions
@@ -68,7 +51,7 @@ disp("Finished formulating NLP!  (" + toc + " sec)");
 %*************************************************************************
 disp("Begin simulation...");
 [traj_info,mpc_info] = ...
-    Simulate_Nonlinear_TrajectoryTracking(x_init,w_init,dyn_info,mpc_info,ref_info);
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
 disp("Finished simulation!");
 
 %% Save Simulation
@@ -80,19 +63,34 @@ plotSettings.q = 1;
 plotSettings.dq = 1;
 plotSettings.u = 1;
 plotSettings.w = 1;
-
-traj_title = string(stpheight)+'m '+dir;
-if (true)
-    Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings,traj_title);
-end
+plotSettings.single_sol = 0;
+plotSettings.traj_title = string(stpheight)+'m '+dir;
+Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);
 
 %% Animate
 animateSettings = struct;
 animateSettings.traj = 1;
 animateSettings.ref = 0;
-Animate_MPC_Traj(ref_info,traj_info,animateSettings)
+animateSettings.single_sol = 0;
+Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);
 
+%% Single Solution 
+% Plots
+plotSettings.q = 0;
+plotSettings.dq = 0;
+plotSettings.u = 0;
+plotSettings.w = 0;
+plotSettings.single_sol = 0;
+Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);
+% Animation
+animateSettings.traj = 0;
+animateSettings.ref = 0;
+animateSettings.single_sol = 0;
+Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);
 
+% Just checked the trajectory for N = 150, and the trajectory generated for
+% the first time step is perfect. There may be a problem with the
+% update_state step which is causing additional errors to be introduced...?
 
 
 

@@ -2,7 +2,7 @@
 %   Trajectory Tracking
 %   Floating Base
 %   Continuous Dynamics ~ no impact considered
-clear; clc;
+clear; clc; close all;
 
 %% Path setup
 restoredefaultpath;
@@ -20,8 +20,9 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 1;
+mpc_info.N = 10;
 mpc_info.sim_time = 1;
+mpc_info.type = 'traj_track';
 
 %% Load Desired Reference Trajectory
 cur = pwd;
@@ -31,8 +32,7 @@ traj_name = string(stpheight) + '_' + dir + '.mat';
 % Compute reference
 ref_info = Load_Reference_Trajectory(mpc_info,dir,traj_name);
 % IC
-x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
-ref_info.x_init = x_init;
+ref_info.x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
 disp("Reference Trajectory Loaded and Initial Condition Set!");
 
 %% Generate Dynamics Functions
@@ -51,28 +51,26 @@ disp("Finished formulating NLP!  (" + toc + " sec)");
 %       Run Simulation
 %*************************************************************************
 disp("Begin simulation...");
-[x_traj,u_traj,x_traj_all,t_all,mpciter,args] = ...
-    Simulate_Nonlinear_TrajectoryTracking(ref_info.x_init,ref_info.x_ref,ref_info.u_ref,ref_info.full_ref,...
-    dyn_info.func.f_NL,dyn_info.dim.n_x,dyn_info.dim.n_u,mpc_info);
+[mpc_info,traj_info] = ...
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
 disp("Finished simulation!");
 
 %% Save Simulation
+
 
 %% Plot
 plotSettings = struct;
 plotSettings.q = 1;
 plotSettings.dq = 1;
 plotSettings.u = 1;
-traj_title = string(stpheight)+'m '+dir;
-if (true)
-    Plot_TrajectoryTracking(t_all,x_traj,u_traj,ref_info.x_ref(:,1:end-1),ref_info.u_ref(:,1:end-1),plotSettings,traj_title,args);
-end
+plotSettings.traj_title = string(stpheight)+'m '+dir;
+Plot_TrajectoryTracking(mpc_info,ref_info,traj_info,plotSettings);
 
 %% Animate
 animateSettings = struct;
 animateSettings.traj = 1;
 animateSettings.ref = 0;
-Animate_MPC_Traj(t_all,ref_info.x_ref,x_traj,animateSettings)
+Animate_MPC_Traj(ref_info,traj_info,animateSettings)
 
 
 
