@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 3 Dec 2019 15:41:38 GMT-05:00
+ * Tue 17 Mar 2020 21:37:21 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -57,10 +60,6 @@ static void output1(double *p_output1,const double *var1,const double *var2)
   p_output1[7]=-1;
   p_output1[8]=1;
   p_output1[9]=-1;
-  p_output1[10]=1;
-  p_output1[11]=-1;
-  p_output1[12]=1;
-  p_output1[13]=-1;
 }
 
 
@@ -115,7 +114,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
    
   /*  Create matrices for return arguments.  */
-  plhs[0] = mxCreateDoubleMatrix((mwSize) 14, (mwSize) 1, mxREAL);
+  plhs[0] = mxCreateDoubleMatrix((mwSize) 10, (mwSize) 1, mxREAL);
   p_output1 = mxGetPr(plhs[0]);
 
 

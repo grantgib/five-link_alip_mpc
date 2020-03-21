@@ -55,26 +55,45 @@ disp("Begin simulation...");
     Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
 disp("Finished simulation!");
 
-%% Save Simulation
+%% Post-compute Wrench values during trajectory
+traj_info = Compute_Wrench(dyn_info,traj_info);
+disp("Computed Wrench Post-Simulation!");
 
+%% Save Simulation
+if true
+    save_name = "Stairs(" + dir + ")_Ht(" + stpheight + ")_N(" + mpc_info.N +...
+        ")_DT(" + mpc_info.DT + ")_Time(" + mpc_info.sim_time + " sec).mat";
+    save(fullfile('saved_results/',save_name),'ref_info','traj_info','dyn_info');
+end
+disp("Saved Trajectory!");
 
 %% Plot
 plotSettings = struct;
-plotSettings.q = 1;
-plotSettings.dq = 1;
-plotSettings.u = 1;
+plotSettings.q = 0;
+plotSettings.dq = 0;
+plotSettings.u = 0;
 plotSettings.traj_title = string(stpheight)+'m '+dir;
 Plot_TrajectoryTracking(mpc_info,ref_info,traj_info,plotSettings);
 
 %% Animate
 animateSettings = struct;
-animateSettings.traj = 1;
+animateSettings.traj = 0;
 animateSettings.ref = 0;
 Animate_MPC_Traj(ref_info,traj_info,animateSettings)
 
 
-
-
+%% Extras
+% ogbounds = [ref_info.full_ref.bounds.RightStance.states.x.lb', ref_info.full_ref.bounds.RightStance.states.x.ub';...
+%     ref_info.full_ref.bounds.RightStance.states.dx.lb', ref_info.full_ref.bounds.RightStance.states.dx.ub';...
+%     ref_info.full_ref.bounds.RightStance.states.x.lb', ref_info.full_ref.bounds.RightStance.states.x.ub';...
+%     ref_info.full_ref.bounds.RightStance.states.dx.lb', ref_info.full_ref.bounds.RightStance.states.dx.ub';
+%     ref_info.full_ref.bounds.RightStance.inputs.Control.u.lb, ref_info.full_ref.bounds.RightStance.inputs.Control.u.ub;...
+%     ref_info.full_ref.bounds.RightStance.inputs.Control.u.lb, ref_info.full_ref.bounds.RightStance.inputs.Control.u.ub];
+% mybounds = [mpc_info.args.lbx, mpc_info.args.ubx];
+% 
+% all_bounds = [mybounds(:,1), ogbounds(:,1), ogbounds(:,2), mybounds(:,2)];
+% save('NMPCbounds','all_bounds');
+% 
 
 
 

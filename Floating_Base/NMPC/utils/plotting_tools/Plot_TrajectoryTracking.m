@@ -18,7 +18,7 @@ n_q = length(q_header);
 n_u = length(u_header);
 
 blue = [0, 0.4470, 0.7410];
-width_ref = 2;
+width_ref = 1;
 width_traj = 1;
 sz = 15;
 
@@ -76,8 +76,8 @@ if plotSettings.u
     figure
     for i = 1:n_u
         subplot(2,2,i);
-        plot(t_all(1:size(U_REF_Original,2)),U_REF_Original(i,1:size(U_REF_Original,2)),'--g','LineWidth',width_ref);
-        hold on; plot(t_all(1:end-1),u_traj(i,:),'color',blue,'LineWidth',width_traj);
+        stairs(t_all(1:size(U_REF_Original,2)),U_REF_Original(i,1:size(U_REF_Original,2)),'m','LineWidth',width_ref);
+        hold on; stairs(t_all(1:end-1),u_traj(i,:),'color',blue,'LineWidth',width_traj);
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end

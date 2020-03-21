@@ -1,4 +1,4 @@
-function args = Update_Args_Nonlinear(x_init,w_init,N,dyn_info,ref_info)
+function args = Update_Args_Nonlinear(x_init,N,dyn_info,ref_info)
 
 %% Extract variables
 n_x = dyn_info.dim.n_x;
@@ -10,27 +10,30 @@ full_ref = ref_info.full_ref;
 
 %% Bounds
 % Relax bounds from trajectory generation for control
-x_lb = [full_ref.bounds.RightStance.states.x.lb - 0.5*full_ref.bounds.RightStance.states.x.lb,...
-    full_ref.bounds.RightStance.states.dx.lb - 0.5*full_ref.bounds.RightStance.states.dx.lb];
-x_ub = [full_ref.bounds.RightStance.states.x.ub + 0.5*full_ref.bounds.RightStance.states.x.ub,...
-    full_ref.bounds.RightStance.states.dx.ub + 0.5*full_ref.bounds.RightStance.states.dx.ub];
+relax_percent = 0.3;
+x_lb = [full_ref.bounds.RightStance.states.x.lb - relax_percent*abs(full_ref.bounds.RightStance.states.x.lb),...
+    full_ref.bounds.RightStance.states.dx.lb - relax_percent*abs(full_ref.bounds.RightStance.states.dx.lb)];
+x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bounds.RightStance.states.x.ub),...
+    full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)];
+
+% disp(x_lb' - [full_ref.bounds.RightStance.states.x.lb, full_ref.bounds.RightStance.states.dx.lb]'); 
+% disp(x_ub' - [full_ref.bounds.RightStance.states.x.ub, full_ref.bounds.RightStance.states.dx.ub]'); 
 
 % Set control bounds
-u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
-u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
+u_lb = (1+relax_percent)*full_ref.bounds.RightStance.inputs.Control.u.lb;
+u_ub = (1+relax_percent)*full_ref.bounds.RightStance.inputs.Control.u.ub;
 
 % Set Wrench bounds
-w_lb = [-inf; 50];
+w_lb = [-inf; -inf];
 w_ub = [inf; inf];
 
-%% Compute parameters vector
+%% Compute full_refeters vector
 args = struct;
 args.p(1:n_x) = x_init; % initial condition of the robot posture
-args.p(n_x+1:n_x+n_w) = w_init;
 for k = 1:N+1 %new - set the reference to          track
-    args.p((k-1)*(n_x+n_u)+(n_x+n_w+1):(k-1)*(n_x+n_u)+(n_x+n_w+n_x)) = ...
+    args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
         X_REF(:,k);
-    args.p((k-1)*(n_x+n_u)+(n_x+n_x+n_w+1):(k-1)*(n_x+n_u)+(n_x+n_w+n_x+n_u)) =...
+    args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
         U_REF(:,k);
 end
 

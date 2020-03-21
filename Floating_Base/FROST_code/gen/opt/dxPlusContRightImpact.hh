@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:58:32 GMT-05:00
+ * Tue 17 Mar 2020 21:37:27 GMT-04:00
  */
 
 #ifndef DXPLUSCONTRIGHTIMPACT_HH

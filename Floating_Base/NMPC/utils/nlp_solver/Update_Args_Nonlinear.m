@@ -1,14 +1,20 @@
-function args = Update_Args_Nonlinear(x_init,N,n_x,n_u,X_REF,U_REF,param)
-% Relax bounds from trajectory generation for control
-x_lb = [param.bounds.RightStance.states.x.lb - 0.5*param.bounds.RightStance.states.x.lb,...
-    param.bounds.RightStance.states.dx.lb - 0.5*param.bounds.RightStance.states.dx.lb];
-x_ub = [param.bounds.RightStance.states.x.ub + 0.5*param.bounds.RightStance.states.x.ub,...
-    param.bounds.RightStance.states.dx.ub + 0.5*param.bounds.RightStance.states.dx.ub];
+function args = Update_Args_Nonlinear(dyn_info,ref_info,x_init,N,X_REF,U_REF)
+%% Extract
+n_x = dyn_info.dim.n_x;
+n_u = dyn_info.dim.n_u;
+full_ref = ref_info.full_ref;
 
+%% Bounds
+% Relax bounds from trajectory generation for control
+relax_percent = 0.5;
+x_lb = [full_ref.bounds.RightStance.states.x.lb - abs(relax_percent*full_ref.bounds.RightStance.states.x.lb),...
+    full_ref.bounds.RightStance.states.dx.lb - abs(relax_percent*full_ref.bounds.RightStance.states.dx.lb)];
+x_ub = [full_ref.bounds.RightStance.states.x.ub + abs(relax_percent*full_ref.bounds.RightStance.states.x.ub),...
+    full_ref.bounds.RightStance.states.dx.ub + abs(relax_percent*full_ref.bounds.RightStance.states.dx.ub)];
 
 % Set control bounds
-u_lb = param.bounds.RightStance.inputs.Control.u.lb;
-u_ub = param.bounds.RightStance.inputs.Control.u.ub;
+u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
+u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
 
 %% Compute parameters vector
 args = struct;
@@ -19,7 +25,6 @@ for k = 1:N+1 %new - set the reference to          track
     args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
         U_REF(:,k);
 end
-
 
 %% Equality Constraints
 % simulation later so it is an output of this function]

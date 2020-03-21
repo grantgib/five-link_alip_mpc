@@ -15,7 +15,7 @@ use_descriptor = dyn_info.descriptor;
 DT = mpc_info.DT;
 
 % ref_info
-param = ref_info.full_ref;
+full_ref = ref_info.full_ref;
 
 %% Symbolics
 Udec = SX.sym('U',n_u,N+1);      % controls in R^N-1. subset of the decision variables
@@ -29,19 +29,25 @@ P = SX.sym('P',n_x + (N+1)*(n_x + n_u));
 % State penalty
 Q_vector = zeros(2*n_q,1);
 for i = 1:n_q
-Q_vector(i) = 10/param.bounds.RightStance.states.x.ub(i);
-Q_vector(n_q+i) = 1/param.bounds.RightStance.states.dx.ub(i);
+    Q_vector(i) = 1/full_ref.bounds.RightStance.states.x.ub(i);
+    Q_vector(n_q+i) = 1/full_ref.bounds.RightStance.states.dx.ub(i);
 end
-Q_weights = diag([1, 1, 10, 1, 1, 1, 1,...
-                  1, 1, 1, 1, 1, 1, 1]);
+Q_weights = diag([1, 1, 1, 1, 1, 1, 1,...
+    1, 1, 1, 1, 1, 1, 1]);
 Q = Q_weights*diag(Q_vector);
 
 % Control penalty
-R_q1R = 1/param.bounds.RightStance.inputs.Control.u.ub(1);
-R_q2R = 1/param.bounds.RightStance.inputs.Control.u.ub(2);
-R_q1L = 1/param.bounds.RightStance.inputs.Control.u.ub(3);
-R_q2L = 1/param.bounds.RightStance.inputs.Control.u.ub(4);
-R = diag([R_q1R,R_q2R,R_q1L,R_q2L]);                    % control penalty
+R_vector = zeros(n_u,1);
+for i = 1:n_u
+    R_vector(i) = 1/full_ref.bounds.RightStance.inputs.Control.u.ub(i);
+end
+R_weights = 0.001*diag([1 1 1 1]);
+R = R_weights*diag(R_vector);                   % control penalty
+% R_q1R = 1/param.bounds.RightStance.inputs.Control.u.ub(1);
+% R_q2R = 1/param.bounds.RightStance.inputs.Control.u.ub(2);
+% R_q1L = 1/param.bounds.RightStance.inputs.Control.u.ub(3);
+% R_q2L = 1/param.bounds.RightStance.inputs.Control.u.ub(4);
+% R = diag([R_q1R,R_q2R,R_q1L,R_q2L]);                    % control penalty
 
 % Output penalty
 Qy = 10*diag([1 0 1]);
@@ -49,7 +55,7 @@ Qy = 10*diag([1 0 1]);
 %% Objective Function
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
 if mpc_info.type == "output"
-    disp('*** Output tracking enabled! ***');
+    %     disp('*** Output tracking enabled! ***');
     for k = 1:N+1
         x_k = Xdec(:,k);   % current state
         u_k = Udec(:,k);   % current control
@@ -63,7 +69,7 @@ if mpc_info.type == "output"
             (y_k - y_ref_k)'*Qy*(y_k - y_ref_k);
     end
 elseif mpc_info.type == "traj_track"
-    disp('*** State trajectory tracking enabled! ***');
+    %     disp('*** State trajectory tracking enabled! ***');
     for k = 1:N+1
         x_k = Xdec(:,k);   % current state
         u_k = Udec(:,k);   % current control
@@ -78,7 +84,7 @@ obj = sum(obj_vector);
 
 %% Equality Constraints (Dynamics)
 g = [];                     % initialize equality constraints vector
-g = [g; Xdec(:,1)-P(1:n_x)];   % initial condition constraints
+g = [g; Xdec(:,1) - P(1:n_x)];   % initial condition constraints
 for k = 1:N
     x_k = Xdec(:,k);                       % current state
     u_k = Udec(:,k);                       % current control

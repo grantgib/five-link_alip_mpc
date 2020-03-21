@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 3 Dec 2019 15:23:21 GMT-05:00
+ * Tue 17 Mar 2020 21:36:31 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -45,17 +48,17 @@ const double Degree = 0.01745329251994329576924;
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t2322;
-  t2322 = 0.7071065623731627*var2[0];
+  double t3769;
+  t3769 = 0.7071065623731627*var2[0];
   p_output1[0]=1.;
   p_output1[1]=1.;
-  p_output1[2]=t2322;
+  p_output1[2]=t3769;
   p_output1[3]=-1.;
-  p_output1[4]=t2322;
+  p_output1[4]=t3769;
   p_output1[5]=1.;
-  p_output1[6]=t2322;
+  p_output1[6]=t3769;
   p_output1[7]=-1.;
-  p_output1[8]=t2322;
+  p_output1[8]=t3769;
 }
 
 

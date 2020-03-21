@@ -13,7 +13,7 @@ export_path = fullfile(cur, 'gen/');
 % be loaded  from the MX binary files from the given directory.
 load_path = [];%fullfile(cur, 'gen/sym');
 delay_set = false;
-COMPILE = false;
+COMPILE = true;
 SAVE_SOLUTION=1;
 
 
@@ -135,7 +135,6 @@ end
 % Example constraint removal
 % removeConstraint(nlp.Phase(1),'u_friction_cone_RightToe');
 %
-% param=load(fullfile('C:\Users\mungam\Documents\GitHub\mpc_fiveLink\trajectories\walking\walkingRabbitGait_11-Nov-2019-19-57-37-0500_Rabbit.mat'));
 
 %% Use IPOPT Solver
 addpath(genpath(export_path));

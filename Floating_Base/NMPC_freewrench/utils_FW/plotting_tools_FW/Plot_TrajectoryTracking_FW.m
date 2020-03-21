@@ -40,12 +40,14 @@ w_header = {'$f_x$','$f_z$'};
 blue = [0, 0.4470, 0.7410];
 width_ref = 2;
 width_traj = 1;
+width_bound = 1;
 sz = 15;
 
 %% Errors
 x_error = x_traj - X_REF_Original(:,1:size(x_traj,2));
 u_error = u_traj - U_REF_Original(:,1:size(u_traj,2));
 q_err_header = {'$x_{err}$','$z_{err}$','${rot_Y}_{err}$','${q_{1R}}_{err}$','${q_{2R}}_{err}$','${q_{1L}}_{err}$','${q_{2L}}_{err}$'}';
+
 %% State positions
 if plotSettings.q
     figure % plot q
@@ -53,8 +55,8 @@ if plotSettings.q
         subplot(3,3,i);
         plot(t_all,X_REF_Original(i,1:size(t_all,2)),'--g','LineWidth',width_ref);
         hold on; plot(t_all,x_traj(i,:),'color',blue,'LineWidth',width_traj);
-        hold on; yline(args.lbx(i),'--r','LineWidth',width_ref);
-        %         hold on; yline(args.ubx(i),'--r','LineWidth',width_ref);
+        hold on; yline(args.lbx(i),'--r','LineWidth',width_bound);
+        hold on; yline(args.ubx(i),'--r','LineWidth',width_bound);
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -81,8 +83,8 @@ if plotSettings.dq
         subplot(3,3,i);
         plot(t_all,X_REF_Original(n_q+i,1:size(t_all,2)),'--g','LineWidth',width_ref);
         hold on; plot(t_all,x_traj(n_q+i,:),'color',blue,'LineWidth',width_traj);
-        %         hold on; yline(args.lbx(n_q+i),'--r','LineWidth',wdr);
-        %         hold on; yline(args.ubx(n_q+i),'--r','LineWidth',wdr);
+        hold on; yline(args.lbx(n_q+i),'--r','LineWidth',width_bound);
+        hold on; yline(args.ubx(n_q+i),'--r','LineWidth',width_bound);
         title(dq_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end

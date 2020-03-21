@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 3 Dec 2019 15:20:55 GMT-05:00
+ * Tue 17 Mar 2020 21:34:26 GMT-04:00
  */
 
 #ifndef J_PRIGHTTOECONT_RIGHTSTANCE_HH

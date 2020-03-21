@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 3 Dec 2019 15:23:53 GMT-05:00
+ * Tue 17 Mar 2020 21:36:58 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -45,22 +48,22 @@ const double Degree = 0.01745329251994329576924;
  */
 static void output1(double *p_output1,const double *var1,const double *var2,const double *var3)
 {
-  double t992;
-  double t994;
-  double t1056;
-  double t1067;
-  double t1078;
-  double t1892;
-  t992 = -1.*var1[0];
-  t994 = t992 + var1[1];
-  t1056 = Power(t994,-2);
-  t1067 = -1.*var2[0];
-  t1078 = t1067 + var3[0];
-  t1892 = 1/t994;
-  p_output1[0]=t1056*t1078;
-  p_output1[1]=-1.*t1056*t1078;
-  p_output1[2]=-1.*t1892;
-  p_output1[3]=t1892;
+  double t104;
+  double t245;
+  double t3030;
+  double t3174;
+  double t3872;
+  double t4493;
+  t104 = -1.*var1[0];
+  t245 = t104 + var1[1];
+  t3030 = Power(t245,-2);
+  t3174 = -1.*var2[0];
+  t3872 = t3174 + var3[0];
+  t4493 = 1/t245;
+  p_output1[0]=t3030*t3872;
+  p_output1[1]=-1.*t3030*t3872;
+  p_output1[2]=-1.*t4493;
+  p_output1[3]=t4493;
 }
 
 

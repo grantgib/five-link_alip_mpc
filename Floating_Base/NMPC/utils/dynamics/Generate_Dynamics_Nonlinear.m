@@ -37,17 +37,25 @@ n_u = length(u);
 D = Mmat_notorso(x,z,rotY,q1R,q2R,q1L,q2L); % 7x7
 G = -GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
 B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
-Jac = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);
-dJac = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
+Jc = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);
+dJc = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
 
-lambda = -Jac*(D\Jac') \ (dJac*dq + Jac*(D\(-G + B*u)));
-rhs = [dq; D\(-G + B*u + Jac'*lambda)]; % system r.h.s
+lambda = -Jc*(D\Jc') \ (dJc*dq + Jc*(D\(-G + B*u)));
+rhs = [dq; D\(-G + B*u + Jc'*lambda)]; % system r.h.s
 
 f_nonlinear = Function('f',{x,u},{rhs});  % nonlinear mapping function f(x,u)
 
 % Descriptor System
 E_nonlinear = 0;
 H_nonlinear = 0;
+
+%% Generate additional functions
+f_D = Function('f_D',{q},{D});
+f_G = Function('f_G',{q},{G});
+f_B = Function('f_B',{},{B});
+f_Jc = Function('f_Jc',{q},{Jc});
+f_dJc = Function('f_dJc',{q,dq},{dJc});
+f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
 %% Return
 dyn_info = struct;
@@ -57,6 +65,12 @@ dyn_info.dim.n_u = n_u;
 dyn_info.func.f_NL = f_nonlinear;
 dyn_info.func.E_NL = E_nonlinear;
 dyn_info.func.H_NL = H_nonlinear;
+dyn_info.func.D = f_D ;
+dyn_info.func.G = f_G ;
+dyn_info.func.B = f_B ;
+dyn_info.func.Jc = f_Jc ;
+dyn_info.func.dJc = f_dJc ;
+dyn_info.func.wrench = f_lambda ;
 dyn_info.descriptor = 0;
 
 end

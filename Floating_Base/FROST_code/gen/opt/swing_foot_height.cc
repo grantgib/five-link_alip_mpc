@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:57:55 GMT-05:00
+ * Tue 17 Mar 2020 21:37:00 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -45,31 +48,31 @@ const double Degree = 0.01745329251994329576924;
  */
 static void output1(double *p_output1,const double *var1)
 {
-  double t1311;
-  double t1314;
-  double t1309;
-  double t1315;
-  double t1300;
-  double t1312;
-  double t1316;
-  double t1317;
-  double t1319;
-  double t1320;
-  double t1321;
-  double t1322;
-  t1311 = Cos(var1[5]);
-  t1314 = Sin(var1[2]);
-  t1309 = Cos(var1[2]);
-  t1315 = Sin(var1[5]);
-  t1300 = Cos(var1[6]);
-  t1312 = t1309*t1311;
-  t1316 = -1.*t1314*t1315;
-  t1317 = t1312 + t1316;
-  t1319 = -1.*t1311*t1314;
-  t1320 = -1.*t1309*t1315;
-  t1321 = t1319 + t1320;
-  t1322 = Sin(var1[6]);
-  p_output1[0]=0.4*(1. - 1.*t1300)*t1317 - 0.4*t1321*t1322 + 0.8*(t1300*t1317 + t1321*t1322) + var1[1];
+  double t7984;
+  double t8128;
+  double t7840;
+  double t8130;
+  double t3908;
+  double t8127;
+  double t8150;
+  double t8176;
+  double t8300;
+  double t8404;
+  double t8406;
+  double t8412;
+  t7984 = Cos(var1[5]);
+  t8128 = Sin(var1[2]);
+  t7840 = Cos(var1[2]);
+  t8130 = Sin(var1[5]);
+  t3908 = Cos(var1[6]);
+  t8127 = t7840*t7984;
+  t8150 = -1.*t8128*t8130;
+  t8176 = t8127 + t8150;
+  t8300 = -1.*t7984*t8128;
+  t8404 = -1.*t7840*t8130;
+  t8406 = t8300 + t8404;
+  t8412 = Sin(var1[6]);
+  p_output1[0]=0.4*(1. - 1.*t3908)*t8176 - 0.4*t8406*t8412 + 0.8*(t3908*t8176 + t8406*t8412) + var1[1];
 }
 
 

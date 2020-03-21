@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:56:59 GMT-05:00
+ * Tue 17 Mar 2020 21:36:18 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -45,43 +48,43 @@ const double Degree = 0.01745329251994329576924;
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t713;
-  double t702;
-  double t706;
-  double t718;
-  double t684;
-  double t711;
-  double t719;
-  double t724;
-  double t727;
-  double t729;
-  double t730;
-  double t731;
-  double t685;
-  double t694;
-  double t759;
-  double t760;
-  double t764;
-  t713 = Cos(var1[2]);
-  t702 = Cos(var1[3]);
-  t706 = Sin(var1[2]);
-  t718 = Sin(var1[3]);
-  t684 = Cos(var1[4]);
-  t711 = t702*t706;
-  t719 = t713*t718;
-  t724 = t711 + t719;
-  t727 = t713*t702;
-  t729 = -1.*t706*t718;
-  t730 = t727 + t729;
-  t731 = Sin(var1[4]);
-  t685 = -1.*t684;
-  t694 = 1. + t685;
-  t759 = -1.*t702*t706;
-  t760 = -1.*t713*t718;
-  t764 = t759 + t760;
-  p_output1[0]=0.4*t694*t724 - 0.4*t730*t731 + 0.8*(t684*t724 + t730*t731) + var1[0] - 1.*var2[0];
+  double t15366;
+  double t15363;
+  double t15364;
+  double t15367;
+  double t10842;
+  double t15365;
+  double t15368;
+  double t15369;
+  double t15371;
+  double t15372;
+  double t15373;
+  double t15374;
+  double t10880;
+  double t15362;
+  double t15384;
+  double t15385;
+  double t15386;
+  t15366 = Cos(var1[2]);
+  t15363 = Cos(var1[3]);
+  t15364 = Sin(var1[2]);
+  t15367 = Sin(var1[3]);
+  t10842 = Cos(var1[4]);
+  t15365 = t15363*t15364;
+  t15368 = t15366*t15367;
+  t15369 = t15365 + t15368;
+  t15371 = t15366*t15363;
+  t15372 = -1.*t15364*t15367;
+  t15373 = t15371 + t15372;
+  t15374 = Sin(var1[4]);
+  t10880 = -1.*t10842;
+  t15362 = 1. + t10880;
+  t15384 = -1.*t15363*t15364;
+  t15385 = -1.*t15366*t15367;
+  t15386 = t15384 + t15385;
+  p_output1[0]=0.4*t15362*t15369 - 0.4*t15373*t15374 + 0.8*(t10842*t15369 + t15373*t15374) + var1[0] - 1.*var2[0];
   p_output1[1]=-1.*var2[1];
-  p_output1[2]=0.4*t694*t730 - 0.4*t731*t764 + 0.8*(t684*t730 + t731*t764) + var1[1] - 1.*var2[2];
+  p_output1[2]=0.4*t15362*t15373 - 0.4*t15374*t15386 + 0.8*(t10842*t15373 + t15374*t15386) + var1[1] - 1.*var2[2];
 }
 
 

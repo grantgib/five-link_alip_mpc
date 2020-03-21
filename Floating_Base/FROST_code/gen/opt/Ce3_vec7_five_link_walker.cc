@@ -1,11 +1,12 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 3 Dec 2019 15:21:45 GMT-05:00
+ * Tue 17 Mar 2020 21:35:09 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
 #include <stdexcept>
 #include <cmath>
+#include<math.h>
 /**
  * Copied from Wolfram Mathematica C Definitions file mdefs.hpp
  * Changed marcos to inline functions (Eric Cousineau)
@@ -37,6 +38,8 @@ const double E	= 2.71828182845904523536029;
 const double Pi = 3.14159265358979323846264;
 const double Degree = 0.01745329251994329576924;
 
+inline double Sec(double x) { return 1/cos(x); }
+inline double Csc(double x) { return 1/sin(x); }
 
 #endif
 
@@ -45,93 +48,93 @@ const double Degree = 0.01745329251994329576924;
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t2602;
-  double t2594;
-  double t2595;
-  double t2603;
-  double t2607;
-  double t2596;
-  double t2604;
-  double t2605;
-  double t2583;
-  double t2608;
-  double t2609;
-  double t2610;
-  double t2644;
-  double t2646;
-  double t2648;
-  double t2649;
-  double t2650;
-  double t2665;
-  double t2666;
-  double t2667;
-  double t2606;
-  double t2627;
-  double t2675;
-  double t2676;
-  double t2677;
-  double t2652;
-  double t2661;
-  double t2662;
-  double t2663;
-  double t2664;
-  double t2668;
-  double t2669;
-  double t2670;
-  double t2671;
-  double t2678;
-  double t2679;
-  double t2680;
-  double t2681;
-  double t2682;
-  double t2683;
-  t2602 = Cos(var1[5]);
-  t2594 = Cos(var1[6]);
-  t2595 = Sin(var1[5]);
-  t2603 = Sin(var1[6]);
-  t2607 = Cos(var1[2]);
-  t2596 = -1.*t2594*t2595;
-  t2604 = -1.*t2602*t2603;
-  t2605 = t2596 + t2604;
-  t2583 = Sin(var1[2]);
-  t2608 = t2602*t2594;
-  t2609 = -1.*t2595*t2603;
-  t2610 = t2608 + t2609;
-  t2644 = -1.*t2594;
-  t2646 = 1. + t2644;
-  t2648 = 0.4*t2646;
-  t2649 = 0.64*t2594;
-  t2650 = t2648 + t2649;
-  t2665 = t2602*t2650;
-  t2666 = -0.24*t2595*t2603;
-  t2667 = t2665 + t2666;
-  t2606 = -1.*t2583*t2605;
-  t2627 = t2607*t2605;
-  t2675 = -1.*t2602*t2594;
-  t2676 = t2595*t2603;
-  t2677 = t2675 + t2676;
-  t2652 = -0.24*t2602*t2603;
-  t2661 = t2650*t2595;
-  t2662 = 0.24*t2602*t2603;
-  t2663 = t2661 + t2662;
-  t2664 = t2663*t2610;
-  t2668 = t2605*t2667;
-  t2669 = t2594*t2595;
-  t2670 = t2602*t2603;
-  t2671 = t2669 + t2670;
-  t2678 = t2607*t2677;
-  t2679 = t2606 + t2678;
-  t2680 = 0.384*var2[1]*t2679;
-  t2681 = t2583*t2677;
-  t2682 = t2627 + t2681;
-  t2683 = 0.384*var2[0]*t2682;
+  double t3337;
+  double t440;
+  double t453;
+  double t3572;
+  double t3770;
+  double t3218;
+  double t3638;
+  double t3639;
+  double t298;
+  double t3801;
+  double t3813;
+  double t3815;
+  double t4086;
+  double t4095;
+  double t4101;
+  double t4107;
+  double t4113;
+  double t4192;
+  double t4239;
+  double t4241;
+  double t3769;
+  double t3840;
+  double t4271;
+  double t4315;
+  double t4328;
+  double t4117;
+  double t4152;
+  double t4162;
+  double t4165;
+  double t4178;
+  double t4242;
+  double t4247;
+  double t4250;
+  double t4251;
+  double t4359;
+  double t4369;
+  double t4383;
+  double t4386;
+  double t4387;
+  double t4405;
+  t3337 = Cos(var1[5]);
+  t440 = Cos(var1[6]);
+  t453 = Sin(var1[5]);
+  t3572 = Sin(var1[6]);
+  t3770 = Cos(var1[2]);
+  t3218 = -1.*t440*t453;
+  t3638 = -1.*t3337*t3572;
+  t3639 = t3218 + t3638;
+  t298 = Sin(var1[2]);
+  t3801 = t3337*t440;
+  t3813 = -1.*t453*t3572;
+  t3815 = t3801 + t3813;
+  t4086 = -1.*t440;
+  t4095 = 1. + t4086;
+  t4101 = 0.4*t4095;
+  t4107 = 0.64*t440;
+  t4113 = t4101 + t4107;
+  t4192 = t3337*t4113;
+  t4239 = -0.24*t453*t3572;
+  t4241 = t4192 + t4239;
+  t3769 = -1.*t298*t3639;
+  t3840 = t3770*t3639;
+  t4271 = -1.*t3337*t440;
+  t4315 = t453*t3572;
+  t4328 = t4271 + t4315;
+  t4117 = -0.24*t3337*t3572;
+  t4152 = t4113*t453;
+  t4162 = 0.24*t3337*t3572;
+  t4165 = t4152 + t4162;
+  t4178 = t4165*t3815;
+  t4242 = t3639*t4241;
+  t4247 = t440*t453;
+  t4250 = t3337*t3572;
+  t4251 = t4247 + t4250;
+  t4359 = t3770*t4328;
+  t4369 = t3769 + t4359;
+  t4383 = 0.384*var2[1]*t4369;
+  t4386 = t298*t4328;
+  t4387 = t3840 + t4386;
+  t4405 = 0.384*var2[0]*t4387;
   p_output1[0]=0;
   p_output1[1]=0;
-  p_output1[2]=(0.384*(-1.*t2583*t2610 + t2627)*var2[0] + 0.384*(t2606 - 1.*t2607*t2610)*var2[1])*var2[6];
+  p_output1[2]=(0.384*(-1.*t298*t3815 + t3840)*var2[0] + 0.384*(t3769 - 1.*t3770*t3815)*var2[1])*var2[6];
   p_output1[3]=0;
   p_output1[4]=0;
-  p_output1[5]=(t2680 + t2683 + 0.384*(t2610*(-1.*t2595*t2650 + t2652) + t2664 + t2668 + t2667*t2671)*var2[2])*var2[6];
-  p_output1[6]=(t2680 + t2683 + 0.384*(t2610*(-0.24*t2594*t2595 + t2652) + t2664 + t2668 + (0.24*t2594*t2602 + t2666)*t2671)*var2[2] + 0.384*(0.24*t2594*t2603 - 1.*t2603*t2650)*var2[5])*var2[6];
+  p_output1[5]=(t4383 + t4405 + 0.384*(t4178 + t4242 + t4241*t4251 + t3815*(t4117 - 1.*t4113*t453))*var2[2])*var2[6];
+  p_output1[6]=(t4383 + t4405 + 0.384*(t4178 + t4242 + t4251*(t4239 + 0.24*t3337*t440) + t3815*(t4117 - 0.24*t440*t453))*var2[2] + 0.384*(-1.*t3572*t4113 + 0.24*t3572*t440)*var2[5])*var2[6];
 }
 
 

@@ -48,31 +48,39 @@ Jc = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);
 dJc = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
 % rhs = [dq; D\(-C*dq -G + B*u + Jac'*w)]; % system r.h.s
 rhs = [dq; D\(-G + B*u + Jc'*w)]; % system r.h.s
-f_nonlinear = Function('f',{x,u,w},{rhs});  % nonlinear mapping function f(x,u)
+f_nonlinear = Function('f',{q,dq,u,w},{rhs});  % nonlinear mapping function f(x,u)
 
 % Wrench as decision variable
-lambda = -((Jc/D)*Jc') \ (dJc*dq + (Jc/D)*(-G + B*u));
+lambda = -Jc*(D\Jc') \ (dJc*dq + Jc*(D\(-G + B*u)));
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
 % Descriptor System
-% E_nonlinear = 0;
-% H_nonlinear = 0;
+E_nonlinear = 0;
+H_nonlinear = 0;
+
+%% Generate additional functions
+f_D = Function('f_D',{q},{D});
+f_G = Function('f_G',{q},{G});
+f_B = Function('f_B',{},{B});
+f_Jc = Function('f_Jc',{q},{Jc});
+f_dJc = Function('f_dJc',{q,dq},{dJc});
 
 %% Outputs
 dyn_info.dim.n_q = n_q;
 dyn_info.dim.n_x = n_x;
 dyn_info.dim.n_u = n_u;
 dyn_info.dim.n_w = n_w;
-dyn_info.func.f_nonlinear = f_nonlinear;
-% dyn_info.func.E_nonlinear = E_nonlinear;
-% dyn_info.func.H_nonlinear = H_nonlinear;
-dyn_info.mat.D = D;
-% dyn_info.mat.C = C;
-dyn_info.mat.G = G;
-dyn_info.mat.B = B;
-dyn_info.mat.Jc = Jc;
-dyn_info.mat.dJc = dJc;
-dyn_info.func.f_lambda = f_lambda;
+dyn_info.func.f_NL = f_nonlinear;
+dyn_info.func.E_NL = E_nonlinear;
+dyn_info.func.H_NL = H_nonlinear;
+dyn_info.func.D = f_D ;
+dyn_info.func.G = f_G ;
+dyn_info.func.B = f_B ;
+dyn_info.func.Jc = f_Jc ;
+dyn_info.func.dJc = f_dJc ;
+dyn_info.func.wrench = f_lambda ;
+dyn_info.descriptor = 0;
+
 end
 
 

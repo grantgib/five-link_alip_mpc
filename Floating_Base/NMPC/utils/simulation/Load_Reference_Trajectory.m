@@ -1,9 +1,9 @@
 function ref_info = Load_Reference_Trajectory(mpc_info,dir,traj_name)
 % Locate directory
 if isequal(dir,'ascend')
-    full_ref = load(fullfile(pwd,'Reference_Trajectories\variousStepHeightsAscend\',traj_name));
+    full_ref = load(fullfile(pwd,'reference_trajectories\variousStepHeightsAscend\',traj_name));
 else
-    full_ref = load(fullfile(pwd,'Reference_Trajectories\variousStepHeightsDescend\',traj_name));
+    full_ref = load(fullfile(pwd,'reference_trajectories\variousStepHeightsDescend\',traj_name));
 end
 
 % Interpolate trajectory (*** This could be a problem ****)

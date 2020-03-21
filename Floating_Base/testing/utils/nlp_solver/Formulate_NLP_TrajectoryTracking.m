@@ -1,4 +1,4 @@
-function [mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info,use_descriptor)
+function [mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info)
 import casadi.*
 % Formulate NLP
 %   * Symbolically create the objective function and equality constraints
@@ -19,11 +19,12 @@ DT = mpc_info.DT;
 
 %% IPOPT settings
 mpc_info.opts = struct;
-mpc_info.opts.ipopt.max_iter = 20000;
-mpc_info.opts.ipopt.print_level =0;%0,3
+% mpc_info.opts.ipopt.max_iter = 20000;
+mpc_info.opts.ipopt.print_level = 0;
 mpc_info.opts.print_time = 0;
-% opts.ipopt.acceptable_tol =1e-8;
-% opts.ipopt.acceptable_obj_change_tol = 1e-6;
+mpc_info.opts.ipopt.acceptable_tol = 1e-8;
+mpc_info.opts.ipopt.acceptable_obj_change_tol = 1e-8;
+mpc_info.opts.ipopt.acceptable_constr_viol_tol = 1e-20;
 
 %% Nonlinear Formulation
 
@@ -41,9 +42,10 @@ solver_NL_all = cell(N,1);
 % trajectory is not extrapolated (which would turn it to a regulator
 % problem that we don't want)
 for i = 1:mpc_info.N
-    % Compute symbolic variables of quadratic program
+    % Compute symbolic variables of quadratic program for N = 1:maxN.
+    % stored in cells (used when implementing shrinking horizon)
     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i}] = ...
-        Objective_Constraints_Nonlinear(dyn_info,ref_info,DT,N,use_descriptor); % DT and N may change each loop so no mpc_info input
+        Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N); 
     
     % Settings
     % Decision variables to optimize
