@@ -26,9 +26,9 @@ mpc_info_FW.iter = 1;
 
 %% Load Desired Reference Trajectory
 cur = pwd;
-stpheight = 0.05;
+step_height = 0.05;
 dir = 'ascend';
-traj_name = string(stpheight) + '_' + dir + '.mat';
+traj_name = string(step_height) + '_' + dir + '.mat';
 ref_info_FW = Load_Reference_Trajectory_FW(mpc_info_FW,dir,traj_name);
 ref_info_FW.x_init = [ref_info_FW.full_ref.gait(1).states.x(:,1); ref_info_FW.full_ref.gait(1).states.dx(:,1)];
 disp("Reference Trajectory Loaded!");
@@ -52,34 +52,34 @@ disp("Begin simulation...");
 disp("Finished simulation!");
 
 %% Save Simulation
-if true
-    save_name = "Stairs(" + dir + ")_Ht(" + stpheight + ")_N(" + mpc_info_FW.N +...
-        ")_DT(" + mpc_info_FW.DT + ")_Time(" + mpc_info_FW.sim_time + " sec)_FreeWrench.mat";
-    save(fullfile('saved_results/',save_name),'ref_info_FW','traj_info_FW','dyn_info_FW');
-end
-disp("Saved Trajectory!");
+% if false
+%     save_name = "Stairs(" + dir + ")_Ht(" + stpheight + ")_N(" + mpc_info_FW.N +...
+%         ")_DT(" + mpc_info_FW.DT + ")_Time(" + mpc_info_FW.sim_time + " sec)_FreeWrench.mat";
+%     save(fullfile('saved_results/',save_name),'ref_info_FW','traj_info_FW','dyn_info_FW');
+% end
+% disp("Saved Trajectory!");
 
 %% Plot
 plotSettings = struct;
 plotSettings.q = 1;
 plotSettings.dq = 1;
 plotSettings.u = 1;
-plotSettings.w = 1;
+plotSettings.w = 0;
+plotSettings.qerr = 0;
+plotSettings.dqerr = 0;
 plotSettings.single_sol = 0;
-plotSettings.traj_title = string(stpheight)+'m '+dir;
+plotSettings.traj_title = string(step_height)+'m '+dir;
 Plot_TrajectoryTracking_FW(dyn_info_FW,mpc_info_FW,ref_info_FW,traj_info_FW,plotSettings);
 
-%% Animate
+%% Animation
 animateSettings = struct;
 animateSettings.traj = 1;
 animateSettings.ref = 0;
 animateSettings.single_sol = 0;
 Animate_MPC_Traj_FW(mpc_info_FW,ref_info_FW,traj_info_FW,animateSettings);
 
-%% ======= EXTRAS ========
-
-%% Check Simulation
-
+%% ============================== EXTRAS ==================================
+%% Check Bounds
 % ogbounds = [ref_info_FW.full_ref.bounds.RightStance.states.x.lb', ref_info_FW.full_ref.bounds.RightStance.states.x.ub';...
 %     ref_info_FW.full_ref.bounds.RightStance.states.dx.lb', ref_info_FW.full_ref.bounds.RightStance.states.dx.ub';...
 %     ref_info_FW.full_ref.bounds.RightStance.states.x.lb', ref_info_FW.full_ref.bounds.RightStance.states.x.ub';...
@@ -91,31 +91,7 @@ Animate_MPC_Traj_FW(mpc_info_FW,ref_info_FW,traj_info_FW,animateSettings);
 %     -inf, inf;...
 %     -inf, inf];
 % mybounds = [mpc_info_FW.args.lbx, mpc_info_FW.args.ubx];
-% 
 % all_bounds = [mybounds(:,1), ogbounds(:,1), ogbounds(:,2), mybounds(:,2)];
 % save('FWbounds','all_bounds');
-
-%% Single Solution 
-% % Plots
-% plotSettings.q = 0;
-% plotSettings.dq = 0;
-% plotSettings.u = 0;
-% plotSettings.w = 0;
-% plotSettings.single_sol = 0;
-% Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);
-% % Animation
-% animateSettings.traj = 0;
-% animateSettings.ref = 0;
-% animateSettings.single_sol = 0;
-% Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);
-
-% Just checked the trajectory for N = 150, and the trajectory generated for
-% the first time step is perfect. There may be a problem with the
-% update_state step which is causing additional errors to be introduced...?
-
-
-
-
-
 
 
