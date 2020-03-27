@@ -1,66 +1,29 @@
-function [t_next, x_next, u_next_guess] = Update_State(dyn_info,mpc_info,t_current,x_init,u_init)
-import casadi.*
+function [t_next, x_next, u_next_guess, w_next_guess] = ...
+    Update_State(dyn_info,mpc_info,t_current,x_init,u_init,w_init)
 %% Extract inputs
 % dyn_info
 f_nonlinear = dyn_info.func.f_NL;
-% mpc_info 
+n_q = dyn_info.dim.n_q;
+
+% mpc_info
 DT = mpc_info.DT;
+N = mpc_info.N;
 
-%% Forward Euler
-x_current = x_init;
+%% Forward Euler to get next state
+q_current = x_init(1:n_q);
+dq_current = x_init(n_q+1:end);
+x_current = [q_current; dq_current];
 u_current = u_init(:,1);
-f_value = full(f_nonlinear(x_current,u_current));
-x_next = x_current + (DT*f_value);
+w_current = w_init(:,1);
+
+f_value = full(f_nonlinear(q_current,dq_current,u_current,w_current));
+
+x_next = x_current + (DT*f_value);    % forward euler
 t_next = t_current + DT;
-u_next_guess = [u_init(:,2:end), u_init(:,end)];
 
-
-% ode45
-% tspan = [t_current t_current+DT];
-% z_init = [x_init; u_init(:,1)];
-% ode = @(t,x) odefunc(t,x,u_init(:,1));
-% [t,x] = ode45(@(t,x) odefunc(t,x,u_init(:,1)),tspan,x_init);
+%% Warm start input for u and w
+u_next_guess = [u_init(:,2:size(u_init,2)), u_init(:,size(u_init,2))];
+w_next_guess = [w_init(:,2:size(w_init,2)), w_init(:,size(w_init,2))];
 
 
 end
-
-function dxdt = odefunc(t,x_init,u_init)
-import casadi.*
-x = SX.sym('x');
-z = SX.sym('z');
-rotY = SX.sym('rotY');
-q1R = SX.sym('q1R');
-q2R = SX.sym('q2R');
-q1L = SX.sym('q1L');
-q2L = SX.sym('q2L');
-dx = SX.sym('dx');
-dz = SX.sym('dz');
-drotY = SX.sym('drotY');
-dq1R = SX.sym('dq1R');
-dq2R = SX.sym('dq2R');
-dq1L = SX.sym('dq1L');
-dq2L = SX.sym('dq2L');
-q = [x; z; rotY; q1R; q2R; q1L; q2L];
-dq = [dx; dz; drotY; dq1R; dq2R; dq1L; dq2L];
-x = [q; dq];
-n_q = length(q);
-n_x = length(x);
-u_q1R = SX.sym('u_q1R');
-u_q2R = SX.sym('u_q2R');
-u_q1L = SX.sym('u_q1L');
-u_q2L = SX.sym('u_q2L');
-u = [u_q1R; u_q2R; u_q1L; u_q2L];
-n_u = length(u);
-D = Mmat_notorso(x,z,rotY,q1R,q2R,q1L,q2L); % 7x7
-G = -GravityVector_notorso(x,z,rotY,q1R,q2R,q1L,q2L); %7x1
-B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
-Jc = Jacobian_notorso(x,z,rotY,q1R,q2R,q1L,q2L);
-dJc = JacobianDot_notorso(x,z,rotY,q1R,q2R,q1L,q2L,dx,dz,drotY,dq1R,dq2R,dq1L,dq2L);
-lambda = -Jc*(D\Jc') \ (dJc*dq + Jc*(D\(-G + B*u)));
-rhs = [dq; D\(-G + B*u + Jc'*lambda)]; % system r.h.s
-f_nonlinear = Function('f',{x,u},{rhs});  % nonlinear mapping function f(x,u)
-
-dxdt = full(f_nonlinear(x_init,u_init));
-end
-
-

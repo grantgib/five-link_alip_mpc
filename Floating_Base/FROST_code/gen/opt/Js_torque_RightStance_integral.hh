@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 17 Mar 2020 21:37:34 GMT-04:00
+ * Wed 25 Mar 2020 21:10:55 GMT-04:00
  */
 
 #ifndef JS_TORQUE_RIGHTSTANCE_INTEGRAL_HH

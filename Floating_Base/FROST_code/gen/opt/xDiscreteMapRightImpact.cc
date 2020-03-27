@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Tue 17 Mar 2020 21:37:20 GMT-04:00
+ * Wed 25 Mar 2020 22:55:49 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -51,10 +51,10 @@ static void output1(double *p_output1,const double *var1,const double *var2)
   double _NotUsed;
   NULL;
   p_output1[0]=var1[2] - var2[2];
-  p_output1[1]=var1[5] - var2[3];
-  p_output1[2]=var1[6] - var2[4];
-  p_output1[3]=var1[3] - var2[5];
-  p_output1[4]=var1[4] - var2[6];
+  p_output1[1]=var1[3] - var2[3];
+  p_output1[2]=var1[4] - var2[4];
+  p_output1[3]=var1[5] - var2[5];
+  p_output1[4]=var1[6] - var2[6];
 }
 
 
