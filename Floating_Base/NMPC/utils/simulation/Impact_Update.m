@@ -25,4 +25,17 @@ height_impact = leftToeZ(x0(1:7)+(DT_impact*f_value(1:7)));
 t_minus = t0 + DT_impact;
 disp("Swing foot impacts step (" + height_impact + " m) at " + t_minus + " sec");
 
+
+%% Forward Integrate until update
+x_minus = x0 + DT_impact*f_value;
+
+%% Apply Impact Map and Relabel
+[x_plus, w_plus] = Impact_Map_Relabel(dyn_info,x_minus);
+q_plus = x_plus(1:n_q);
+dq_plus = x_plus(n_q+1:end);
+
+%% Forward Integrate until t0 + DT has been reached
+x_next = x_plus + (DT - DT_impact)*full(f_nonlinear(q_plus,dq_plus,u0,w_plus));
+t_next = t0 + DT;
+
 end

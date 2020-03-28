@@ -43,24 +43,26 @@ y_traj = swing_foot_init([1,3]);
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
 w_traj_all = [];
+x_ref_traj = [];
+u_ref_traj = [];
 
 %% Main Loop
-while(mpciter < size(X_REF_Original,2))
+while(mpciter < 1.8*size(X_REF_Original,2))
     % Start solver computation timer
     solver_comp_time = tic;
     
     %% Shrinking Horizon Check & Update parameters
-    if round(time_traj(end) + DT * N,3) > t_final
-        % Select fewer decision variables and solver with sizes
-        % corresponding to decreased prediction horizon (~lookup table)
-        N_new = round( (t_final - time_traj(end)) / DT );
-        if N_new < 1    % when we want step to continue until impact
-            N_new = 1;
-        end
-        indx = (mpc_info.N-N_new)+1;
-        solver = mpc_info.solvers_NL{indx};
-        N = N_new;
-    end
+%     if round(time_traj(end) + DT * N,3) > t_final
+%         % Select fewer decision variables and solver with sizes
+%         % corresponding to decreased prediction horizon (~lookup table)
+%         N_new = round( (t_final - time_traj(end)) / DT );
+%         if N_new < 1    % when we want step to continue until impact
+%             N_new = 1;
+%         end
+%         indx = (mpc_info.N-N_new)+1;
+%         solver = mpc_info.solvers_NL{indx};
+%         N = N_new;
+%     end
     
     % Resize if Prediction Horizons changes
     X0 = X0(:,1:N+1);
@@ -93,6 +95,8 @@ while(mpciter < size(X_REF_Original,2))
     x_traj = [x_traj, x_init];
     u_traj = [u_traj , u_sol(:,1)];
     w_traj = [w_traj , w_sol(:,1)];
+    x_ref_traj = [x_ref_traj, X_REF(:,1)];
+    u_ref_traj = [u_ref_traj, U_REF(:,1)];
     time_traj(mpciter) = t_current;
     
     %% Apply the control and forward integrate dynamics
@@ -102,11 +106,21 @@ while(mpciter < size(X_REF_Original,2))
     %% Check for impact & 
     swing_foot_pos = leftToePos(x_next(1:7))';
     y_swingfoot = swing_foot_pos([1,3]);
-    if (y_swingfoot(2) < double(ref_info.step_height)) && (y_swingfoot(2) - y_traj(2,end) < 0)
+    if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) && (y_traj(2,end) > double(ref_info.step_height)) && (y_swingfoot(2) - y_traj(2,end) < 0)
         disp("Impact occured, find when it happened!");
-        Impact_Update(dyn_info,mpc_info,ref_info,t_current,x_init,u_sol,w_sol)
+        [t_next, x_next] = Impact_Update(dyn_info,mpc_info,ref_info,t_current,x_init,u_sol,w_sol);
         num_impacts = num_impacts + 1;
+        
+        Rx = eye(14);
+        Ru = eye(4);
+%         Rx([4,5,6,7],:) = Rx([6,7,4,5],:);
+%         Rx([11,12,13,14],:) = Rx([13,14,11,12],:);
+%         Ru([1,2,3,4],:) = Ru([3,4,1,2],:);
+        X_REF = Rx*X_REF_Original;
+        U_REF = Ru*U_REF_Original;
+        
     end
+
     y_traj = [y_traj, y_swingfoot];
     
     %% Update state and time, warm start, shift reference
@@ -157,6 +171,8 @@ traj_info.y_traj = y_traj;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;
 traj_info.w_traj_all = w_traj_all;
+traj_info.x_ref_traj = x_ref_traj;
+traj_info.u_ref_traj = u_ref_traj;
 traj_info.stats.x_traj_final_error = x_traj_end_error;
 traj_info.stats.avgmpctime = average_mpc_time;
 traj_info.stats.x_traj_error = traj_error;

@@ -1,4 +1,4 @@
-function traj=referenceTrajBez(gait,delT)
+function traj = referenceTrajBez(gait,delT)
 %example of bezCoef
 % bezCoef={};
 % bezCoef{1}=gait(1).params.adoubleSupportConst;

@@ -14,8 +14,8 @@ x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bou
     full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
 
 % Set control bounds
-u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
-u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
+u_lb = inf*full_ref.bounds.RightStance.inputs.Control.u.lb;
+u_ub = inf*full_ref.bounds.RightStance.inputs.Control.u.ub;
 
 % Set Wrench bounds
 w_lb = [-inf; -inf];

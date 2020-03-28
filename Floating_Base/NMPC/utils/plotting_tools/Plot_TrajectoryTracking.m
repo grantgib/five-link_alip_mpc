@@ -24,11 +24,13 @@ else
     u_traj = traj_info.u_traj;
     w_traj = traj_info.w_traj;
     time_traj = traj_info.time_traj;
+    x_ref_traj = traj_info.x_ref_traj;
+    u_ref_traj = traj_info.u_ref_traj;
 end
 
 % ref_info
-X_REF_Original = ref_info.x_ref(:,1:size(x_traj,2));
-U_REF_Original = ref_info.u_ref(:,1:size(u_traj,2));
+X_REF_Original = ref_info.x_ref;
+U_REF_Original = ref_info.u_ref;
 
 %% Initialize variables
 q_header = {'$x$','$z$','$rot_Y$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
@@ -44,20 +46,15 @@ width_traj = 1;
 width_bound = 1;
 sz = 15;
 
-% Errors
-q_error = x_traj(1:n_q,:) - X_REF_Original(1:n_q,1:size(x_traj,2));
-dq_error = x_traj(n_q+1:end,:) - X_REF_Original(n_q+1:end,1:size(x_traj,2));
-u_error = u_traj - U_REF_Original(:,1:size(u_traj,2));
-
 %% State Positions
 if plotSettings.q
     figure % plot q
     for i = 1:n_q
         subplot(3,3,i);
-        plot(time_traj,X_REF_Original(i,1:size(time_traj,2)),'LineWidth',width_ref);
+        plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'--','LineWidth',width_traj);
-        hold on; yline(args.lbx(i),'g','LineWidth',width_bound);
-        hold on; yline(args.ubx(i),'g','LineWidth',width_bound);
+%         hold on; yline(args.lbx(i),'g','LineWidth',width_bound);
+%         hold on; yline(args.ubx(i),'g','LineWidth',width_bound);
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -68,6 +65,7 @@ end
 
 %% State Position Errors
 if plotSettings.qerr
+    q_error = x_traj(1:n_q,1:end-1) - x_ref_traj(1:n_q,:);
     figure
     for i = 1:n_q
         subplot(3,3,i);
@@ -85,7 +83,7 @@ if plotSettings.dq
     figure % plot q
     for i = 1:length(q_header)
         subplot(3,3,i);
-        plot(time_traj,X_REF_Original(n_q+i,1:size(time_traj,2)),'LineWidth',width_ref);
+        plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(n_q+i,:),'--','LineWidth',width_traj);
 %         hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
 %         hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
@@ -99,6 +97,7 @@ end
 
 %% State Velocity Errors
 if plotSettings.dqerr
+    dq_error = x_traj(n_q+1:end,1:end-1) - x_ref_traj;
     figure
     for i = 1:n_q
         subplot(3,3,i);
@@ -116,7 +115,7 @@ if plotSettings.u
     figure
     for i = 1:n_u
         subplot(2,2,i);
-        plot(time_traj(1:size(U_REF_Original,2)),U_REF_Original(i,:),'LineWidth',width_ref);
+        plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'--','LineWidth',width_traj);
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)

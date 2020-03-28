@@ -13,7 +13,7 @@ export_path = fullfile(cur, 'gen/');
 % be loaded  from the MX binary files from the given directory.
 load_path = [];%fullfile(cur, 'gen/sym');
 delay_set = false;
-COMPILE = true;
+COMPILE = false;
 SAVE_SOLUTION = 0;
 
 % Load model
@@ -122,6 +122,7 @@ nlp.update;
 % expressions.
 % load_path = fullfile(cur, 'gen/sym');
 % rabbit_1step.saveExpression(load_path);
+
 %% Compile
 if COMPILE
     if ~exist([export_path, 'opt/'])
@@ -159,7 +160,7 @@ gait = struct(...
 
 name_save = "Ascend_Ht(0.10)_Time(0.45)";
 
-if true
+if SAVE_SOLUTION
 %     data_name = string(datetime('now','TimeZone','local','Format','d-MMM-y-HH-mm-ssZ'));  %'local/longer_double_support_wider_step_dummy';
 %     name_save = [CHARACTER_NAME, '_', data_name];
 
@@ -202,3 +203,17 @@ anim.updateWorldPosition = true;
 % anim.endTime = 20;
 conGUI = Animator.AnimatorControls();
 conGUI.anim = anim;
+
+%% Compute Jacobian of swing foot
+% rabbit_1step.Gamma.Nodes(1,:).Domain{1}.HolonomicConstraints.RightToe
+
+LeftFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
+J_leftfoot = jacobian(LeftFootPos,rabbit.States.x);
+J_leftfoot = J_leftfoot([1,3],:);
+size(J_leftfoot);
+%exporting to mex
+if true
+    export(J_leftfoot,'Vars',rabbit.States.x,'File','J_leftFoot')
+end
+
+
