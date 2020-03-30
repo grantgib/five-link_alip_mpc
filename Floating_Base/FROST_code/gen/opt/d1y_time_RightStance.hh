@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 25 Mar 2020 22:53:58 GMT-04:00
+ * Sun 29 Mar 2020 00:51:52 GMT-04:00
  */
 
 #ifndef D1Y_TIME_RIGHTSTANCE_HH

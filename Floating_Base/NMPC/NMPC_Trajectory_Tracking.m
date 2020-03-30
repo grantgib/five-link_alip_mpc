@@ -2,6 +2,8 @@
 %   Trajectory Tracking
 %   Floating Base (multi-shooting with Wrench Included)
 %   Continuous Dynamics ~ no impact considered
+%   Impact Map included ~ shrinking horizon used before impact (i.e. can't
+%       predict states ahead of impact currently)
 clear; clc; close all;
 
 %% Path setup
@@ -20,7 +22,7 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 1;
+mpc_info.N = 10;
 mpc_info.iter = 1;
 
 %% Load Desired Reference Trajectory
@@ -55,25 +57,30 @@ disp("Begin simulation...");
 disp("Finished simulation!");
 
 %% Save Simulation
+args = mpc_info.args;
+penalties = struct;
+penalties.Q = mpc_info.Q;
+penalties.R = mpc_info.R;
 if true
     save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
         ")_Time(" + ref_info.step_time + " sec).mat";
-    save(fullfile('saved_results/',save_name),'ref_info','traj_info','dyn_info');
+    save(fullfile('saved_results/',save_name),'ref_info','traj_info','dyn_info','args','penalties');
 end
 disp("Saved Trajectory!");
 
 %% Plot
 plotSettings = struct;
-plotSettings.q = 1;
-plotSettings.dq = 0;
+plotSettings.x = 1;
 plotSettings.u = 1;
 plotSettings.w = 1;
-plotSettings.qerr = 0;
-plotSettings.dqerr = 0;
+plotSettings.xerr = 0;
+plotSettings.y = 1;
+plotSettings.calc_time = 1;
 plotSettings.single_sol = 0;
 plotSettings.traj_title = ref_info.step_height + "m " + ref_info.step_dir;
 Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);
+disp('Finished Plotting!');
 
 %% Animation
 animateSettings = struct;
@@ -81,6 +88,7 @@ animateSettings.traj = 1;
 animateSettings.ref = 0;
 animateSettings.single_sol = 0;
 Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);
+disp('Finished Animation!');
 
 %% ============================== EXTRAS ==================================
 %% Check Bounds

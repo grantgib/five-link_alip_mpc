@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 25 Mar 2020 22:55:56 GMT-04:00
+ * Sun 29 Mar 2020 00:53:42 GMT-04:00
  */
 
 #ifndef JS_XDISCRETEMAPRIGHTIMPACT_HH

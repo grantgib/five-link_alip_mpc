@@ -70,6 +70,7 @@ dyn_info.dim.n_q = n_q;
 dyn_info.dim.n_x = n_x;
 dyn_info.dim.n_u = n_u;
 dyn_info.dim.n_w = n_w;
+dyn_info.dim.n_y = 2;   % swing foot position (x,z)
 dyn_info.func.f_NL = f_nonlinear;
 dyn_info.func.E_NL = E_nonlinear;
 dyn_info.func.H_NL = H_nonlinear;

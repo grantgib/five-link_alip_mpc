@@ -7,6 +7,7 @@ import casadi.*
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
+n_y = dyn_info.dim.n_y;
 
 % mpc_info
 DT = mpc_info.DT;
@@ -24,6 +25,7 @@ t_current = 0;
 t_final = DT * (size(X_REF_Original,2)-1);
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
+stance_foot_pos = [0; 0];
 swing_foot_init = leftToePos(x_init(1:7))';
 num_impacts = 0;
 
@@ -35,7 +37,7 @@ W0 = zeros(2,N+1);
 
 % Initialize storage variables
 time_traj(1) = t_current;
-time_solver = [];
+time_calc = [];
 x_traj = [];
 u_traj = [];          
 w_traj = [];
@@ -47,7 +49,7 @@ x_ref_traj = [];
 u_ref_traj = [];
 
 %% Main Loop
-while(mpciter < 1.8*size(X_REF_Original,2))
+while(mpciter < 2*size(X_REF_Original,2))
     % Start solver computation timer
     solver_comp_time = tic;
     
@@ -77,7 +79,7 @@ while(mpciter < 1.8*size(X_REF_Original,2))
     sol = solver('x0', args.x0, 'lbx', args.lbx, 'ubx', args.ubx,...
         'lbg', args.lbg, 'ubg', args.ubg,'p',args.p);
     % Store solver time
-    time_solver = [time_solver, toc(solver_comp_time)];
+    time_calc = [time_calc, toc(solver_comp_time)];
     
     % Extract solutions and outputs
     x_sol = reshape(full(sol.x(1:n_x*(N+1))),n_x,N+1);
@@ -106,18 +108,19 @@ while(mpciter < 1.8*size(X_REF_Original,2))
     %% Check for impact & 
     swing_foot_pos = leftToePos(x_next(1:7))';
     y_swingfoot = swing_foot_pos([1,3]);
-    if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) && (y_traj(2,end) > double(ref_info.step_height)) && (y_swingfoot(2) - y_traj(2,end) < 0)
+    if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) &&...
+            (y_traj(2,end) > double(ref_info.step_height)) &&...
+            (y_swingfoot(2) - y_traj(2,end) < 0) &&...
+            (y_swingfoot(1) > stance_foot_pos(1))
         disp("Impact occured, find when it happened!");
         [t_next, x_next] = Impact_Update(dyn_info,mpc_info,ref_info,t_current,x_init,u_sol,w_sol);
         num_impacts = num_impacts + 1;
         
-        Rx = eye(14);
-        Ru = eye(4);
-%         Rx([4,5,6,7],:) = Rx([6,7,4,5],:);
-%         Rx([11,12,13,14],:) = Rx([13,14,11,12],:);
-%         Ru([1,2,3,4],:) = Ru([3,4,1,2],:);
-        X_REF = Rx*X_REF_Original;
-        U_REF = Ru*U_REF_Original;
+        X_REF = X_REF_Original + ...
+            [(X_REF_Original(1:2,end)-X_REF_Original(1:2,1)).*ones(2,size(X_REF_Original,2));
+            zeros(12,size(X_REF_Original,2))];
+        U_REF = U_REF_Original;
+        stance_foot_pos = y_swingfoot(1);
         
     end
 
@@ -149,20 +152,22 @@ while(mpciter < 1.8*size(X_REF_Original,2))
 end
 % Finish updating trajectory and time after loop finishes
 x_traj = [x_traj, x_next];          
+x_ref_traj = [x_ref_traj, X_REF(:,1)]; % X_REF has been shifted so the next reference is the first column
 time_traj(end+1) = time_traj(end) + DT;  
 
 %% End of Simulation Calculations
-x_traj_end_error = norm((x_traj(:,end)-X_REF),2);
-average_mpc_time = mean(time_solver);
-% traj_error = vecnorm((x_traj - X_REF_Original(:,1:size(x_traj,r2)))');
-traj_error = 0;
+x_traj_final_error = norm((x_traj(:,end)-X_REF),2);
+avg_calc_time = mean(time_calc);
+x_traj_error = vecnorm((x_traj - x_ref_traj)')';
+disp('************** Trajectory STATISTICS **************')
 disp("Trajectory error (2-norm) = ")
-disp(traj_error');
-disp("Final trajectory error (2-norm) = " + x_traj_end_error);
-disp("Average MPC Calculation Time = " + average_mpc_time);
+disp(x_traj_error);
+disp("Final trajectory error (2-norm) = " + x_traj_final_error);
+disp("Average MPC Calculation Time = " + avg_calc_time);
+disp("State Penalty (Q)"); disp(mpc_info.Q);
+disp("Control Inputs Penalty (R)"); disp(mpc_info.R);
 
 %% Update function outputs
-traj_info.time_solver = time_solver;
 traj_info.time_traj = time_traj;
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
@@ -173,10 +178,11 @@ traj_info.u_traj_all = u_traj_all;
 traj_info.w_traj_all = w_traj_all;
 traj_info.x_ref_traj = x_ref_traj;
 traj_info.u_ref_traj = u_ref_traj;
-traj_info.stats.x_traj_final_error = x_traj_end_error;
-traj_info.stats.avgmpctime = average_mpc_time;
-traj_info.stats.x_traj_error = traj_error;
-traj_info.num_impacts = num_impacts;
+traj_info.stats.time_calc = time_calc;
+traj_info.stats.x_traj_final_error = x_traj_final_error;
+traj_info.stats.avg_calc_time = avg_calc_time;
+traj_info.stats.x_traj_error = x_traj_error;
+traj_info.stats.num_impacts = num_impacts;
 mpc_info.args = args;
 
 end

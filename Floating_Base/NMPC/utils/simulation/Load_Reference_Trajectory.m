@@ -11,8 +11,8 @@ else
 end
 % Interpolate trajectory (*** This could be a problem ****)
 trajRef = calculations.referenceTrajBez(full_ref.gait,mpc_info.DT);
-X_REF_Original = [trajRef.x; trajRef.dx];
-U_REF_Original = trajRef.u;
+X_REF_Original = [trajRef{1}.x; trajRef{1}.dx];
+U_REF_Original = trajRef{1}.u;
 
 %% Return ref_info
 ref_info.x_ref = X_REF_Original;

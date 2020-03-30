@@ -25,11 +25,11 @@ bounds.RightStance.time.t0.x0 = 0;
 % bounds.RightStance.time.duration.ub = 0.75;
 % bounds.RightStance.time.duration.x0 = 0.75;
 
-bounds.RightStance.time.tf.lb = 1;
+bounds.RightStance.time.tf.lb = 0.1;
 bounds.RightStance.time.tf.ub = 2;
 bounds.RightStance.time.tf.x0 = 1;
 
-bounds.RightStance.time.duration.lb = 1;
+bounds.RightStance.time.duration.lb = 0.1;
 bounds.RightStance.time.duration.ub = 2;
 bounds.RightStance.time.duration.x0 = 1;
 

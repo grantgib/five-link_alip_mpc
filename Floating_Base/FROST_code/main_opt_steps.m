@@ -13,7 +13,7 @@ export_path = fullfile(cur, 'gen/');
 % be loaded  from the MX binary files from the given directory.
 load_path = [];%fullfile(cur, 'gen/sym');
 delay_set = false;
-COMPILE = false;
+COMPILE = true;
 SAVE_SOLUTION = 0;
 
 % Load model
@@ -109,7 +109,7 @@ addConstraint(nlp.Phase(2), nlpFunc(1).Name, 'first', nlpFunc);
 nlp.update;
 
 for i = 1:(nlp.Phase(1).NumNode-1)
-    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-0.1, Inf);
+    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-0.11, Inf);
 end
 nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(0.10, 0.10);
 
@@ -207,13 +207,13 @@ conGUI.anim = anim;
 %% Compute Jacobian of swing foot
 % rabbit_1step.Gamma.Nodes(1,:).Domain{1}.HolonomicConstraints.RightToe
 
-LeftFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
-J_leftfoot = jacobian(LeftFootPos,rabbit.States.x);
-J_leftfoot = J_leftfoot([1,3],:);
-size(J_leftfoot);
-%exporting to mex
-if true
-    export(J_leftfoot,'Vars',rabbit.States.x,'File','J_leftFoot')
-end
+% LeftFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
+% J_leftfoot = jacobian(LeftFootPos,rabbit.States.x);
+% J_leftfoot = J_leftfoot([1,3],:);
+% size(J_leftfoot);
+% %exporting to mex
+% if true
+%     export(J_leftfoot,'Vars',rabbit.States.x,'File','J_leftFoot')
+% end
 
 

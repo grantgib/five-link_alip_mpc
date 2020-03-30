@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 25 Mar 2020 22:53:48 GMT-04:00
+ * Sun 29 Mar 2020 00:51:43 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,58 +48,58 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2,const double *var3,const double *var4,const double *var5,const double *var6)
 {
-  double t5091;
-  double t5118;
-  double t5125;
-  double t5126;
-  double t5180;
-  double t6765;
-  double t6815;
-  double t7032;
-  double t7276;
-  double t11397;
-  double t11460;
-  double t11463;
-  double t5119;
-  double t7452;
-  double t9566;
-  double t9661;
-  double t11767;
-  double t11991;
-  double t12018;
-  double t14844;
-  double t14845;
-  double t14846;
-  double t14853;
-  double t14855;
-  t5091 = -1.*var4[1];
-  t5118 = var4[0] + t5091;
-  t5125 = -1. + var5[0];
-  t5126 = -1. + var6[0];
-  t5180 = 1/t5126;
-  t6765 = -1.*var1[0];
-  t6815 = t6765 + var1[1];
-  t7032 = t5125*t5180*t6815;
-  t7276 = t5091 + var1[0] + t7032;
-  t11397 = 1/t5118;
-  t11460 = -1.*t11397*t7276;
-  t11463 = 1. + t11460;
-  t5119 = Power(t5118,-5);
-  t7452 = Power(t7276,5);
-  t9566 = Power(t5118,-4);
-  t9661 = Power(t7276,4);
-  t11767 = Power(t5118,-3);
-  t11991 = Power(t7276,3);
-  t12018 = Power(t11463,2);
-  t14844 = Power(t5118,-2);
-  t14845 = Power(t7276,2);
-  t14846 = Power(t11463,3);
-  t14853 = Power(t11463,4);
-  t14855 = Power(t11463,5);
-  p_output1[0]=var2[3] - 1.*t14855*var3[0] - 5.*t11397*t14853*t7276*var3[4] - 10.*t14844*t14845*t14846*var3[8] - 10.*t11767*t11991*t12018*var3[12] - 5.*t11463*t9566*t9661*var3[16] - 1.*t5119*t7452*var3[20];
-  p_output1[1]=var2[4] - 1.*t14855*var3[1] - 5.*t11397*t14853*t7276*var3[5] - 10.*t14844*t14845*t14846*var3[9] - 10.*t11767*t11991*t12018*var3[13] - 5.*t11463*t9566*t9661*var3[17] - 1.*t5119*t7452*var3[21];
-  p_output1[2]=var2[5] - 1.*t14855*var3[2] - 5.*t11397*t14853*t7276*var3[6] - 10.*t14844*t14845*t14846*var3[10] - 10.*t11767*t11991*t12018*var3[14] - 5.*t11463*t9566*t9661*var3[18] - 1.*t5119*t7452*var3[22];
-  p_output1[3]=var2[6] - 1.*t14855*var3[3] - 5.*t11397*t14853*t7276*var3[7] - 10.*t14844*t14845*t14846*var3[11] - 10.*t11767*t11991*t12018*var3[15] - 5.*t11463*t9566*t9661*var3[19] - 1.*t5119*t7452*var3[23];
+  double t5371;
+  double t5449;
+  double t5709;
+  double t6124;
+  double t8119;
+  double t8130;
+  double t8158;
+  double t8159;
+  double t8474;
+  double t9340;
+  double t9757;
+  double t9859;
+  double t5543;
+  double t8754;
+  double t8759;
+  double t8805;
+  double t9890;
+  double t9952;
+  double t10004;
+  double t10291;
+  double t18319;
+  double t18337;
+  double t18390;
+  double t18735;
+  t5371 = -1.*var4[1];
+  t5449 = var4[0] + t5371;
+  t5709 = -1. + var5[0];
+  t6124 = -1. + var6[0];
+  t8119 = 1/t6124;
+  t8130 = -1.*var1[0];
+  t8158 = t8130 + var1[1];
+  t8159 = t5709*t8119*t8158;
+  t8474 = t5371 + var1[0] + t8159;
+  t9340 = 1/t5449;
+  t9757 = -1.*t9340*t8474;
+  t9859 = 1. + t9757;
+  t5543 = Power(t5449,-5);
+  t8754 = Power(t8474,5);
+  t8759 = Power(t5449,-4);
+  t8805 = Power(t8474,4);
+  t9890 = Power(t5449,-3);
+  t9952 = Power(t8474,3);
+  t10004 = Power(t9859,2);
+  t10291 = Power(t5449,-2);
+  t18319 = Power(t8474,2);
+  t18337 = Power(t9859,3);
+  t18390 = Power(t9859,4);
+  t18735 = Power(t9859,5);
+  p_output1[0]=var2[3] - 1.*t18735*var3[0] - 5.*t18390*t8474*t9340*var3[4] - 10.*t10291*t18319*t18337*var3[8] - 10.*t10004*t9890*t9952*var3[12] - 5.*t8759*t8805*t9859*var3[16] - 1.*t5543*t8754*var3[20];
+  p_output1[1]=var2[4] - 1.*t18735*var3[1] - 5.*t18390*t8474*t9340*var3[5] - 10.*t10291*t18319*t18337*var3[9] - 10.*t10004*t9890*t9952*var3[13] - 5.*t8759*t8805*t9859*var3[17] - 1.*t5543*t8754*var3[21];
+  p_output1[2]=var2[5] - 1.*t18735*var3[2] - 5.*t18390*t8474*t9340*var3[6] - 10.*t10291*t18319*t18337*var3[10] - 10.*t10004*t9890*t9952*var3[14] - 5.*t8759*t8805*t9859*var3[18] - 1.*t5543*t8754*var3[22];
+  p_output1[3]=var2[6] - 1.*t18735*var3[3] - 5.*t18390*t8474*t9340*var3[7] - 10.*t10291*t18319*t18337*var3[11] - 10.*t10004*t9890*t9952*var3[15] - 5.*t8759*t8805*t9859*var3[19] - 1.*t5543*t8754*var3[23];
 }
 
 

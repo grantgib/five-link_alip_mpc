@@ -17,11 +17,10 @@ for i=1:2:length(gait)
     alpha_x = calculations.bezfit(t_par,gait(i).states.x,5);
     alpha_dx = calculations.bezfit(t_par,gait(i).states.dx,5);
     for k = 1:length(tdes)
-        s = (tdes(k)-t0)/(tf-t0);
-        ds = 1/(tf-t0);
-        traj(i).x(:,k) = calculations.bezier_Jessy(alpha_x,s);
-        traj(i).dx(:,k) = calculations.bezier_Jessy(alpha_dx,s);
-        traj(i).u(:,k) = calculations.bezier_Jessy(alpha_u,s);
+        s = (tdes(k)-t0)/(tf-t0); % ds = 1/(tf-t0);
+        traj{i}.x(:,k) = calculations.bezier_Jessy(alpha_x,s);
+        traj{i}.dx(:,k) = calculations.bezier_Jessy(alpha_dx,s);
+        traj{i}.u(:,k) = calculations.bezier_Jessy(alpha_u,s);
     end
 end
 

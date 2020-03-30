@@ -1,4 +1,4 @@
-function [Xdec,Udec,Wdec,P,obj,g,obj_vector] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N)
+function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q,R] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -36,7 +36,7 @@ for i = 1:n_q
     Q_vector(i) = 1/full_ref.bounds.RightStance.states.x.ub(i);
     Q_vector(n_q+i) = 1/full_ref.bounds.RightStance.states.dx.ub(i);
 end
-Q_weights = diag([1, 1, 1, 1, 1, 1, 1,...
+Q_weights = diag([100, 100, 1, 1, 1, 1, 1,...
     1, 1, 1, 1, 1, 1, 1]);
 Q = Q_weights*diag(Q_vector);
 
