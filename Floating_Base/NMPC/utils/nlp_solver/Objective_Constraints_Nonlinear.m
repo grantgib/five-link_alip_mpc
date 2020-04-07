@@ -36,17 +36,19 @@ for i = 1:n_q
     Q_vector(i) = 1/full_ref.bounds.RightStance.states.x.ub(i);
     Q_vector(n_q+i) = 1/full_ref.bounds.RightStance.states.dx.ub(i);
 end
-Q_weights = diag([100, 100, 1, 1, 1, 1, 1,...
-    1, 1, 1, 1, 1, 1, 1]);
-Q = Q_weights*diag(Q_vector);
+Q_weights = [10, 10, 10, 10, 10, 10, 10,...
+    1, 1, 1, 1, 1, 1, 1]';
+Q = Q_weights.*Q_vector;
+Q_mat = diag(Q);
 
 % Control penalty
 R_vector = zeros(n_u,1);
 for i = 1:n_u
     R_vector(i) = 1/full_ref.bounds.RightStance.inputs.Control.u.ub(i);
 end
-R_weights = 0.001*diag([1 1 1 1]);
-R = R_weights*diag(R_vector);                   % control penalty
+R_weights = 0.001.*[1, 1, 1, 1]';
+R = R_weights.*R_vector;                   % control penalty
+R_mat = diag(R);
 
 % Force penalty
 % Qw_vector = [1/70; 1/300];
@@ -62,8 +64,8 @@ for k = 1:N+1
     x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
     u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
     % Running stage and control cost
-    obj_vector(k) = (x_k - x_ref_k)'*Q*(x_k - x_ref_k) + ...
-        (u_k - u_ref_k)'*R*(u_k - u_ref_k);
+    obj_vector(k) = (x_k - x_ref_k)'*Q_mat*(x_k - x_ref_k) + ...
+        (u_k - u_ref_k)'*R_mat*(u_k - u_ref_k);
 end
 obj = sum(obj_vector);
 %% Equality Constraints (Dynamics)

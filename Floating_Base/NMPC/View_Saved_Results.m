@@ -21,15 +21,19 @@ addpath(genpath('saved_results/'));
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 10;
+mpc_info.N = 1;
 step_dir = "Ascend";
 step_height = "0.10";
-step_time = "0.45";
+% step_time = "0.45";
+step_vel = "0.75";
 
 %% Load Results
+% load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...
+%         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
+%         ")_Time(" + step_time + " sec).mat";
 load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...
         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
-        ")_Time(" + step_time + " sec).mat";
+        ")_Vel(" + step_vel + " sec).mat";
 results = load(fullfile('saved_results/',load_name));
 dyn_info = results.dyn_info;
 ref_info = results.ref_info;
@@ -52,12 +56,12 @@ disp("Control Inputs Penalty (R)"); disp(mpc_info.R);
 
 %% Plot
 plotSettings = struct;
-plotSettings.x = 1;
-plotSettings.u = 1;
-plotSettings.w = 1;
+plotSettings.x = 0;
+plotSettings.u = 0;
+plotSettings.w = 0;
 plotSettings.xerr = 0;
-plotSettings.y = 1;
-plotSettings.calc_time = 1;
+plotSettings.y = 0;
+plotSettings.calc_time = 0;
 plotSettings.single_sol = 0;
 plotSettings.traj_title = step_height + "m " + step_dir;
 Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);

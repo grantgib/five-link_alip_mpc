@@ -62,7 +62,7 @@ if plotSettings.x
     end
     legend('reference','NMPC trajectory','constraints');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" State Positions");
+    sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
 end
 
 % Velocities
@@ -79,7 +79,7 @@ if plotSettings.x
     end
     legend('reference','NMPC trajectory');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" State Velociites");
+    sgtitle(plot_title + " State Velociites (N = " + mpc_info.N + ")");
 end
 
 %% State Errors
@@ -95,7 +95,7 @@ if plotSettings.xerr
     end
     legend('Error');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" Position Error");
+    sgtitle(plot_title+" Position Error (N = " + mpc_info.N + ")");
 end
 
 % Velocity 
@@ -110,7 +110,7 @@ if plotSettings.xerr
     end
     legend('Error');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" Velocity Error");
+    sgtitle(plot_title + " Velocity Error (N = " + mpc_info.N + ")");
 end
 
 %% Control inputs
@@ -124,7 +124,7 @@ if plotSettings.u
         grid on; set(gca,'FontSize',sz)
     end
     legend('reference','NMPC trajectory','location','best');
-    sgtitle(plot_title+" Control Inputs");
+    sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
 end
 
 %% Wrench
@@ -136,7 +136,7 @@ if plotSettings.w
         title(w_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
-    sgtitle(plot_title + " Wrench");
+    sgtitle(plot_title + " Wrench (N = " + mpc_info.N + ")");
 end
 
 %% Output - Swing Foot Position
@@ -148,14 +148,14 @@ if plotSettings.y
         title(y_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
-    sgtitle(plot_title + " Swing Foot Positions");
+    sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
 end
 
 %% MPC Calculation Time
 if plotSettings.calc_time
     figure
     plot(time_traj(1:size(time_calc,2)),time_calc);
-    title(time_calc_header{1},'interpreter','latex');
+    title("MPC Calculation Time [sec] (N = " + mpc_info.N + ")");
     grid on; set(gca,'FontSize',sz);
 end
 

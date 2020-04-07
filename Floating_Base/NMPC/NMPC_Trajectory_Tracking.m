@@ -22,16 +22,16 @@ addpath(genpath('../FROST_code'))
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 10;
+mpc_info.N = 1;
 mpc_info.iter = 1;
 
 %% Load Desired Reference Trajectory
-ref_info.step_height = "0.10";
-ref_info.step_time = "0.45";
+ref_info.step_height = "0.05";
+ref_info.step_vel = "0.20";
 ref_info.step_dir = "Ascend";
-ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Time(' + ref_info.step_time + ").mat";
+ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
 
-% Compute reference
+% Load reference
 ref_info = Load_Reference_Trajectory(mpc_info,ref_info);
 
 % IC
@@ -61,10 +61,13 @@ args = mpc_info.args;
 penalties = struct;
 penalties.Q = mpc_info.Q;
 penalties.R = mpc_info.R;
-if true
+if false
+%     save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
+%         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
+%         ")_Time(" + ref_info.step_time + " sec).mat";
     save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
-        ")_Time(" + ref_info.step_time + " sec).mat";
+        ")_Vel(" + ref_info.step_vel + " sec).mat";
     save(fullfile('saved_results/',save_name),'ref_info','traj_info','dyn_info','args','penalties');
 end
 disp("Saved Trajectory!");
@@ -72,11 +75,11 @@ disp("Saved Trajectory!");
 %% Plot
 plotSettings = struct;
 plotSettings.x = 1;
-plotSettings.u = 1;
-plotSettings.w = 1;
+plotSettings.u = 0;
+plotSettings.w = 0;
 plotSettings.xerr = 0;
-plotSettings.y = 1;
-plotSettings.calc_time = 1;
+plotSettings.y = 0;
+plotSettings.calc_time = 0;
 plotSettings.single_sol = 0;
 plotSettings.traj_title = ref_info.step_height + "m " + ref_info.step_dir;
 Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);

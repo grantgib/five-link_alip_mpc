@@ -49,7 +49,8 @@ x_ref_traj = [];
 u_ref_traj = [];
 
 %% Main Loop
-while(mpciter < 2*size(X_REF_Original,2))
+num_steps = 5;
+while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))      %  
     % Start solver computation timer
     solver_comp_time = tic;
     
@@ -105,25 +106,34 @@ while(mpciter < 2*size(X_REF_Original,2))
     % Predict next step with Forward Euler Discretization
     [t_next, x_next, u_next_guess, w_next_guess] = Update_State(dyn_info,mpc_info,t_current,x_init,u_sol,w_sol);
     
-    %% Check for impact & 
+    %% Check for impact & Apply Impact/Switch Map
     swing_foot_pos = leftToePos(x_next(1:7))';
     y_swingfoot = swing_foot_pos([1,3]);
     if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) &&...
             (y_traj(2,end) > double(ref_info.step_height)) &&...
             (y_swingfoot(2) - y_traj(2,end) < 0) &&...
             (y_swingfoot(1) > stance_foot_pos(1))
-        disp("Impact occured, find when it happened!");
-        [t_next, x_next] = Impact_Update(dyn_info,mpc_info,ref_info,t_current,x_init,u_sol,w_sol);
+        
+        disp("-> Impact occured, find when it happened!");
+        % Forward Integrate until Impact, Apply Impact, Integrate until
+        % t_current + DT has been reached
+        [t_next, x_next] = Impact_Update(dyn_info,mpc_info,ref_info,t_current,x_init,u_sol,w_sol,num_impacts);
+        
+        % Update impact counter
         num_impacts = num_impacts + 1;
+        disp("-> Step # " + num_impacts);
         
+        % Update reference trajectory
         X_REF = X_REF_Original + ...
-            [(X_REF_Original(1:2,end)-X_REF_Original(1:2,1)).*ones(2,size(X_REF_Original,2));
-            zeros(12,size(X_REF_Original,2))];
+            [(X_REF_Original(1:2,end)-X_REF_Original(1:2,1)).*(num_impacts*ones(2,size(X_REF,2)));
+            zeros(12,size(X_REF,2))];
         U_REF = U_REF_Original;
-        stance_foot_pos = y_swingfoot(1);
         
+        % Update stance foot position with previous swing foot impact pos
+        stance_foot_pos = y_swingfoot(1);
     end
-
+    
+    % Update output trajectory
     y_traj = [y_traj, y_swingfoot];
     
     %% Update state and time, warm start, shift reference
@@ -162,10 +172,11 @@ x_traj_error = vecnorm((x_traj - x_ref_traj)')';
 disp('************** Trajectory STATISTICS **************')
 disp("Trajectory error (2-norm) = ")
 disp(x_traj_error);
-disp("Final trajectory error (2-norm) = " + x_traj_final_error);
-disp("Average MPC Calculation Time = " + avg_calc_time);
 disp("State Penalty (Q)"); disp(mpc_info.Q);
 disp("Control Inputs Penalty (R)"); disp(mpc_info.R);
+
+disp("-> Final trajectory error (2-norm) = " + x_traj_final_error);
+disp("-> Average MPC Calculation Time = " + avg_calc_time);
 
 %% Update function outputs
 traj_info.time_traj = time_traj;
