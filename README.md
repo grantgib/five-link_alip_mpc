@@ -1,2 +1,2 @@
 # MPC_Rabbit
-MPC controller for Rabbit 5-Link Biped Walker
+**In Progress:** MPC controller for Rabbit 5-Link Biped Walker
