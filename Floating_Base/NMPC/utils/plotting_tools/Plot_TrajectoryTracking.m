@@ -10,7 +10,7 @@ n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
 
 % mpc_info
-args = mpc_info.args;
+% args = mpc_info.args;
 N = mpc_info.N;
 DT = mpc_info.DT;
 

@@ -37,8 +37,13 @@ end
 %% Single Solution Trajectory
 if animateSettings.single_sol
     % mpc_info
-    N = mpc_info.N;
-    DT = mpc_info.DT;
+    if isempty(mpc_info)
+        DT = 0.005;
+        N = 1;
+    else
+        N = mpc_info.N;
+        DT = mpc_info.DT;
+    end
     % traj_info
     t_all = linspace(0,N*DT,N+1);
     x_traj = traj_info.x_traj_all(:,:,1);

@@ -27,7 +27,6 @@ height_impact = leftToeZ(x0(1:7)+(DT_impact*f_value(1:7)));
 t_minus = t0 + DT_impact;
 disp("-> Swing foot impacts step (" + height_impact + " m) at " + t_minus + " sec");
 
-
 %% Forward Integrate until update
 x_minus = x0 + DT_impact*f_value;
 

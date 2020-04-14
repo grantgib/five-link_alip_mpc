@@ -27,7 +27,7 @@ mpc_info.iter = 1;
 
 %% Load Desired Reference Trajectory
 ref_info.step_height = "0.05";
-ref_info.step_vel = "0.20";
+ref_info.step_vel = "0.40";
 ref_info.step_dir = "Ascend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
 
@@ -36,6 +36,7 @@ ref_info = Load_Reference_Trajectory(mpc_info,ref_info);
 
 % IC
 ref_info.x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
+% ref_info.x_init = ref_info.x_ref(:,1);
 disp("Reference Trajectory Loaded!");
 disp("Initial Condition Set!");
 
@@ -52,16 +53,19 @@ disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ************************** Run Simulation ******************************
 disp("Begin simulation...");
-[traj_info,mpc_info] = ...
-    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+% [traj_info,mpc_info] = ...
+%     Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+
+[traj_info] = Simulate_IO_TrajectoryTracking(dyn_info,ref_info);
 disp("Finished simulation!");
 
 %% Save Simulation
-args = mpc_info.args;
-penalties = struct;
-penalties.Q = mpc_info.Q;
-penalties.R = mpc_info.R;
+
 if false
+    args = mpc_info.args;
+    penalties = struct;
+    penalties.Q = mpc_info.Q;
+    penalties.R = mpc_info.R;
 %     save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
 %         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
 %         ")_Time(" + ref_info.step_time + " sec).mat";
@@ -75,7 +79,7 @@ disp("Saved Trajectory!");
 %% Plot
 plotSettings = struct;
 plotSettings.x = 1;
-plotSettings.u = 0;
+plotSettings.u = 1;
 plotSettings.w = 0;
 plotSettings.xerr = 0;
 plotSettings.y = 0;
@@ -87,7 +91,7 @@ disp('Finished Plotting!');
 
 %% Animation
 animateSettings = struct;
-animateSettings.traj = 1;
+animateSettings.traj = 0;
 animateSettings.ref = 0;
 animateSettings.single_sol = 0;
 Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);

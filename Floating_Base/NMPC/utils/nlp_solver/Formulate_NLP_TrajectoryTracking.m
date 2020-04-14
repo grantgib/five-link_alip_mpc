@@ -15,7 +15,6 @@ n_w = dyn_info.dim.n_w;
 
 % mpc_info
 N = mpc_info.N;
-DT = mpc_info.DT;
 
 %% IPOPT settings
 mpc_info.opts = struct;
@@ -42,11 +41,14 @@ solver_NL_all = cell(N,1);
 % that we can implement a shrinking horizon so that the reference
 % trajectory is not extrapolated (which would turn it to a regulator
 % problem that we don't want)
-for i = 1:mpc_info.N
+for i = 1:1%mpc_info.N
     % Compute symbolic variables of quadratic program for N = 1:maxN.
     % stored in cells (used when implementing shrinking horizon)
-    [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R] = ...
-        Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N); 
+%     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
+%         Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N); 
+    
+    [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
+        Objective_Constraints_IO(dyn_info,mpc_info,ref_info,N);
     
     % Settings
     % Decision variables to optimize
@@ -74,4 +76,6 @@ mpc_info.solvers_NL = solver_NL_all;
 mpc_info.DEC_variables = DEC_variables;
 mpc_info.Q = Q;
 mpc_info.R = R;
+mpc_info.C = C;
+
 

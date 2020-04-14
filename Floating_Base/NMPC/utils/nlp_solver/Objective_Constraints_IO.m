@@ -1,4 +1,4 @@
-function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N)
+function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_IO(dyn_info,mpc_info,ref_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -11,6 +11,8 @@ f_w = dyn_info.func.wrench;
 % use_descriptor = dyn_info.descriptor;
 % E = dyn_info.func.E_nonlinear;
 % H = dyn_info.func.H_nonlinear;
+Kp = dyn_info.ctrl.Kp;
+Kd = dyn_info.ctrl.Kd;
 
 % mpc_info
 DT = mpc_info.DT;
@@ -62,13 +64,15 @@ R_mat = diag(R);
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
 for k = 1:N+1
     x_k = Xdec(:,k);   % current state
-    u_k = Udec(:,k);   % current control
+    du_k = Udec(:,k);   % current control
     if k < N+1
         x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
         u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
-        % Running stage and control cost
+        % Running stage and control cost (u is now a delta_u added to
+        % nominal IO controller so no reference dependece on u)
         obj_vector(k) = (x_k - x_ref_k)'*Q_mat*(x_k - x_ref_k) + ...
-            (u_k - u_ref_k)'*R_mat*(u_k - u_ref_k);
+            (du_k)'*R_mat*(du_k); 
+        
     else
         Term_cost = (x_k - x_ref_k)'*Q_term*(x_k - x_ref_k);
     end
@@ -82,11 +86,23 @@ for k = 1:N+1
     q_k = Xdec(1:n_q,k);
     dq_k = Xdec(n_q+1:2*n_q,k);
     x_k = [q_k; dq_k];            % current state
-    u_k = Udec(:,k);              % current control
+    du_k = Udec(:,k);              % current control
     w_k = Wdec(:,k);              % current wrench
+    x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
+    u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
+    
+    % Compute IO input
+    Kp = 66;
+    Kd = 13;
+    y_des = x_ref_k(4:n_q);
+    dy_des = x_ref_k(n_q+4:end);
+    u_IO_k = dyn_info.func.u_IO(q_k,dq_k,y_des,dy_des,Kp,Kd);
+    u_k = u_IO_k ;%+ du_k;
+    
     % Contact constraint
     w_sym_k = f_w(q_k,dq_k,u_k);
     g = [g; w_k - w_sym_k];
+    
     % Forward Integration dynamics constraint
     if k < N+1
         x_k_1 = Xdec(:,k+1);

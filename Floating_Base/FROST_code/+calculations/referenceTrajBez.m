@@ -6,7 +6,7 @@ function traj = referenceTrajBez(gait,delT)
 % bezCoef{5}=gait(5).params.aleftStance;
 %% get the traj for position and velocity
 traj={};
-CHECK=0;
+CHECK=1;
 for i=1:2:length(gait)
     t = gait(i).tspan;
     t0 = t(1);
@@ -31,8 +31,8 @@ if CHECK
         dest(:,j)=calculations.bezier_Jessy(alpha_dx,t_par(j));
         uest(:,j)=calculations.bezier_Jessy(alpha_u,t_par(j));
     end
-    est-gait(i).states.x;
-    dest-gait(i).states.dx;
-    uest-gait(i).inputs.u;
+    q_error = est-gait(i).states.x; disp("q_error = "); disp(q_error);
+    dq_error = dest-gait(i).states.dx; disp("dq_error = "); disp(dq_error);
+    u_error = uest-gait(i).inputs.u; disp("u_error = "); disp(u_error);
 end
 end
