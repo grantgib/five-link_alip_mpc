@@ -26,7 +26,7 @@ else
     x_traj = traj_info.x_traj;
     u_traj = traj_info.u_traj;
     w_traj = traj_info.w_traj;
-    y_traj = traj_info.y_traj;
+    y_traj = traj_info.y_sw;
     x_ref_traj = traj_info.x_ref_traj;
     u_ref_traj = traj_info.u_ref_traj;
 end

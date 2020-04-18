@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 1 Apr 2020 22:04:03 GMT-04:00
+ * Fri 17 Apr 2020 14:55:20 GMT-04:00
  */
 
 #ifndef U_LEFTFOOTHEIGHT_RIGHTSTANCE_HH

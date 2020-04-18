@@ -47,9 +47,9 @@ C = [0 0 0 1 0 0 0;     % stance thigh
      0 0 0 0 0 1 0;     % swing leg
      0 0 0 0 0 0 1];    % swing leg
 Q_mat = [C'*C, zeros(n_q,n_q);
-     zeros(n_q,n_q), 10*C'*C];
+     zeros(n_q,n_q), C'*C];
 
-Q_term = 1e4*Q_mat;
+% Q_term = 1e4*Q_mat;
 
 % Control penalty
 R_vector = zeros(n_u,1);
@@ -59,6 +59,10 @@ end
 R_weights = 0.001*[1, 1, 1, 1]';
 R = R_weights.*R_vector;
 R_mat = diag(R);
+
+% Terminal state penalty (LQR of closed-loop linear system y'' = v)
+Q_term = CLF_Terminal_Penalty(Q_mat,R_mat);
+
 
 %% Objective Function
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
@@ -74,7 +78,9 @@ for k = 1:N+1
             (du_k)'*R_mat*(du_k); 
         
     else
-        Term_cost = (x_k - x_ref_k)'*Q_term*(x_k - x_ref_k);
+        y_N = x_k(4:7);     % virtual constraint
+        dy_N = x_k(11:end); % derivative
+        Term_cost = [y_N; dy_N]'*Q_term*[y_N; dy_N];
     end
 end
 obj = sum(obj_vector) + Term_cost;
@@ -96,9 +102,14 @@ for k = 1:N+1
     Kd = 13;
     y_des = x_ref_k(4:n_q);
     dy_des = x_ref_k(n_q+4:end);
-    u_IO_k = dyn_info.func.u_IO(q_k,dq_k,y_des,dy_des,Kp,Kd);
-    u_k = u_IO_k ;%+ du_k;
     
+    if dyn_info.IO_type == "time"
+        u_IO_k = dyn_info.func.u_IO_time(q_k,dq_k,y_des,dy_des,zeros(4,1),Kp,Kd);        % Error not using correct ddy_des term!!!!!!
+        u_k = u_IO_k ;%+ du_k;
+    else
+        u_IO_k = dyn_info.func.u_IO(q_k,dq_k,y_des,dy_des,Kp,Kd);        % Error not using correct ddy_des term!!!!!!
+        u_k = u_IO_k ;%+ du_k;
+    end
     % Contact constraint
     w_sym_k = f_w(q_k,dq_k,u_k);
     g = [g; w_k - w_sym_k];

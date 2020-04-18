@@ -56,7 +56,7 @@ function [xdot] = secondOrderDynamics(obj, t, x, controller, params, logger)
         h_cstr = struct2array(obj.HolonomicConstraints);
         n_cstr = length(h_cstr);
         % determine the total dimension of the holonomic constraints
-        cdim = sum([h_cstr.Dimension]);
+        cdim = sum([h_cstr.Dimension]-1); %planar model
         % initialize the Jacobian matrix
         Je = zeros(cdim,nx);
         Jedot = zeros(cdim,nx);
@@ -67,13 +67,16 @@ function [xdot] = secondOrderDynamics(obj, t, x, controller, params, logger)
             
             % calculate the Jacobian
             [Jh,dJh] = calcJacobian(cstr,q,dq);
-            cstr_indices = idx:idx+cstr.Dimension-1;
+            Jh=Jh([1,3],:);  % Edited this line
+            dJh = dJh([1,3],:);
+            cstr_indices = idx:idx+cstr.Dimension-2; % Changed this from -1 to -2
             tol = 1e-2;
             if norm(Jh*dq) > tol
                 warning('The holonomic constraint %s violated.', h_cstr_name{i});
             end            
             Je(cstr_indices,:) = Jh;
             Jedot(cstr_indices,:) = dJh; 
+            
             idx = idx + cstr.Dimension;
         end 
     else
@@ -133,7 +136,7 @@ function [xdot] = secondOrderDynamics(obj, t, x, controller, params, logger)
         for i=1:n_cstr           
             cstr = h_cstr(i);
             hval.(h_cstr_name{i}) = calcConstraint(cstr,q);
-            cstr_indices = idx:idx+cstr.Dimension-1;
+            cstr_indices = idx:idx+cstr.Dimension-2;    % planar model
             input_name = cstr.InputName;
             obj.inputs_.ConstraintWrench.(input_name) = lambda(cstr_indices);
             idx = idx + cstr.Dimension;

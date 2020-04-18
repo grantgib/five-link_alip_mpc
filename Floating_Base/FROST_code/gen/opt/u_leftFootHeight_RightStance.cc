@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 1 Apr 2020 22:04:03 GMT-04:00
+ * Fri 17 Apr 2020 14:55:20 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,31 +48,31 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1)
 {
-  double t1176;
-  double t1179;
-  double t1174;
-  double t1184;
-  double t1157;
-  double t1178;
-  double t1185;
-  double t1187;
-  double t1190;
-  double t1191;
-  double t1209;
+  double t1392;
+  double t1394;
+  double t1391;
+  double t1395;
+  double t1385;
   double t1393;
-  t1176 = Cos(var1[5]);
-  t1179 = Sin(var1[2]);
-  t1174 = Cos(var1[2]);
-  t1184 = Sin(var1[5]);
-  t1157 = Cos(var1[6]);
-  t1178 = t1174*t1176;
-  t1185 = -1.*t1179*t1184;
-  t1187 = t1178 + t1185;
-  t1190 = -1.*t1176*t1179;
-  t1191 = -1.*t1174*t1184;
-  t1209 = t1190 + t1191;
-  t1393 = Sin(var1[6]);
-  p_output1[0]=0.4*(1. - 1.*t1157)*t1187 - 0.4*t1209*t1393 + 0.8*(t1157*t1187 + t1209*t1393) + var1[1];
+  double t1396;
+  double t1397;
+  double t1399;
+  double t1400;
+  double t1401;
+  double t1402;
+  t1392 = Cos(var1[5]);
+  t1394 = Sin(var1[2]);
+  t1391 = Cos(var1[2]);
+  t1395 = Sin(var1[5]);
+  t1385 = Cos(var1[6]);
+  t1393 = t1391*t1392;
+  t1396 = -1.*t1394*t1395;
+  t1397 = t1393 + t1396;
+  t1399 = -1.*t1392*t1394;
+  t1400 = -1.*t1391*t1395;
+  t1401 = t1399 + t1400;
+  t1402 = Sin(var1[6]);
+  p_output1[0]=0.4*(1. - 1.*t1385)*t1397 - 0.4*t1401*t1402 + 0.8*(t1385*t1397 + t1401*t1402) + var1[1];
 }
 
 

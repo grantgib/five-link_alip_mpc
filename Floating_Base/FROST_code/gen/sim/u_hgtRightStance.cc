@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:21:18 GMT-05:00
+ * Fri 17 Apr 2020 16:58:04 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,31 +48,51 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t351;
-  double t353;
-  double t348;
-  double t356;
-  double t339;
-  double t352;
-  double t357;
-  double t358;
-  double t360;
-  double t361;
-  double t362;
-  double t363;
-  t351 = Cos(var1[5]);
-  t353 = Sin(var1[2]);
-  t348 = Cos(var1[2]);
-  t356 = Sin(var1[5]);
-  t339 = Cos(var1[6]);
-  t352 = t348*t351;
-  t357 = -1.*t353*t356;
-  t358 = t352 + t357;
-  t360 = -1.*t351*t353;
-  t361 = -1.*t348*t356;
-  t362 = t360 + t361;
-  t363 = Sin(var1[6]);
-  p_output1[0]=0.4*(1. - 1.*t339)*t358 - 0.4*t362*t363 + 0.8*(t339*t358 + t362*t363) + var1[1] - 1.*var2[0];
+  double t4283;
+  double t4287;
+  double t4282;
+  double t4288;
+  double t4268;
+  double t4284;
+  double t4289;
+  double t4292;
+  double t4294;
+  double t4295;
+  double t4296;
+  double t4297;
+  double t4306;
+  double t4308;
+  double t4303;
+  double t4307;
+  double t4309;
+  double t4310;
+  double t4312;
+  double t4313;
+  double t4314;
+  double t4315;
+  t4283 = Cos(var1[3]);
+  t4287 = Sin(var1[2]);
+  t4282 = Cos(var1[2]);
+  t4288 = Sin(var1[3]);
+  t4268 = Cos(var1[4]);
+  t4284 = t4282*t4283;
+  t4289 = -1.*t4287*t4288;
+  t4292 = t4284 + t4289;
+  t4294 = -1.*t4283*t4287;
+  t4295 = -1.*t4282*t4288;
+  t4296 = t4294 + t4295;
+  t4297 = Sin(var1[4]);
+  t4306 = Cos(var1[5]);
+  t4308 = Sin(var1[5]);
+  t4303 = Cos(var1[6]);
+  t4307 = t4282*t4306;
+  t4309 = -1.*t4287*t4308;
+  t4310 = t4307 + t4309;
+  t4312 = -1.*t4306*t4287;
+  t4313 = -1.*t4282*t4308;
+  t4314 = t4312 + t4313;
+  t4315 = Sin(var1[6]);
+  p_output1[0]=-0.4*(1. - 1.*t4268)*t4292 + 0.4*t4296*t4297 - 0.8*(t4268*t4292 + t4296*t4297) + 0.4*(1. - 1.*t4303)*t4310 - 0.4*t4314*t4315 + 0.8*(t4303*t4310 + t4314*t4315) - 1.*var2[0];
 }
 
 

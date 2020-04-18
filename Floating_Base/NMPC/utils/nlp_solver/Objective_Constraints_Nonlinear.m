@@ -44,33 +44,57 @@ C = [0 0 0 1 0 0 0;     % stance thigh
      0 0 1 1 1 0 0;     % torso, stance leg together
      0 0 0 0 0 1 0;     % swing leg
      0 0 0 0 0 0 1];    % swing leg
-Q_mat = [C'*C, zeros(n_q,n_q);
-     zeros(n_q,n_q), 10*C'*C];
-
-Q_term = 1e4*Q_mat;
+Q_mat = [(C'*C), zeros(n_q,n_q);
+     zeros(n_q,n_q), 100*(C'*C)];
 
 % Control penalty
 R_vector = zeros(n_u,1);
 for i = 1:n_u
     R_vector(i) = 1/full_ref.bounds.RightStance.inputs.Control.u.ub(i);
 end
-R_weights = 0.001*[1, 1, 1, 1]';
+R_weights = 1e-3*[1, 1, 1, 1]';
 R = R_weights.*R_vector;
 R_mat = diag(R);
+
+% Terminal state penalty 
+CLF_term = true;
+if CLF_term
+    % (LQR of closed-loop linear system y'' = v)
+    Q_term = CLF_Terminal_Penalty(Q_mat,R_mat);
+    Q_term = 1*Q_term;
+    eig_Qterm = eig(Q_term);
+
+else
+    Q_term = 1e4*Q_mat;
+end
+disp("Q_term = "); disp(Q_term);
+disp("E-values = "); disp(eig_Qterm);
 
 %% Objective Function
 obj_vector = SX.zeros(N+1,1);    % initialize objective function (scalar output)
 for k = 1:N+1
     x_k = Xdec(:,k);   % current state
-    u_k = Udec(:,k);   % current control
+    u_k = Udec(:,k);   % current control  
+    x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
+    u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
     if k < N+1
-        x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
-        u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
         % Running stage and control cost
         obj_vector(k) = (x_k - x_ref_k)'*Q_mat*(x_k - x_ref_k) + ...
             (u_k - u_ref_k)'*R_mat*(u_k - u_ref_k);
     else
-        Term_cost = (x_k - x_ref_k)'*Q_term*(x_k - x_ref_k);
+        if CLF_term
+            ya_N = x_k(4:7);     % virtual constraint
+            dya_N = x_k(11:end); % derivative
+            yd_N = x_ref_k(4:7);
+            dyd_N = x_ref_k(11:end);
+            yerr_N = ya_N - yd_N;
+            dyerr_N = dya_N - dyd_N;
+%             Term_cost = [ya_N; dya_N]'*Q_term*[ya_N; dya_N];
+%             Term_cost = [yd_N; dyd_N]'*100*Q_term*[yd_N; dyd_N];
+            Term_cost = [yerr_N; dyerr_N]'*Q_term*[yerr_N; dyerr_N];
+        else
+            Term_cost = (x_k - x_ref_k)'*Q_term*(x_k - x_ref_k);
+        end
     end
 end
 obj = sum(obj_vector) + Term_cost;

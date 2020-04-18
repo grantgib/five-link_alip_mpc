@@ -44,11 +44,11 @@ solver_NL_all = cell(N,1);
 for i = 1:1%mpc_info.N
     % Compute symbolic variables of quadratic program for N = 1:maxN.
     % stored in cells (used when implementing shrinking horizon)
-%     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
-%         Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N); 
-    
     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
-        Objective_Constraints_IO(dyn_info,mpc_info,ref_info,N);
+        Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N); 
+    
+%     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
+%         Objective_Constraints_IO(dyn_info,mpc_info,ref_info,N);
     
     % Settings
     % Decision variables to optimize

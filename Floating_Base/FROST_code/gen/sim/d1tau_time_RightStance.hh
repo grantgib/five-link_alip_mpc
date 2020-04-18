@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:21:15 GMT-05:00
+ * Fri 17 Apr 2020 16:57:58 GMT-04:00
  */
 
 #ifndef D1TAU_TIME_RIGHTSTANCE_HH

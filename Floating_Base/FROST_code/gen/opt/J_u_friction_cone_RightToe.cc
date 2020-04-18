@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 1 Apr 2020 22:02:59 GMT-04:00
+ * Fri 17 Apr 2020 14:54:02 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,17 +48,17 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t844;
-  t844 = 0.7071065623731627*var2[0];
+  double t1128;
+  t1128 = 0.7071065623731627*var2[0];
   p_output1[0]=1.;
   p_output1[1]=1.;
-  p_output1[2]=t844;
+  p_output1[2]=t1128;
   p_output1[3]=-1.;
-  p_output1[4]=t844;
+  p_output1[4]=t1128;
   p_output1[5]=1.;
-  p_output1[6]=t844;
+  p_output1[6]=t1128;
   p_output1[7]=-1.;
-  p_output1[8]=t844;
+  p_output1[8]=t1128;
 }
 
 

@@ -11,7 +11,7 @@ export_path = fullfile(cur, 'gen/');
 % be loaded  from the MX binary files from the given directory.
 load_path = [];     %fullfile(cur, 'gen/sym');
 delay_set = false;
-COMPILE = true;
+COMPILE = false;
 
 % Load model
 rabbit = RABBIT('urdf/five_link_walker.urdf');
@@ -122,6 +122,18 @@ gait = struct(...
     'inputs',inputs,...
     'params',params);
 
+%%
+% alpha_x=reshape(gait(1).params.atime,4,6)
+% ds=1/(gait(1).tspan(end)-gait(1).tspan(1));
+% t_par=(gait(1).tspan-gait(1).tspan(1)).*ds
+% for i=1:length(t_par)
+% traj2(:,i)=calculations.bezier_Jessy(alpha_x,t_par(i));
+% traj2dx(:,i)=calculations.dbezier(alpha_x,t_par(i))*ds;
+% end
+% traj2-gait(1).states.x(4:end,:)
+% traj2dx-gait(1).states.dx(4:end,:)
+
+
 %% Animation
 q_log_R = states{1}.x; % Right stance
 q_log_L = q_log_R([1:3,6:7,4:5],:); % symmetric Left stance
@@ -143,7 +155,7 @@ conGUI = Animator.AnimatorControls();
 conGUI.anim = anim;
 
 %%
-SAVE_SOLUTION = 1;
+SAVE_SOLUTION = 0;
 name_save = "Ascend_Ht(0)_Vel(0.75)";
 if SAVE_SOLUTION
     %     data_name = string(datetime('now','TimeZone','local','Format','d-MMM-y-HH-mm-ssZ'));  %'local/longer_double_support_wider_step_dummy';

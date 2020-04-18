@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:21:53 GMT-05:00
+ * Fri 17 Apr 2020 16:58:31 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,43 +48,43 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1)
 {
-  double t508;
-  double t505;
-  double t506;
-  double t509;
-  double t499;
-  double t507;
-  double t510;
-  double t511;
-  double t513;
-  double t514;
-  double t515;
-  double t516;
-  double t503;
-  double t504;
-  double t524;
-  double t525;
-  double t526;
-  t508 = Cos(var1[2]);
-  t505 = Cos(var1[3]);
-  t506 = Sin(var1[2]);
-  t509 = Sin(var1[3]);
-  t499 = Cos(var1[4]);
-  t507 = t505*t506;
-  t510 = t508*t509;
-  t511 = t507 + t510;
-  t513 = t508*t505;
-  t514 = -1.*t506*t509;
-  t515 = t513 + t514;
-  t516 = Sin(var1[4]);
-  t503 = -1.*t499;
-  t504 = 1. + t503;
-  t524 = -1.*t505*t506;
-  t525 = -1.*t508*t509;
-  t526 = t524 + t525;
-  p_output1[0]=0.4*t504*t511 - 0.4*t515*t516 + 0.8*(t499*t511 + t515*t516) + var1[0];
+  double t4452;
+  double t4449;
+  double t4450;
+  double t4453;
+  double t4443;
+  double t4451;
+  double t4454;
+  double t4455;
+  double t4457;
+  double t4458;
+  double t4459;
+  double t4460;
+  double t4447;
+  double t4448;
+  double t4468;
+  double t4469;
+  double t4470;
+  t4452 = Cos(var1[2]);
+  t4449 = Cos(var1[3]);
+  t4450 = Sin(var1[2]);
+  t4453 = Sin(var1[3]);
+  t4443 = Cos(var1[4]);
+  t4451 = t4449*t4450;
+  t4454 = t4452*t4453;
+  t4455 = t4451 + t4454;
+  t4457 = t4452*t4449;
+  t4458 = -1.*t4450*t4453;
+  t4459 = t4457 + t4458;
+  t4460 = Sin(var1[4]);
+  t4447 = -1.*t4443;
+  t4448 = 1. + t4447;
+  t4468 = -1.*t4449*t4450;
+  t4469 = -1.*t4452*t4453;
+  t4470 = t4468 + t4469;
+  p_output1[0]=0.4*t4448*t4455 - 0.4*t4459*t4460 + 0.8*(t4443*t4455 + t4459*t4460) + var1[0];
   p_output1[1]=0;
-  p_output1[2]=0.4*t504*t515 - 0.4*t516*t526 + 0.8*(t499*t515 + t516*t526) + var1[1];
+  p_output1[2]=0.4*t4448*t4459 - 0.4*t4460*t4470 + 0.8*(t4443*t4459 + t4460*t4470) + var1[1];
 }
 
 

@@ -34,17 +34,18 @@ function [tn, xn,lambda] = calcDiscreteMap(obj, t, x, varargin)
         cstr = struct2array(obj.ImpactConstraints);
         n_cstr = length(cstr);
         % determine the total dimension of the holonomic constraints
-        cdim = sum([cstr.Dimension]);
+        cdim = sum([cstr.Dimension-1]);
         % initialize the Jacobian matrix
         Je = zeros(cdim,nx);
         
         idx = 1;
         for i=1:n_cstr
             c_obj = cstr(i);
-            cstr_indices = idx:idx+c_obj.Dimension-1;
+            cstr_indices = idx:idx+c_obj.Dimension-2;   % planar
             
             % calculate the Jacobian
             [Jh] = calcJacobian(c_obj,q,dq);
+            Jh = Jh([1,3],:);
             Je(cstr_indices,:) = Jh;
             idx = idx + c_obj.Dimension;
         end
@@ -73,7 +74,7 @@ function [tn, xn,lambda] = calcDiscreteMap(obj, t, x, varargin)
         idx = 1;
         for i=1:n_cstr
             c_obj = cstr(i);
-            cstr_indices = idx:idx+c_obj.Dimension-1;
+            cstr_indices = idx:idx+c_obj.Dimension-2;   % planar model
             
             % calculate the Jacobian
             lambda.(c_obj.InputName) = ImpF(cstr_indices);

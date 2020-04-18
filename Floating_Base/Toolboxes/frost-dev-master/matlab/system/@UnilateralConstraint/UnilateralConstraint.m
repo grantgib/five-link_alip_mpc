@@ -55,7 +55,7 @@ classdef UnilateralConstraint < handle
             validateattributes(h,{'SymExpression'},...
                 {'nonempty','vector'},...
                 'UnilateralConstraint','h');            
-            if isrow(h) % convert to column vector if it is a row vector
+            if isrow(h) && length(h) > 1 % convert to column vector if it is a row vector
                 h = vertcat(h(:));
             end
             dim = length(h);

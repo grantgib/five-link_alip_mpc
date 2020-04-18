@@ -14,8 +14,8 @@ x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bou
     full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
 
 % Set control bounds
-u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb/10;
-u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub/10;
+u_lb = 0.2*full_ref.bounds.RightStance.inputs.Control.u.lb;
+u_ub = 0.2*full_ref.bounds.RightStance.inputs.Control.u.ub;
 
 % Set Wrench bounds
 w_lb = [-inf; -inf];
@@ -24,7 +24,7 @@ w_ub = [inf; inf];
 %% Compute full_refeters vector
 args = struct;
 args.p(1:n_x) = x_init; % initial condition of the robot posture
-for k = 1:N+1 %new - set the reference to          track
+for k = 1:N+1 %   
     args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
         X_REF(:,k);
     args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...

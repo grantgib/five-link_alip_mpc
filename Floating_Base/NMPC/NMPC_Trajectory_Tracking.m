@@ -20,16 +20,20 @@ addpath(genpath('../reference_trajectories/'));
 addpath(genpath('../FROST_code'))
 
 %% Time Step, Prediction Horizon, Simulation Time
+ctrl_type = "IO";
+% ctrl_type = "NMPC";
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 1;
+mpc_info.N = 4;
 mpc_info.iter = 1;
 
 %% Load Desired Reference Trajectory
-ref_info.step_height = "0.05";
-ref_info.step_vel = "0.40";
+ref_info.step_height = "0";
+ref_info.step_vel = "0.75";
 ref_info.step_dir = "Ascend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
+% ref_info.step_dir = "Descend";
+% ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ")_Time(" + 1 + ").mat";
 
 % Load reference
 ref_info = Load_Reference_Trajectory(mpc_info,ref_info);
@@ -48,19 +52,26 @@ disp("Dynamic Functions Created!  (" + toc + " sec)");
 %% Build Nonlinear Program
 disp("Begin NLP formulation...");
 tic
-[mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+if ctrl_type == "NMPC"
+        [mpc_info] = Formulate_NLP_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+
+elseif ctrl_type == "IO"
+        [mpc_info] = Formulate_NLP_TrajectoryTracking_IO(dyn_info,mpc_info,ref_info);
+
+end
 disp("Finished formulating NLP!  (" + toc + " sec)");
 
 %% ************************** Run Simulation ******************************
 disp("Begin simulation...");
-% [traj_info,mpc_info] = ...
-%     Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
-
-[traj_info] = Simulate_IO_TrajectoryTracking(dyn_info,ref_info);
+if ctrl_type == "NMPC"
+    [traj_info,mpc_info] = ...
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+elseif ctrl_type == "IO"
+    [traj_info] = Simulate_IO_TrajectoryTracking(dyn_info,mpc_info,ref_info);
+end
 disp("Finished simulation!");
 
 %% Save Simulation
-
 if false
     args = mpc_info.args;
     penalties = struct;
@@ -81,7 +92,7 @@ plotSettings = struct;
 plotSettings.x = 1;
 plotSettings.u = 1;
 plotSettings.w = 0;
-plotSettings.xerr = 0;
+plotSettings.xerr = 1;
 plotSettings.y = 0;
 plotSettings.calc_time = 0;
 plotSettings.single_sol = 0;
@@ -91,7 +102,7 @@ disp('Finished Plotting!');
 
 %% Animation
 animateSettings = struct;
-animateSettings.traj = 0;
+animateSettings.traj = 1;
 animateSettings.ref = 0;
 animateSettings.single_sol = 0;
 Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);

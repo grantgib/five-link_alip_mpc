@@ -36,7 +36,6 @@ function logger = simulate(obj, t0, x0, tf, options, varargin)
     
     
     
-    
     % initialization
     cur_node_idx = s_domain_idx;
     log_idx = 0;
@@ -80,18 +79,24 @@ function logger = simulate(obj, t0, x0, tf, options, varargin)
         disp(['Simulating ',cur_domain.Name]);
         
         if strcmp(obj.Gamma.Nodes.Domain{cur_node_idx}.VirtualConstraints.time.PhaseType, 'TimeBased')
-          if cur_node_idx == 1
-            tend_prev = 0;
-          else
-            tend_prev = t0;
-            t0 = 0;
-          end
-          tf = cur_param.ptime(1);
+%           if cur_node_idx == 1
+%             tend_prev = 0;
+%           else
+%             tend_prev = t0;
+%             t0 = 0;
+%           end
+          tf = (cur_param.ptime(1) - cur_param.ptime(2)) + t0;
           % run the simulation
+          % Reminder: Change atime beziers (y, y' are zero at beginning of
+          % step)
+          % first find first column of atime such that y == 0 at the
+          % beginning
+          % next find second column of atime such that y' == 0 at the
+          % beginning
           sol = cur_domain.simulate(t0,x0,tf,cur_control,cur_param,...
           logger(log_idx),eventnames,options,obj.Options.OdeSolver);
-          sol.xe = sol.xe + tend_prev;
-          sol.x = sol.x + tend_prev;
+          sol.xe = sol.xe;
+          sol.x = sol.x;
         else
           % run the simulation
           sol = cur_domain.simulate(t0,x0,tf,cur_control,cur_param,...

@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:20:45 GMT-05:00
+ * Fri 17 Apr 2020 16:57:29 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,43 +48,43 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2)
 {
-  double t100;
-  double t60;
-  double t63;
-  double t124;
-  double t32;
-  double t71;
-  double t142;
-  double t148;
-  double t152;
-  double t154;
-  double t159;
-  double t171;
-  double t40;
-  double t48;
-  double t187;
-  double t188;
-  double t189;
-  t100 = Cos(var1[2]);
-  t60 = Cos(var1[3]);
-  t63 = Sin(var1[2]);
-  t124 = Sin(var1[3]);
-  t32 = Cos(var1[4]);
-  t71 = t60*t63;
-  t142 = t100*t124;
-  t148 = t71 + t142;
-  t152 = t100*t60;
-  t154 = -1.*t63*t124;
-  t159 = t152 + t154;
-  t171 = Sin(var1[4]);
-  t40 = -1.*t32;
-  t48 = 1. + t40;
-  t187 = -1.*t60*t63;
-  t188 = -1.*t100*t124;
-  t189 = t187 + t188;
-  p_output1[0]=-0.4*t159*t171 + 0.8*(t159*t171 + t148*t32) + 0.4*t148*t48 + var1[0] - 1.*var2[0];
+  double t4010;
+  double t3985;
+  double t3990;
+  double t4018;
+  double t657;
+  double t3992;
+  double t4045;
+  double t4062;
+  double t4069;
+  double t4082;
+  double t4083;
+  double t4087;
+  double t3960;
+  double t3978;
+  double t4126;
+  double t4127;
+  double t4128;
+  t4010 = Cos(var1[2]);
+  t3985 = Cos(var1[3]);
+  t3990 = Sin(var1[2]);
+  t4018 = Sin(var1[3]);
+  t657 = Cos(var1[4]);
+  t3992 = t3985*t3990;
+  t4045 = t4010*t4018;
+  t4062 = t3992 + t4045;
+  t4069 = t4010*t3985;
+  t4082 = -1.*t3990*t4018;
+  t4083 = t4069 + t4082;
+  t4087 = Sin(var1[4]);
+  t3960 = -1.*t657;
+  t3978 = 1. + t3960;
+  t4126 = -1.*t3985*t3990;
+  t4127 = -1.*t4010*t4018;
+  t4128 = t4126 + t4127;
+  p_output1[0]=0.4*t3978*t4062 - 0.4*t4083*t4087 + 0.8*(t4083*t4087 + t4062*t657) + var1[0] - 1.*var2[0];
   p_output1[1]=-1.*var2[1];
-  p_output1[2]=-0.4*t171*t189 + 0.8*(t171*t189 + t159*t32) + 0.4*t159*t48 + var1[1] - 1.*var2[2];
+  p_output1[2]=0.4*t3978*t4083 - 0.4*t4087*t4128 + 0.8*(t4087*t4128 + t4083*t657) + var1[1] - 1.*var2[2];
 }
 
 

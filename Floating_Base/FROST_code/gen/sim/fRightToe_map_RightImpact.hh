@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:21:26 GMT-05:00
+ * Fri 17 Apr 2020 16:58:18 GMT-04:00
  */
 
 #ifndef FRIGHTTOE_MAP_RIGHTIMPACT_HH

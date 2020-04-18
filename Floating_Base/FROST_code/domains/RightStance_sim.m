@@ -1,7 +1,7 @@
  % Right Stance Domain 
  %
  % Contact: Right Toe
-function domain = RightStance_sim(model, load_path)
+function domain = RightStance_sim(model, info,load_path)
     % construct the right stance domain of RABBIT
     %
     % Parameters:
@@ -28,11 +28,12 @@ function domain = RightStance_sim(model, load_path)
     % add event
     % height of non-stance foot (left toe)
     p_nsf = getCartesianPosition(domain, domain.ContactPoints.LeftToe);
+    p_stance = getCartesianPosition(domain, domain.ContactPoints.RightToe);
     hgt=SymVariable('hgt');
-    heightConstr=p_nsf(3)-hgt;
+    heightConstr=(p_nsf(3)-p_stance(3))-hgt;
     fun_name=['u_hgt','RightStance'];
     f_heightconstr=SymFunction(fun_name,heightConstr,{domain.States.x},{[hgt]});
-    h_nsf = UnilateralConstraint(domain,f_heightconstr,'leftFootHeight','x','AuxData',hgt);
+    h_nsf = UnilateralConstraint(domain,f_heightconstr,'leftFootHeight','x','AuxData',info.hgt);
     % often very simple, no need to load expression. Compute them directly
     domain = addEvent(domain, h_nsf);
    

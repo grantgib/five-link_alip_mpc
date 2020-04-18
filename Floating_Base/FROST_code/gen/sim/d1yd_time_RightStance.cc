@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Wed 11 Dec 2019 12:21:10 GMT-05:00
+ * Fri 17 Apr 2020 16:57:50 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,42 +48,42 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2,const double *var3)
 {
-  double t304;
-  double t310;
-  double t314;
-  double t318;
-  double t320;
-  double t324;
-  double t325;
-  double t326;
-  double t327;
-  double t328;
-  double t331;
-  double t332;
-  double t333;
-  double t336;
-  double t337;
-  double t340;
-  t304 = -1.*var3[1];
-  t310 = var3[0] + t304;
-  t314 = Power(t310,-5);
-  t318 = t304 + var1[0];
-  t320 = Power(t318,4);
-  t324 = Power(t310,-4);
-  t325 = Power(t318,3);
-  t326 = 1/t310;
-  t327 = -1.*t326*t318;
-  t328 = 1. + t327;
-  t331 = Power(t310,-3);
-  t332 = Power(t318,2);
-  t333 = Power(t328,2);
-  t336 = Power(t310,-2);
-  t337 = Power(t328,3);
-  t340 = Power(t328,4);
-  p_output1[0]=-5.*t326*t340*var2[0] - 20.*t318*t336*t337*var2[4] + 5.*t326*t340*var2[4] - 30.*t331*t332*t333*var2[8] + 20.*t318*t336*t337*var2[8] - 20.*t324*t325*t328*var2[12] + 30.*t331*t332*t333*var2[12] - 5.*t314*t320*var2[16] + 20.*t324*t325*t328*var2[16] + 5.*t314*t320*var2[20];
-  p_output1[1]=-5.*t326*t340*var2[1] - 20.*t318*t336*t337*var2[5] + 5.*t326*t340*var2[5] - 30.*t331*t332*t333*var2[9] + 20.*t318*t336*t337*var2[9] - 20.*t324*t325*t328*var2[13] + 30.*t331*t332*t333*var2[13] - 5.*t314*t320*var2[17] + 20.*t324*t325*t328*var2[17] + 5.*t314*t320*var2[21];
-  p_output1[2]=-5.*t326*t340*var2[2] - 20.*t318*t336*t337*var2[6] + 5.*t326*t340*var2[6] - 30.*t331*t332*t333*var2[10] + 20.*t318*t336*t337*var2[10] - 20.*t324*t325*t328*var2[14] + 30.*t331*t332*t333*var2[14] - 5.*t314*t320*var2[18] + 20.*t324*t325*t328*var2[18] + 5.*t314*t320*var2[22];
-  p_output1[3]=-5.*t326*t340*var2[3] - 20.*t318*t336*t337*var2[7] + 5.*t326*t340*var2[7] - 30.*t331*t332*t333*var2[11] + 20.*t318*t336*t337*var2[11] - 20.*t324*t325*t328*var2[15] + 30.*t331*t332*t333*var2[15] - 5.*t314*t320*var2[19] + 20.*t324*t325*t328*var2[19] + 5.*t314*t320*var2[23];
+  double t4243;
+  double t4249;
+  double t4253;
+  double t4257;
+  double t4259;
+  double t4263;
+  double t4264;
+  double t4265;
+  double t4266;
+  double t4267;
+  double t4270;
+  double t4271;
+  double t4272;
+  double t4275;
+  double t4276;
+  double t4279;
+  t4243 = -1.*var3[1];
+  t4249 = var3[0] + t4243;
+  t4253 = Power(t4249,-5);
+  t4257 = t4243 + var1[0];
+  t4259 = Power(t4257,4);
+  t4263 = Power(t4249,-4);
+  t4264 = Power(t4257,3);
+  t4265 = 1/t4249;
+  t4266 = -1.*t4265*t4257;
+  t4267 = 1. + t4266;
+  t4270 = Power(t4249,-3);
+  t4271 = Power(t4257,2);
+  t4272 = Power(t4267,2);
+  t4275 = Power(t4249,-2);
+  t4276 = Power(t4267,3);
+  t4279 = Power(t4267,4);
+  p_output1[0]=-5.*t4265*t4279*var2[0] - 20.*t4257*t4275*t4276*var2[4] + 5.*t4265*t4279*var2[4] - 30.*t4270*t4271*t4272*var2[8] + 20.*t4257*t4275*t4276*var2[8] - 20.*t4263*t4264*t4267*var2[12] + 30.*t4270*t4271*t4272*var2[12] - 5.*t4253*t4259*var2[16] + 20.*t4263*t4264*t4267*var2[16] + 5.*t4253*t4259*var2[20];
+  p_output1[1]=-5.*t4265*t4279*var2[1] - 20.*t4257*t4275*t4276*var2[5] + 5.*t4265*t4279*var2[5] - 30.*t4270*t4271*t4272*var2[9] + 20.*t4257*t4275*t4276*var2[9] - 20.*t4263*t4264*t4267*var2[13] + 30.*t4270*t4271*t4272*var2[13] - 5.*t4253*t4259*var2[17] + 20.*t4263*t4264*t4267*var2[17] + 5.*t4253*t4259*var2[21];
+  p_output1[2]=-5.*t4265*t4279*var2[2] - 20.*t4257*t4275*t4276*var2[6] + 5.*t4265*t4279*var2[6] - 30.*t4270*t4271*t4272*var2[10] + 20.*t4257*t4275*t4276*var2[10] - 20.*t4263*t4264*t4267*var2[14] + 30.*t4270*t4271*t4272*var2[14] - 5.*t4253*t4259*var2[18] + 20.*t4263*t4264*t4267*var2[18] + 5.*t4253*t4259*var2[22];
+  p_output1[3]=-5.*t4265*t4279*var2[3] - 20.*t4257*t4275*t4276*var2[7] + 5.*t4265*t4279*var2[7] - 30.*t4270*t4271*t4272*var2[11] + 20.*t4257*t4275*t4276*var2[11] - 20.*t4263*t4264*t4267*var2[15] + 30.*t4270*t4271*t4272*var2[15] - 5.*t4253*t4259*var2[19] + 20.*t4263*t4264*t4267*var2[19] + 5.*t4253*t4259*var2[23];
 }
 
 

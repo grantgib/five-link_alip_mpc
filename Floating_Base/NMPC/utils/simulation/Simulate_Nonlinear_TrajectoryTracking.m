@@ -21,7 +21,7 @@ x_init = ref_info.x_init;
 
 %% Initialize Variables
 mpciter = 1;            % simulation iteration number (proportional to t_current)
-t_current = 0;          
+t_current = 0;
 t_final = DT * (size(X_REF_Original,2)-1);
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
@@ -39,9 +39,9 @@ W0 = zeros(2,N+1);
 time_traj(1) = t_current;
 time_calc = [];
 x_traj = [];
-u_traj = [];          
+u_traj = [];
 w_traj = [];
-y_traj = swing_foot_init([1,3]);
+y_sw = swing_foot_init([1,3]);
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
 w_traj_all = [];
@@ -49,29 +49,29 @@ x_ref_traj = [];
 u_ref_traj = [];
 
 %% Main Loop
-num_steps = 1;
-while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2)) 
-% while(mpciter < 5)  
-    disp("iteration = " + mpciter);
+num_steps = 4;
+while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
+    % while(mpciter < 5)
+    
     % Start solver computation timer
     solver_comp_time = tic;
     
     %% Shrinking Horizon Check & Update parameters
-%     if round(time_traj(end) + DT * N,3) > t_final
-%         % Select fewer decision variables and solver with sizes
-%         % corresponding to decreased prediction horizon (~lookup table)
-%         N_new = round( (t_final - time_traj(end)) / DT );
-%         if N_new < 1    % when we want step to continue until impact
-%             N_new = 1;
-%         end
-%         indx = (mpc_info.N-N_new)+1;
-%         solver = mpc_info.solvers_NL{indx};
-%         N = N_new;
-%     end
+    %     if round(time_traj(end) + DT * N,3) > t_final
+    %         % Select fewer decision variables and solver with sizes
+    %         % corresponding to decreased prediction horizon (~lookup table)
+    %         N_new = round( (t_final - time_traj(end)) / DT );
+    %         if N_new < 1    % when we want step to continue until impact
+    %             N_new = 1;
+    %         end
+    %         indx = (mpc_info.N-N_new)+1;
+    %         solver = mpc_info.solvers_NL{indx};
+    %         N = N_new;
+    %     end
     
     % Resize if Prediction Horizons changes
     X0 = X0(:,1:N+1);
-
+    
     % Set Parameter vector and Decision Variables
     args = Update_Args_Nonlinear(dyn_info,ref_info,x_init,N,X_REF,U_REF);
     args.x0  = [reshape(X0(:,1:N+1),n_x*(N+1),1);
@@ -106,17 +106,16 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     
     %% Apply the control and forward integrate dynamics
     % Predict next step with Forward Euler Discretization
-%     [t_next, x_next, u_next_guess, w_next_guess] = Update_State(dyn_info,mpc_info,t_current,x_init,u_sol,w_sol);
-    [t_next, x_next, u_next_guess, w_next_guess] = Update_State_IO(dyn_info,mpc_info,x_ref_traj,t_current,x_init,u_sol,w_sol);
-
+    [t_next, x_next, u_next_guess, w_next_guess] = Update_State(dyn_info,mpc_info,t_current,x_init,u_sol,w_sol);
+    
     %% Check for impact & Apply Impact/Switch Map
     swing_foot_pos = leftToePos(x_next(1:7))';
     y_swingfoot = swing_foot_pos([1,3]);
     if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) &&...
-            (y_traj(2,end) > double(ref_info.step_height)) &&...
-            (y_swingfoot(2) - y_traj(2,end) < 0) &&...
+            (y_sw(2,end) > double(ref_info.step_height)) &&...
+            (y_swingfoot(2) - y_sw(2,end) < 0) &&...
             (y_swingfoot(1) > stance_foot_pos(1))
-        break;
+        
         disp("-> Impact occured, find when it happened!");
         % Forward Integrate until Impact, Apply Impact, Integrate until
         % t_current + DT has been reached
@@ -137,16 +136,16 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     end
     
     % Update output trajectory
-    y_traj = [y_traj, y_swingfoot];
+    y_sw = [y_sw, y_swingfoot];
     
     %% Update state and time, warm start, shift reference
     t_current = t_next;
-    x_init = x_next;    
+    x_init = x_next;
     mpciter = mpciter + 1;  % update iteration counter
     mpc_info.iter = mpc_info.iter + 1;
     
     % Warm start solver
-    X0 = [x_sol(:,2:N+1), x_sol(:,N+1)];    
+    X0 = [x_sol(:,2:N+1), x_sol(:,N+1)];
     U0 = u_next_guess;
     W0 = w_next_guess;
     
@@ -154,7 +153,7 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     % windows the reference trajectory will begin repeating (the problem
     % changes to a regulator problem. If a hybrid update is not being used
     % we implement a shrinking horizon method to decrease N so that the
-    % problem remains trajectory tracking    
+    % problem remains trajectory tracking
     X_REF = [X_REF(:,2:end),X_REF(:,end)];
     U_REF = [U_REF(:,2:end),U_REF(:,end)];
     
@@ -164,9 +163,9 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     end
 end
 % Finish updating trajectory and time after loop finishes
-x_traj = [x_traj, x_next];          
+x_traj = [x_traj, x_next];
 x_ref_traj = [x_ref_traj, X_REF(:,1)]; % X_REF has been shifted so the next reference is the first column
-time_traj(end+1) = time_traj(end) + DT;  
+time_traj(end+1) = time_traj(end) + DT;
 
 %% End of Simulation Calculations
 x_traj_final_error = x_traj(:,end)-x_ref_traj(:,end);
@@ -192,7 +191,7 @@ traj_info.time_traj = time_traj;
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
 traj_info.w_traj = w_traj;
-traj_info.y_traj = y_traj;
+traj_info.y_sw = y_sw;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;
 traj_info.w_traj_all = w_traj_all;
