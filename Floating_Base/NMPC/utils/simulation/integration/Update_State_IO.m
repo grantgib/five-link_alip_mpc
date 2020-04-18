@@ -1,19 +1,23 @@
 function [t_next, x_next, u_sol, w_sol] = ...
-    Update_State_IO(dyn_info,mpc_info,x_ref_current,ddy_ref_current,t_current,x_init,u_mpc,w_mpc)
+    Update_State_IO(dyn_info,ctrl_info,ref_info,x_ref_current,ddy_ref_current,t_current,x_init,u_mpc,w_mpc)
 import casadi.*
 %% Extract inputs
 % dyn_info
 f_nonlinear = dyn_info.func.f_NL;
 f_w = dyn_info.func.wrench;
-u_IO_time = dyn_info.func.u_IO_time;
-% w_IO_time = dyn_info.func.w_IO_time;
-
+u_IO = dyn_info.func.u_IO;
 n_q = dyn_info.dim.n_q;
 check_ZD = dyn_info.ctrl.check_ZD;
 
-% mpc_info 
-DT = mpc_info.DT;
-N = mpc_info.N;
+% ctrl_info 
+DT = ctrl_info.DT;
+IO_type = ctrl_info.IO_info.type;
+
+% ref_info
+s_func = ref_info.phase_based.s_func;
+alpha_h = ref_info.phase_based.alpha_h;
+alpha_dh = ref_info.phase_based.alpha_dh;
+alpha_ddh = ref_info.phase_based.alpha_ddh;
 
 % state/control variables
 q_current = x_init(1:n_q);
@@ -33,25 +37,21 @@ else
     Kp = dyn_info.ctrl.Kp;
     Kd = dyn_info.ctrl.Kd;
 end
+% h_q = q_current(4:end);       % just for reference 
+% dh_q = dq_current(4:end);
 
-y_a = q_current(4:end);
-dy_a = dq_current(4:end);
-y_d = q_ref_current(4:end);
-dy_d = dq_ref_current(4:end);
-ddy_d = ddq_ref_current;
-
-if dyn_info.IO_type == "time"
-    u_sol = full(u_IO_time(q_current,dq_current,y_d,dy_d,ddy_d,Kp,Kd));
-%     w_IO = full(w_IO_time(q_current,dq_current,y_d,dy_d,ddy_d,Kp,Kd));
-else
-%     u_sol = full(u_IO(q_current,dq_current,y_d,dy_d,Kp,Kd));
+if IO_type == "phase"
+    s_current = full(s_func(q_current));
+    h_d = bezier(alpha_h ,s_current);
+    dh_d = bezier(alpha_dh ,s_current);
+    ddh_d = bezier(alpha_ddh ,s_current);
+elseif IO_type == "time"
+    h_d = q_ref_current(4:end);
+    dh_d = dq_ref_current(4:end);
+    ddh_d = ddq_ref_current;
 end
+u_sol = full(u_IO(q_current,dq_current,h_d,dh_d,ddh_d,Kp,Kd));
 w_sol = f_w(q_current,dq_current,u_sol);
-
-% disp("u_{IO} = "); disp(u_sol);
-% disp("w_{IO} = "); disp(w_IO);
-% disp("w_other = "); disp(w_sol);
-
 
 %% forward integrate
 % f_value = full(f_nonlinear(q_current,dq_current,u_sol,w_sol));
@@ -59,8 +59,8 @@ w_sol = f_w(q_current,dq_current,u_sol);
 % t_next = t_current + DT;
 params_int = struct('q_init',q_current,'dq_init',dq_current,'u',u_sol,...
     'w',w_sol,'DT',DT);
-% params_int.type = "Euler";
-params_int.type = "RK4";
+params_int.type = "Euler";
+% params_int.type = "RK4";
 if params_int.type == "Euler"
     [x_next,t_next] = Forward_Euler_Integrate(f_nonlinear,x_current,t_current,params_int);
 elseif params_int.type == "RK4"

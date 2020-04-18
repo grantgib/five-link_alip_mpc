@@ -39,7 +39,7 @@ f_z = SX.sym('f_z');
 w = [f_x; f_z];
 n_w = length(w);
 
-%% ODE Formualation
+%% Euler-Lagrange ODE 
 % old matrices
 D_old = Mmat_notorso(xbar,zbar,rotY,q1R,q2R,q1L,q2L); % 7x7
 G_old = -GravityVector_notorso(xbar,zbar,rotY,q1R,q2R,q1L,q2L); %7x1  %FROST gravity vector is -G
@@ -54,21 +54,20 @@ B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
 pos_stance_foot = Right_Stance_Foot_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L)';
 pos_stance_foot = pos_stance_foot([1,3],:);
 Jc = jacobian(pos_stance_foot,q);
-Jc_dot = jacobian(Jc,q)*dq;
-Jc_dot = reshape(Jc_dot,n_w,n_q);
+Jc_dot = jacobian(Jc*dq,q);     % move dq term inside of the jacobian to avoid tensor and dq not function of q
 ddq = D\(-C*dq -G + B*u + Jc'*w);
 rhs = [dq; ddq]; % omit Coriolis for now
 f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{rhs});  % nonlinear mapping function f(x,u)
 
 % Wrench as decision variable
-lambda = -Jc*(D\Jc') \ (Jc_dot*dq + Jc*(D\(-C*dq -G + B*u)));
+lambda = ((Jc/D)*Jc') \ ((Jc/D)*(C*dq + G) - (Jc/D)*B*u -Jc_dot*dq);
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
 % Descriptor System
 E_nonlinear = 0;
 H_nonlinear = 0;
 
-%% Generate I/O Controller function
+%% Generate I/O Controller Parameters
 % Reference symbolics
 q1R_ref = SX.sym('q1R_ref');
 q2R_ref = SX.sym('q2R_ref');
@@ -89,55 +88,44 @@ Kd = SX.sym('Kd');
 % damp = 0.9;
 % Ts = 0.1;
 damp = 0.9;
-Ts = 0.1;
+Ts = 0.11;
 wn = 3.9/(Ts*damp);
 Kp_save = wn^2;
 Kd_save = 2*damp*wn;
 check_ZD = 0;    % if 0 then use Kp_save and Kd_save as gains
 
-
 % Virtual constraints
-y_actual = [q1R; q2R ; q1L ; q2L];
-dy_actual = [dq1R; dq2R; dq1L; dq2L];
-y_des = [q1R_ref; q2R_ref; q1L_ref; q2L_ref];
-dy_des = [dq1R_ref; dq2R_ref; dq1L_ref; dq2L_ref];
-ddy_des = [ddq1R_ref; ddq2R_ref; ddq1L_ref; ddq2L_ref];
-h = y_actual - y_des;
-dh = dy_actual - dy_des;
-n_h = size(h,1);
-Jh = jacobian(h,q);
-Jh_dot = jacobian(Jh,q)*dq;
-Jh_dot = reshape(Jh_dot,n_h,n_q);
+h_q = [q1R; q2R ; q1L ; q2L];
+h_d = [q1R_ref; q2R_ref; q1L_ref; q2L_ref];
+dh_d = [dq1R_ref; dq2R_ref; dq1L_ref; dq2L_ref];
+ddh_d = [ddq1R_ref; ddq2R_ref; ddq1L_ref; ddq2L_ref];
+Jh = jacobian(h_q,q);
+Jh_dot = jacobian(Jh*dq,q);
+y = h_q - h_d;
+dy =  jacobian(h_q,q)*dq - dh_d;
+n_y = length(y);
 
-% I/O control law (time-based)
+%% I/O control law (phase-based)
+
+JcD = (Jc/D)*Jc';
+Hu = (eye(n_q) - Jc'*(JcD\(Jc/D)))*B;
+Hlambda = Jc'*(JcD\((Jc/D)*(C*dq+G)-Jc_dot*dq));
+v = -Kd*dy - Kp*y;
+u_IO_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v);
+u_IO = Function('u_IO',{q,dq,h_d,dh_d,ddh_d,Kp,Kd},{u_IO_sym});
+
+%% I/O control law (time-based)
 % Derived From:
 %       D*ddq + C*dq + G = B*u + J'*w   (Euler-Lagrange)
 %       Jc*ddq + dJc*dq = 0             (Foot contact accleration is zero)
-v = - Kd*dh - Kp*h;
-Xinv = eye(size(Jc,1))/((Jc/D)*Jc');
-F = Jc'*(Xinv*(Jc/D)*(C*dq+G)-Jc_dot*dq); % ...G - Jc_dot*dq but Jc_dot = 0
-H = (eye(n_q) - Jc'*Xinv*(Jc/D))*B;
-Aleft = ((Jh/D)*H);
-Bright = -(Jh/D)*(-C*dq-G + F) - Jh_dot*dq + ddy_des + v;
-u_IO = Aleft\Bright;
-u_IO_time = Function('u_IO',{q,dq,y_des,dy_des,ddy_des,Kp,Kd},{u_IO});
-
-% I/O control law (time-based) QP
-% Derived From:
-%       D*ddq + C*dq + G = B*u + J'*w   (Euler-Lagrange)
-%       Jc*ddq + dJc*dq = 0             (Foot contact accleration is zero)
-% [J*D^{-1}*B   J*D^{-1}*J' ] * [ u ] = [            J*D^{-1}*(C*dq + G)             ]% 
-% [Jh*D^{-1}*B  Jh*D^{-1}*J'] * [ w ] = [Jh*D^{-1}*(C*dq + G) - dJh*dq + ddy_des - v ]% 
-% v = - Kd*dh - Kp*h;
-% Aleft = [(Jc/D)*B,(Jc/D)*Jc';
-%          (Jh/D)*B,(Jh/D)*Jc'];
-% Bright = [(Jc/D)*(C*dq + G);
-%           (Jh/D)*(C*dq + G) -Jh_dot*dq + ddy_des + v];    % Jh constant --> Jh_dot = 0
-% u_lambda = Aleft \ Bright;
-% u_IO = u_lambda(1:n_h);
-% w_IO = u_lambda(end-1:end);
-% u_IO_time = Function('u_IO',{q,dq,y_des,dy_des,ddy_des,Kp,Kd},{u_IO});
-% w_IO_time = Function('w_IO_time',{q,dq,y_des,dy_des,ddy_des,Kp,Kd},{w_IO});
+% v = - Kd*dy - Kp*y;
+% Xinv = eye(size(Jc,1))/((Jc/D)*Jc');
+% F = Jc'*(Xinv*(Jc/D)*(C*dq+G)-Jc_dot*dq);
+% H = (eye(n_q) - Jc'*Xinv*(Jc/D))*B;
+% Aleft = ((Jh/D)*H);
+% Bright = -(Jh/D)*(-C*dq-G + F) - Jh_dot*dq + ddh_d + v;
+% u_IO = Aleft\Bright;
+% u_IO_time = Function('u_IO',{q,dq,y_des,dy_des,ddh_d,Kp,Kd},{u_IO});
 
 %% Generate additional functions
 f_D = Function('f_D',{q},{D});
@@ -153,16 +141,17 @@ f_Jc_old = Function('f_Jc_old',{q},{Jc_old});
 f_Jc_dot_old = Function('f_Jc_dot_old',{q,dq},{Jc_dot_old});
 
 % for I/O
-f_v = Function('f_v',{q,dq,y_des,dy_des,Kp,Kd},{v});
-f_h = Function('f_h',{q,y_des},{h});
-f_dh = Function('f_dh',{dq,dy_des},{dh});
+f_v = Function('f_v',{q,dq,h_d,dh_d,Kp,Kd},{v});
+f_h = Function('f_h',{q,h_d},{y});
+f_dh = Function('f_dh',{dq,dh_d},{dy});
 
 %% Outputs
 dyn_info.dim.n_q = n_q;
 dyn_info.dim.n_x = n_x;
 dyn_info.dim.n_u = n_u;
 dyn_info.dim.n_w = n_w;
-dyn_info.dim.n_y = 2;   % swing foot position (x,z)
+dyn_info.dim.n_y_sw = 2;   % swing foot position (x,z)
+dyn_info.dim.n_y = n_y;
 dyn_info.func.f_NL = f_nonlinear;
 dyn_info.func.E_NL = E_nonlinear;
 dyn_info.func.H_NL = H_nonlinear;
@@ -178,9 +167,9 @@ dyn_info.ctrl.check_ZD = check_ZD;
 dyn_info.descriptor = 0;
 
 % I/O
-dyn_info.func.u_IO_time = u_IO_time;
-% dyn_info.func.w_IO_time = w_IO_time;
-dyn_info.IO_type = "time";
+dyn_info.func.u_IO = u_IO;
+% dyn_info.func.u_IO_phase = u_IO_phase;
+% dyn_info.func.u_IO_time = u_IO_time;
 dyn_info.func.v = f_v;
 dyn_info.func.h = f_h;
 dyn_info.func.dh = f_dh;

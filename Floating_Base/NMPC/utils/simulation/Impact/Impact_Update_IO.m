@@ -1,18 +1,23 @@
 function [t_next, x_next] = ...
-    Impact_Update_IO(dyn_info,mpc_info,ref_info,t0,x0,u_init,w_init,num_impacts,x_ref_current,ddq_ref)
+    Impact_Update_IO(dyn_info,ctrl_info,ref_info,t0,x0,u_init,w_init,num_impacts,x_ref_current,ddq_ref)
 %% Extract inputs
 % dyn_info
 f_nonlinear = dyn_info.func.f_NL;
 n_q = dyn_info.dim.n_q;
 f_w = dyn_info.func.wrench;
-u_IO_time = dyn_info.func.u_IO_time;
+u_IO = dyn_info.func.u_IO;
 n_q = dyn_info.dim.n_q;
 check_ZD = dyn_info.ctrl.check_ZD;
 
-% mpc_info
-DT = mpc_info.DT;
+% ctrl_info
+DT = ctrl_info.DT;
+IO_type = ctrl_info.IO_info.type;
 
 % ref_info
+s_func = ref_info.phase_based.s_func;
+alpha_h = ref_info.phase_based.alpha_h;
+alpha_dh = ref_info.phase_based.alpha_dh;
+alpha_ddh = ref_info.phase_based.alpha_ddh;
 step_height = double(ref_info.step_height);
 
 
@@ -29,21 +34,33 @@ else
     Kp = dyn_info.ctrl.Kp;
     Kd = dyn_info.ctrl.Kd;
 end
-y_a = q0(4:end);
-dy_a = dq0(4:end);
-y_d = q_ref_current(4:end);
-dy_d = dq_ref_current(4:end);
-ddy_d = ddq_ref_current;
-
-u_sol = full(u_IO_time(q0,dq0,y_d,dy_d,ddy_d,Kp,Kd));
+% h_q = q0(4:end);      % just for reference
+% dh_q = dq0(4:end);
+if IO_type == "phase"
+    s_current = full(s_func(q0));
+    h_d = bezier(alpha_h ,s_current);
+    dh_d = bezier(alpha_dh ,s_current);
+    ddh_d = bezier(alpha_ddh ,s_current);
+elseif IO_type == "time"
+    h_d = q_ref_current(4:end);
+    dh_d = dq_ref_current(4:end);
+    ddh_d = ddq_ref_current;
+end
+u_sol = full(u_IO(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd));
 w_sol = full(f_w(q0,dq0,u_sol));
+
+%% There could be an issue that the controller does not change immediately after impact.
+% Current Implementation makes sense for real world implementation but might be inducing too much error currently
 
 %% Root finding impact time
 
 f_value = full(f_nonlinear(q0,dq0,u_sol,w_sol));
 y_func = @(delT) leftToeZ(x0(1:7)+(delT*f_value(1:7))) - step_height*(num_impacts+1);
-DT_impact = fzero(y_func, DT/2);     % Matlab root finding function
-if DT_impact > DT
+options = optimset('Display','iter'); % show iterations
+[DT_impact,fval,exitflag,output] = fzero(y_func,DT/4);     % Matlab root finding function
+if DT_impact > DT && y_func(DT) < 1e-5
+    DT_impact = DT;
+elseif DT_impact > DT
     error("Root finding method did not work. Guessed that impact occured outside of specified time interval. 0 <= t <= DT");
 end
 % Display impact height of swing foot

@@ -1,5 +1,5 @@
 function [traj_info,mpc_info] = ...
-    Simulate_Nonlinear_TrajectoryTracking(dyn_info,mpc_info,ref_info)
+    Simulate_Nonlinear_TrajectoryTracking(dyn_info,ctrl_info,ref_info)
 import casadi.*
 
 %% Extract inputs
@@ -10,6 +10,7 @@ n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
 
 % mpc_info
+mpc_info = ctrl_info.mpc_info;
 DT = mpc_info.DT;
 N = mpc_info.N;
 solver = mpc_info.solvers_NL{1};
@@ -18,6 +19,7 @@ solver = mpc_info.solvers_NL{1};
 X_REF_Original = ref_info.x_ref;
 U_REF_Original = ref_info.u_ref;
 x_init = ref_info.x_init;
+num_steps = ref_info.num_steps;
 
 %% Initialize Variables
 mpciter = 1;            % simulation iteration number (proportional to t_current)
@@ -49,7 +51,7 @@ x_ref_traj = [];
 u_ref_traj = [];
 
 %% Main Loop
-num_steps = 4;
+
 while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     % while(mpciter < 5)
     
@@ -142,7 +144,6 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     t_current = t_next;
     x_init = x_next;
     mpciter = mpciter + 1;  % update iteration counter
-    mpc_info.iter = mpc_info.iter + 1;
     
     % Warm start solver
     X0 = [x_sol(:,2:N+1), x_sol(:,N+1)];
@@ -203,5 +204,5 @@ traj_info.stats.avg_calc_time = avg_calc_time;
 traj_info.stats.x_traj_error = x_traj_error;
 traj_info.stats.num_impacts = num_impacts;
 mpc_info.args = args;
-
+ctrl_info.mpc_info = mpc_info;
 end

@@ -1,4 +1,4 @@
-function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_IO(dyn_info,mpc_info,ref_info,N)
+function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -6,6 +6,7 @@ n_q = dyn_info.dim.n_q;
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
+n_y = dyn_info.dim.n_y;
 f = dyn_info.func.f_NL;
 f_w = dyn_info.func.wrench;
 % use_descriptor = dyn_info.descriptor;
@@ -14,8 +15,10 @@ f_w = dyn_info.func.wrench;
 Kp = dyn_info.ctrl.Kp;
 Kd = dyn_info.ctrl.Kd;
 
-% mpc_info
+% ctrl_info
+mpc_info = ctrl_info.mpc_info;
 DT = mpc_info.DT;
+IO_info = ctrl_info.IO_info;
 
 % ref_info
 full_ref = ref_info.full_ref;
@@ -43,11 +46,11 @@ P = SX.sym('P',n_x+(N+1)*(n_x + n_u));
 % Q = Q_weights.*Q_vector;
 % Q_mat = diag(Q);
 C = [0 0 0 1 0 0 0;     % stance thigh
-     0 0 1 1 1 0 0;     % torso, stance leg together
-     0 0 0 0 0 1 0;     % swing leg
-     0 0 0 0 0 0 1];    % swing leg
+    0 0 1 1 1 0 0;     % torso, stance leg together
+    0 0 0 0 0 1 0;     % swing leg
+    0 0 0 0 0 0 1];    % swing leg
 Q_mat = [C'*C, zeros(n_q,n_q);
-     zeros(n_q,n_q), C'*C];
+    zeros(n_q,n_q), C'*C];
 
 % Q_term = 1e4*Q_mat;
 
@@ -75,7 +78,7 @@ for k = 1:N+1
         % Running stage and control cost (u is now a delta_u added to
         % nominal IO controller so no reference dependece on u)
         obj_vector(k) = (x_k - x_ref_k)'*Q_mat*(x_k - x_ref_k) + ...
-            (du_k)'*R_mat*(du_k); 
+            (du_k)'*R_mat*(du_k);
         
     else
         y_N = x_k(4:7);     % virtual constraint
@@ -84,7 +87,7 @@ for k = 1:N+1
     end
 end
 obj = sum(obj_vector) + Term_cost;
- 
+
 %% Equality Constraints (Dynamics)
 g = [];                          % initialize equality constraints vector
 g = [g; Xdec(:,1) - P(1:n_x)];    % initial condition constraints
@@ -97,19 +100,19 @@ for k = 1:N+1
     x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
     u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
     
-    % Compute IO input
-    Kp = 66;
-    Kd = 13;
-    y_des = x_ref_k(4:n_q);
-    dy_des = x_ref_k(n_q+4:end);
-    
-    if dyn_info.IO_type == "time"
-        u_IO_k = dyn_info.func.u_IO_time(q_k,dq_k,y_des,dy_des,zeros(4,1),Kp,Kd);        % Error not using correct ddy_des term!!!!!!
-        u_k = u_IO_k ;%+ du_k;
-    else
-        u_IO_k = dyn_info.func.u_IO(q_k,dq_k,y_des,dy_des,Kp,Kd);        % Error not using correct ddy_des term!!!!!!
-        u_k = u_IO_k ;%+ du_k;
+    % Compute IO input    
+    if IO_info.type == "time"
+        h_d = x_ref_k(4:n_q);
+        dh_d = x_ref_k(n_q+4:end);
+        ddh_d = zeros(n_y,1);
+    elseif IO_info.type == "phase"
+        h_d = x_ref_k(4:n_q);       % WRONG
+        dh_d = x_ref_k(n_q+4:end);
+        ddh_d = zeros(n_y,1);
     end
+    u_IO_k = dyn_info.func.u_IO(q_k,dq_k,h_d,dh_d,ddh_d,Kp,Kd);        % Error not using correct ddy_des term!!!!!!
+    u_k = u_IO_k ;%+ du_k;
+    
     % Contact constraint
     w_sym_k = f_w(q_k,dq_k,u_k);
     g = [g; w_k - w_sym_k];

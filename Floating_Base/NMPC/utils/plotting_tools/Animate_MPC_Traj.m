@@ -1,11 +1,13 @@
-function [] = Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings)
+function [] = Animate_MPC_Traj(ctrl_info,ref_info,traj_info,animateSettings)
 %% Reference Trajectory
 if animateSettings.ref
     % ref_info
     x_ref_traj = traj_info.x_ref_traj;
     % traj_info
     t_all = traj_info.time_traj;
-    
+    % mpc info
+    mpc_info = ctrl_info.mpc_info;
+
     anim = Animator.FiveLinkAnimator(t_all(1:end), x_ref_traj(1:7,1:end));
     anim.pov = Animator.AnimatorPointOfView.West;
     anim.Animate(true);
@@ -23,6 +25,7 @@ if animateSettings.traj
     x_traj = traj_info.x_traj;
     
     anim2 = Animator.FiveLinkAnimator(t_all, x_traj(1:7,:));
+    anim2.speed = animateSettings.speed;
     anim2.pov = Animator.AnimatorPointOfView.West;
     anim2.Animate(true);
     anim2.isLooping = false;

@@ -1,14 +1,14 @@
 function traj = Interpolate_Bezier_Trajectory(gait,delT)
-%example of bezCoef
-% bezCoef={};
-% bezCoef{1}=gait(1).params.adoubleSupportConst;
-% bezCoef{3}=gait(3).params.arightStance;
-% bezCoef{5}=gait(5).params.aleftStance;
+%% Extract inputs
+
+
+
+
 %% get the traj for position and velocity
 traj = {};
 n_u = size(gait(1).inputs.u,1);
 n_y = n_u;
-CHECK = 1;
+CHECK = 0;
 for i=1:2:length(gait)
     t = gait(i).tspan;
     t0 = t(1);
@@ -43,30 +43,76 @@ for i=1:2:length(gait)
 end
 
 % Phase-Based Trajectory (Theta = absolute stance leg angle)
-traj{i}.theta = sum([traj{1}.q(3,:); traj{1}.q(4,:); traj{1}.q(5,:)./2]); 
+traj{i}.theta = sum([traj{1}.q(3,:); traj{1}.q(4,:); traj{1}.q(5,:)./2]);
+traj{i}.theta_begin = traj{i}.theta(1);
+traj{i}.theta_end = traj{i}.theta(end);
 traj{i}.h_0 = traj{i}.q(4:end,:);
 traj{i}.dh_0 = traj{i}.dq(4:end,:);
+traj{i}.ddh_0 = traj{i}.ddq(4:end,:);
+
+s_points = zeros(1,length(tdes));
+for p = 1:length(tdes)
+    s_points(p) = (traj{i}.theta(p)-traj{i}.theta_begin)/(traj{i}.theta_end-traj{i}.theta_begin);
+end
+
+M_h = 10;
+free_h = [0 0 ones(1,M_h-3) 0 0]; % constrain position/derivative at
+traj{i}.alpha_h = bezfit(s_points,traj{i}.h_0,free_h);
+traj{i}.alpha_dh = bezfit(s_points,traj{i}.dh_0,free_h);
+traj{i}.alpha_ddh = bezfit(s_points,traj{i}.ddh_0,free_h);
+
+for k = 1:length(s_points)
+    traj{i}.h_d(:,k) = bezier(traj{i}.alpha_h ,s_points(k));
+    traj{i}.dh_d(:,k) = bezier(traj{i}.alpha_dh ,s_points(k));
+    traj{i}.ddh_d(:,k) = bezier(traj{i}.alpha_ddh ,s_points(k));
+end
 
 %% Phase variable check
-close all;
-figure;
-plot(tdes,traj{i}.theta); % Verify that phase variable is monotonically increasing
-xlabel('Time'); ylabel('Theta'); title("Phase Variable: Absolute Stance Leg Angle");
-figure
-for w = 1:n_y
-    subplot(2,4,w)
-    scatter(traj{i}.theta,traj{i}.h_0(w,:),2)
-    xlabel('Theta'); ylabel("h_0 "+w); title("h_0 "+w);
+if CHECK
+    close all;
+    figure;
+    plot(tdes,traj{i}.theta); hold on;% Verify that phase variable is monotonically increasing
+    scatter(tdes(1),traj{i}.theta_begin,'m'); hold on;
+    scatter(tdes(end),traj{i}.theta_end,'m');
+    xlabel('Time'); ylabel('Theta'); title("Phase Variable: Absolute Stance Leg Angle");
     
-    subplot(2,4,w+4);
-    scatter(traj{i}.theta,traj{i}.dh_0(w,:),2)
-    xlabel('Theta'); ylabel("dh_0 "+w); title("dh_0 "+w);
+    figure
+    for w = 1:n_y
+        subplot(3,4,w)
+        scatter(traj{i}.theta,traj{i}.h_0(w,:),2)
+        xlabel('Theta'); ylabel("h_0 "+w); title("h_0 "+w);
+        
+        subplot(3,4,w+4);
+        scatter(traj{i}.theta,traj{i}.dh_0(w,:),2)
+        xlabel('Theta'); ylabel("dh_0 "+w); title("dh_0 "+w);
+        
+        subplot(3,4,w+2*4);
+        scatter(traj{i}.theta,traj{i}.ddh_0(w,:),2)
+        xlabel('Theta'); ylabel("ddh_0 " + w); title("ddh_0 " + w);
+    end
+    sgtitle("h_0, dh_0, and ddh_0 vs. \theta (t)");
+    
+    figure
+    for w = 1:n_y
+        subplot(3,4,w)
+        scatter(s_points,traj{i}.h_0(w,:),2); hold on;
+        plot(s_points,traj{i}.h_d(w,:));
+        xlabel('s'); ylabel("h_0 "+w); title("h_0 "+w);
+        
+        subplot(3,4,w+4);
+        scatter(s_points,traj{i}.dh_0(w,:),2); hold on;
+        plot(s_points,traj{i}.dh_d(w,:));
+        xlabel('s'); ylabel("dh_0 "+w); title("dh_0 "+w);
+        
+        subplot(3,4,w+2*4);
+        scatter(s_points,traj{i}.ddh_0(w,:),2); hold on;
+        plot(s_points,traj{i}.ddh_d(w,:));
+        xlabel('s'); ylabel("ddh_0 " + w); title("ddh_0 " + w);
+    end
+    sgtitle("h_0, dh_0, and ddh_0 vs. s");
 end
-sgtitle("h_0 and dh_0 vs. \theta (t)");
 
-
-
-%% Check
+%% Original Trajectory Interpolation Check
 if CHECK
     close all;
     figure
@@ -101,8 +147,6 @@ if CHECK
         legend('original','new');
         title("u_" + i);
     end
-    
-
 end
 
 

@@ -1,4 +1,4 @@
-function [] = Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings)
+function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,plotSettings)
 %% Extract variables from inputs
 % plotSettings
 plot_title = plotSettings.traj_title;
@@ -11,6 +11,7 @@ n_y = dyn_info.dim.n_y;
 
 % mpc_info
 % args = mpc_info.args;
+mpc_info = ctrl_info.mpc_info;
 N = mpc_info.N;
 DT = mpc_info.DT;
 
@@ -26,6 +27,7 @@ else
     x_traj = traj_info.x_traj;
     u_traj = traj_info.u_traj;
     w_traj = traj_info.w_traj;
+    s_traj = traj_info.s_traj;
     y_traj = traj_info.y_sw;
     x_ref_traj = traj_info.x_ref_traj;
     u_ref_traj = traj_info.u_ref_traj;
@@ -149,6 +151,15 @@ if plotSettings.y
         grid on; set(gca,'FontSize',sz);
     end
     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
+end
+
+%% Phase Variable
+if plotSettings.s
+    figure
+    plot(time_traj(1:size(s_traj,2)),s_traj);
+    title('Phase Variable Trajectory');
+    xlabel('Time'); ylabel('s');
+    grid on; set(gca,'FontSize',sz);
 end
 
 %% MPC Calculation Time

@@ -1,21 +1,25 @@
 function [traj_info] = ...
-    Simulate_IO_TrajectoryTracking(dyn_info,mpc_info,ref_info)
+    Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info)
 import casadi.*
 
 %% Extract inputs
 % dyn_info
+n_q = dyn_info.dim.n_q;
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
+
+% ctrl_info
+DT = ctrl_info.DT;
 
 % ref_info
 X_REF_Original = ref_info.x_ref;
 U_REF_Original = ref_info.u_ref;
 DDY_REF_Original = ref_info.ddq_ref(4:end,:);
 x_init = ref_info.x_init;
-
-DT = 0.005;
+num_steps = ref_info.num_steps;
+s_func = ref_info.phase_based.s_func;
 
 %% Initialize Variables
 iter = 1;            % simulation iteration number (proportional to t_current)
@@ -40,9 +44,9 @@ w_traj_all = [];
 x_ref_traj = [];
 ddy_ref_traj = [];
 u_ref_traj = [];
+s_traj = [];
 
 %% Main Loop
-num_steps = 4;
 while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     % while(mpciter < 5)
 %     disp("iteration = " + iter);
@@ -58,8 +62,7 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     % Predict next step with Forward Euler Discretization
     
 
-    [t_next, x_next, u_sol, w_sol] = Update_State_IO(dyn_info,mpc_info,x_ref_traj,ddy_ref_traj,t_current,x_init,[],[]);
-        
+    [t_next, x_next, u_sol, w_sol] = Update_State_IO(dyn_info,ctrl_info,ref_info,x_ref_traj,ddy_ref_traj,t_current,x_init,[],[]);
     u_traj = [u_traj , u_sol];
     w_traj = [w_traj , w_sol];
     
@@ -75,7 +78,7 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
         % Forward Integrate until Impact, Apply Impact, Integrate until
         % t_current + DT has been reached
         [t_next, x_next] = ....
-            Impact_Update_IO(dyn_info,mpc_info,ref_info,t_current,x_init,...
+            Impact_Update_IO(dyn_info,ctrl_info,ref_info,t_current,x_init,...
             u_sol,w_sol,num_impacts,x_ref_traj,ddy_ref_traj);
         
         % Update impact counter
@@ -95,6 +98,10 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     % Update output trajectory
     y_sw = [y_sw, y_swingfoot];
     
+    % Update s phase variable
+    s_traj = [s_traj, full(s_func(x_next(1:n_q)))];
+
+
     %% Update state and time, warm start, shift reference
     t_current = t_next;
     x_init = x_next;
@@ -144,6 +151,7 @@ traj_info.time_traj = time_traj;
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
 traj_info.w_traj = w_traj;
+traj_info.s_traj = s_traj;
 traj_info.y_sw = y_sw;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;

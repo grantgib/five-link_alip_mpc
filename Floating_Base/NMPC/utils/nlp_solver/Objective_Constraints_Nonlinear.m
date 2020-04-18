@@ -1,4 +1,4 @@
-function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_Nonlinear(dyn_info,mpc_info,ref_info,N)
+function [Xdec,Udec,Wdec,P,obj,g,obj_vector,Q_mat,R,C] = Objective_Constraints_Nonlinear(dyn_info,ctrl_info,ref_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -13,6 +13,7 @@ f_w = dyn_info.func.wrench;
 % H = dyn_info.func.H_nonlinear;
 
 % mpc_info
+mpc_info = ctrl_info;
 DT = mpc_info.DT;
 
 % ref_info
