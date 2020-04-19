@@ -19,6 +19,10 @@ if isequal(dir,"Ascend")
 else
     full_ref = load(fullfile(pwd,'\..\reference_trajectories\descend_gaits\',traj_name));
 end
+if ref_info.better_traj
+    new_gait = load('new_gait');
+    full_ref.gait = new_gait.gait;
+end
 trajRef = Interpolate_Bezier_Trajectory(full_ref.gait,ctrl_info.DT);
 Q_REF = trajRef{1}.q;
 DQ_REF = trajRef{1}.dq;
@@ -33,6 +37,16 @@ s_func = Function('s_func',{q},{s});
 alpha_h = trajRef{1}.alpha_h;
 alpha_dh = trajRef{1}.alpha_dh;
 alpha_ddh = trajRef{1}.alpha_ddh;
+
+% if ref_info.better_traj
+%    traj_better = load('new_alphas.mat');
+%    s_func = traj_better.s_func;
+%    alpha_h = traj_better.alpha_h;
+%    alpha_dh = traj_better.alpha_dh;
+%    alpha_ddh = traj_better.alpha_ddh;
+% %    alpha_ddh = traj_better.alpha_ddh_old;
+% end
+
 
 %% Return ref_info
 ref_info.q_ref = Q_REF;

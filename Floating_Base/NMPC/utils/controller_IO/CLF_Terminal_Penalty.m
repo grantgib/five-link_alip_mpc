@@ -8,16 +8,17 @@ function P = CLF_Terminal_Penalty(Q_x,R)
 %       x' = Ax + B v
 % Q_y = blkdiag(Q_x(4:7,4:7),Q_x(11:end,11:end)); 
 % R_v = R;
-Q_y = blkdiag(eye(4),eye(4));
-R_v = 0.01*eye(4);
-A = [zeros(4,4), eye(4);
-     zeros(4,4), zeros(4,4)];
-B = [zeros(4,4); eye(4)];
+n_y = size(R,1);
+Q_y = blkdiag(eye(n_y),eye(n_y));
+R_v = 0.1*eye(n_y);
+A = [zeros(n_y,n_y), eye(n_y);
+     zeros(n_y,n_y), zeros(n_y,n_y)];
+B = [zeros(n_y,n_y); eye(n_y)];
 
 
-assert(size(A,1) == 8);
-assert(size(B,1) == 8);
-assert(size(R,1) == 4);
+assert(size(A,1) == 2*n_y);
+assert(size(B,1) == 2*n_y);
+assert(size(R,1) == n_y);
 assert(size(Q_y,1) == size(A,1));
 
 [~,P] = lqr(A,B,Q_y,R_v);

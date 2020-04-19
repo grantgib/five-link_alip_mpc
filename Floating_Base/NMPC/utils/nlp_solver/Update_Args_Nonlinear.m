@@ -1,4 +1,4 @@
-function args = Update_Args_Nonlinear(dyn_info,ref_info,x_init,N,X_REF,U_REF)
+function args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,x_init,N,X_REF,U_REF)
 %% Extract variables
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
@@ -7,18 +7,23 @@ full_ref = ref_info.full_ref;
 
 %% Bounds
 % Relax bounds from trajectory generation for control
-relax_percent = 0.05;
+relax_percent = 0.10;
 x_lb = [full_ref.bounds.RightStance.states.x.lb - relax_percent*abs(full_ref.bounds.RightStance.states.x.lb),...
     full_ref.bounds.RightStance.states.dx.lb - relax_percent*abs(full_ref.bounds.RightStance.states.dx.lb)];
 x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bounds.RightStance.states.x.ub),...
     full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
 
 % Set control bounds
-u_lb = 0.2*full_ref.bounds.RightStance.inputs.Control.u.lb;
-u_ub = 0.2*full_ref.bounds.RightStance.inputs.Control.u.ub;
+if ~ctrl_info.IO_info.linear
+    u_lb = -1*ones(n_u,1);
+    u_ub = -u_lb;
+else
+    u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
+    u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
+end
 
 % Set Wrench bounds
-w_lb = [-inf; -inf];
+w_lb = [-inf; 0];
 w_ub = [inf; inf];
 
 %% Compute full_refeters vector

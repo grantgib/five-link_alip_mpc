@@ -1,17 +1,18 @@
 function [t_next, x_next] = ...
-    Impact_Update_IO(dyn_info,ctrl_info,ref_info,t0,x0,u_init,w_init,num_impacts,x_ref_current,ddq_ref)
+    Impact_Update_IO(dyn_info,ctrl_info,ref_info,t0,x0,u_mpc,w_mpc,num_impacts,x_ref_current,ddq_ref)
 %% Extract inputs
 % dyn_info
 f_nonlinear = dyn_info.func.f_NL;
 n_q = dyn_info.dim.n_q;
 f_w = dyn_info.func.wrench;
 u_IO = dyn_info.func.u_IO;
+u_IO_NMPC = dyn_info.func.u_IO_NMPC;
 n_q = dyn_info.dim.n_q;
-check_ZD = dyn_info.ctrl.check_ZD;
 
 % ctrl_info
 DT = ctrl_info.DT;
 IO_type = ctrl_info.IO_info.type;
+IO_info = ctrl_info.IO_info;
 
 % ref_info
 s_func = ref_info.phase_based.s_func;
@@ -27,15 +28,11 @@ dq0 = x0(n_q+1:end);
 q_ref_current = x_ref_current(1:n_q,end);
 dq_ref_current = x_ref_current(n_q+1:end,end);
 ddq_ref_current = ddq_ref(:,end);
-if check_ZD
-    Kp = 0;
-    Kd = 0;
-else
-    Kp = dyn_info.ctrl.Kp;
-    Kd = dyn_info.ctrl.Kd;
-end
+
 % h_q = q0(4:end);      % just for reference
 % dh_q = dq0(4:end);
+    Kp = dyn_info.ctrl.Kp;
+    Kd = dyn_info.ctrl.Kd;
 if IO_type == "phase"
     s_current = full(s_func(q0));
     h_d = bezier(alpha_h ,s_current);
@@ -46,14 +43,24 @@ elseif IO_type == "time"
     dh_d = dq_ref_current(4:end);
     ddh_d = ddq_ref_current;
 end
-u_sol = full(u_IO(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd));
-w_sol = full(f_w(q0,dq0,u_sol));
+
+if IO_info.linear
+    u_sol = full(u_IO(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd));
+    w_sol = full(f_w(q0,dq0,u_sol));
+else % NMPC zero dynamics used in I/O controller
+%     u_sol = full(u_IO_NMPC(q0,dq0,h_d,dh_d,ddh_d,u_mpc));
+    u_sol = full(u_IO_NMPC(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd,u_mpc));
+    w_sol = w_mpc;
+end
+w_sol = f_w(q0,dq0,u_sol);
+% if abs(full(w_check-w_sol)) > 1e-5
+%     error("Wrench computation not right")
+% end
 
 %% There could be an issue that the controller does not change immediately after impact.
 % Current Implementation makes sense for real world implementation but might be inducing too much error currently
 
 %% Root finding impact time
-
 f_value = full(f_nonlinear(q0,dq0,u_sol,w_sol));
 y_func = @(delT) leftToeZ(x0(1:7)+(delT*f_value(1:7))) - step_height*(num_impacts+1);
 options = optimset('Display','iter'); % show iterations

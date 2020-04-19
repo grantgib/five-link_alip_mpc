@@ -64,6 +64,7 @@ for i = 1:1%mpc_info.N
     % Setup solver
     solver_NL_all{i} = nlpsol('solver', 'ipopt', nlp_prob, mpc_info.opts);
     
+    disp("N = " + N + " is done formulating");
     N = N - 1;
 end
 

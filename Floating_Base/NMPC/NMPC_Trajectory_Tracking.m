@@ -23,33 +23,41 @@ addpath(genpath('../FROST_code'))
 % General
 ctrl_info = struct;
 ctrl_info.DT = 0.005;
-ctrl_info.type = "IO";
+ctrl_info.type = "IO"; 
 % ctrl_info.type = "NMPC";
 
 % MPC info
-ctrl_info.mpc_info.N = 4;
+ctrl_info.mpc_info.N = 1;
 ctrl_info.mpc_info.DT = ctrl_info.DT;
 
 % IO info
 ctrl_info.IO_info.DT = ctrl_info.DT;
-ctrl_info.IO_info.type = "phase";
+ctrl_info.IO_info.type = "phase"; % time
+ctrl_info.IO_info.linear = true; % true
 
 %% Load Desired Reference Trajectory
-ref_info.num_steps = 10;
-ref_info.step_height = "0.05";
-ref_info.step_vel = "0.40";
+tic
+ref_info.num_steps = 40;
+ref_info.step_height = "0";
+ref_info.step_vel = "0.75";
 ref_info.step_dir = "Ascend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
 % ref_info.step_dir = "Descend";
 % ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ")_Time(" + 1 + ").mat";
 
 % Load reference
+ref_info.better_traj = 0;
 ref_info = Load_Reference_Trajectory(ctrl_info,ref_info);
+disp("Reference Trajectory Loaded! ( " + toc + " sec)");
 
 % IC
+% if ref_info.better_traj
+%     new_traj = load('new_alphas');
+%     ref_info.x_init = new_traj.x_init_new;
+% else
+%     ref_info.x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
+% end
 ref_info.x_init = [ref_info.full_ref.gait(1).states.x(:,1); ref_info.full_ref.gait(1).states.dx(:,1)];
-% ref_info.x_init = ref_info.x_ref(:,1);
-disp("Reference Trajectory Loaded!");
 disp("Initial Condition Set!");
 
 %% Generate Dynamics Functions
@@ -65,7 +73,7 @@ if ctrl_info.type == "NMPC"
 elseif ctrl_info.type == "IO"
     [ctrl_info] = Formulate_NLP_TrajectoryTracking_IO(dyn_info,ctrl_info,ref_info);
 end
-disp("Finished formulating NLP!  (" + toc + " sec)");
+disp("Finished formulating NLP! (N = " + ctrl_info.mpc_info.N + ", " + toc + " sec)");
 
 %% ************************** Run Simulation ******************************
 disp("Begin simulation...");
@@ -73,7 +81,7 @@ if ctrl_info.type == "NMPC"
     [traj_info,ctrl_info] = ...
         Simulate_Nonlinear_TrajectoryTracking(dyn_info,ctrl_info,ref_info);
 elseif ctrl_info.type == "IO"
-    [traj_info] = Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info);
+    [traj_info,ctrl_info] = Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info);
 end
 disp("Finished simulation!");
 
@@ -88,21 +96,33 @@ if false
     %         ")_Time(" + ref_info.step_time + " sec).mat";
     save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
         ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-        ")_Vel(" + ref_info.step_vel + " sec).mat";
-    save(fullfile('saved_results/',save_name),'ref_info','traj_info','dyn_info','args','penalties');
+        ")_Vel(" + ref_info.step_vel + " sec)_New.mat";
+    save(fullfile('saved_results/IO',save_name),'ref_info','traj_info','dyn_info','penalties');
 end
 disp("Saved Trajectory!");
 
+
+%% Extract Better Trajectory
+% [alpha_h,alpha_dh,alpha_ddh,alpha_ddh_old,s_func,x_init_new,gait] = Generate_Better_Trajectory(dyn_info,ctrl_info,ref_info,traj_info);
+% save('new_gait','gait');
+% disp("Saved new gait");
+% save('new_alphas','alpha_h','alpha_dh','alpha_ddh','alpha_ddh_old','s_func','x_init_new')
+% disp("Saved new alphas");
+
 %% Plot
-plotSettings = struct;
-plotSettings.x = 1;
-plotSettings.u = 1;
-plotSettings.w = 0;
-plotSettings.xerr = 1;
-plotSettings.y = 0;
-plotSettings.s = 1;
-plotSettings.calc_time = 0;
-plotSettings.single_sol = 0;
+close all;
+plotSettings = struct('x',1,...
+    'u',         1,...
+    'w',         0,...
+    'xerr',      0,...
+    'y_sw',      0,...
+    's',         0,...
+    'calc_time', 0,...
+    'impact',    0,...
+    'single_sol',0,...
+    'virtuals',  0,...
+    'h_q_vs_s',  0,...
+    'last_step', 0);
 plotSettings.traj_title = ref_info.step_height + "m " + ref_info.step_dir;
 Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,plotSettings);
 disp('Finished Plotting!');

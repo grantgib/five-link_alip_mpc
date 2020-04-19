@@ -22,9 +22,8 @@ x_init = ref_info.x_init;
 num_steps = ref_info.num_steps;
 
 %% Initialize Variables
-mpciter = 1;            % simulation iteration number (proportional to t_current)
+iter = 1;            % simulation iteration number (proportional to t_current)
 t_current = 0;
-t_final = DT * (size(X_REF_Original,2)-1);
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
 stance_foot_pos = [0; 0];
@@ -35,7 +34,7 @@ num_impacts = 0;
 % to a warm start
 X0 = X_REF(:,1:N+1);
 U0 = U_REF(:,1:N+1);
-W0 = zeros(2,N+1);
+W0 = zeros(n_w,N+1);
 
 % Initialize storage variables
 time_traj(1) = t_current;
@@ -52,7 +51,7 @@ u_ref_traj = [];
 
 %% Main Loop
 
-while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
+while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     % while(mpciter < 5)
     
     % Start solver computation timer
@@ -93,9 +92,9 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     
     % Store Entire time step trajectory
     if (N == mpc_info.N)   % before shrinking horizon zone
-        x_traj_all(1:n_x,:,mpciter) = reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1);
-        u_traj_all(1:n_u,:,mpciter) = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1);
-        w_traj_all(1:n_w,:,mpciter) = reshape(full(sol.x((n_u+n_x)*(N+1)+1:end))',n_w,N+1);
+        x_traj_all(1:n_x,:,iter) = reshape(full(sol.x(1:n_x*(N+1)))',n_x,N+1);
+        u_traj_all(1:n_u,:,iter) = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1);
+        w_traj_all(1:n_w,:,iter) = reshape(full(sol.x((n_u+n_x)*(N+1)+1:end))',n_w,N+1);
     end
     
     % Store trajectory and time
@@ -104,7 +103,7 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     w_traj = [w_traj , w_sol(:,1)];
     x_ref_traj = [x_ref_traj, X_REF(:,1)];
     u_ref_traj = [u_ref_traj, U_REF(:,1)];
-    time_traj(mpciter) = t_current;
+    time_traj(iter) = t_current;
     
     %% Apply the control and forward integrate dynamics
     % Predict next step with Forward Euler Discretization
@@ -143,7 +142,7 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     %% Update state and time, warm start, shift reference
     t_current = t_next;
     x_init = x_next;
-    mpciter = mpciter + 1;  % update iteration counter
+    iter = iter + 1;  % update iteration counter
     
     % Warm start solver
     X0 = [x_sol(:,2:N+1), x_sol(:,N+1)];
@@ -159,8 +158,8 @@ while(num_impacts < num_steps && mpciter < num_steps*size(X_REF_Original,2))
     U_REF = [U_REF(:,2:end),U_REF(:,end)];
     
     % Print every n iterations
-    if mod(mpciter-1,10) == 0
-        disp("MPC iteration = " + (mpciter-1));
+    if mod(iter-1,10) == 0
+        disp("MPC iteration = " + (iter-1));
     end
 end
 % Finish updating trajectory and time after loop finishes

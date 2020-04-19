@@ -57,6 +57,7 @@ Jc = jacobian(pos_stance_foot,q);
 Jc_dot = jacobian(Jc*dq,q);     % move dq term inside of the jacobian to avoid tensor and dq not function of q
 ddq = D\(-C*dq -G + B*u + Jc'*w);
 rhs = [dq; ddq]; % omit Coriolis for now
+f_ddq = Function('f_ddq',{q,dq,u,w},{ddq});
 f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{rhs});  % nonlinear mapping function f(x,u)
 
 % Wrench as decision variable
@@ -87,8 +88,8 @@ Kd = SX.sym('Kd');
 % PD gains
 % damp = 0.9;
 % Ts = 0.1;
-damp = 0.9;
-Ts = 0.11;
+damp = 1;
+Ts = 0.05;
 wn = 3.9/(Ts*damp);
 Kp_save = wn^2;
 Kd_save = 2*damp*wn;
@@ -105,8 +106,7 @@ y = h_q - h_d;
 dy =  jacobian(h_q,q)*dq - dh_d;
 n_y = length(y);
 
-%% I/O control law (phase-based)
-
+%% I/O control law 
 JcD = (Jc/D)*Jc';
 Hu = (eye(n_q) - Jc'*(JcD\(Jc/D)))*B;
 Hlambda = Jc'*(JcD\((Jc/D)*(C*dq+G)-Jc_dot*dq));
@@ -114,18 +114,13 @@ v = -Kd*dy - Kp*y;
 u_IO_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v);
 u_IO = Function('u_IO',{q,dq,h_d,dh_d,ddh_d,Kp,Kd},{u_IO_sym});
 
-%% I/O control law (time-based)
-% Derived From:
-%       D*ddq + C*dq + G = B*u + J'*w   (Euler-Lagrange)
-%       Jc*ddq + dJc*dq = 0             (Foot contact accleration is zero)
-% v = - Kd*dy - Kp*y;
-% Xinv = eye(size(Jc,1))/((Jc/D)*Jc');
-% F = Jc'*(Xinv*(Jc/D)*(C*dq+G)-Jc_dot*dq);
-% H = (eye(n_q) - Jc'*Xinv*(Jc/D))*B;
-% Aleft = ((Jh/D)*H);
-% Bright = -(Jh/D)*(-C*dq-G + F) - Jh_dot*dq + ddh_d + v;
-% u_IO = Aleft\Bright;
-% u_IO_time = Function('u_IO',{q,dq,y_des,dy_des,ddh_d,Kp,Kd},{u_IO});
+%% I/O control law (NMPC desired zero dynamics)
+v_NMPC = SX.sym('v_NMPC',n_y,1);
+% u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v_NMPC);
+% u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,v_NMPC},{u_IO_NMPC_sym});
+
+u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)- Jh_dot*dq + ddh_d + v + v_NMPC); % remove ddh_d term for simplicity
+u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,Kp,Kd,v_NMPC},{u_IO_NMPC_sym});
 
 %% Generate additional functions
 f_D = Function('f_D',{q},{D});
@@ -161,6 +156,7 @@ dyn_info.func.B = f_B ;
 dyn_info.func.Jc = f_Jc ;
 dyn_info.func.Jc_dot = f_Jc_dot ;
 dyn_info.func.wrench = f_lambda;
+dyn_info.func.f_ddq = f_ddq;
 dyn_info.ctrl.Kp = Kp_save;
 dyn_info.ctrl.Kd = Kd_save;
 dyn_info.ctrl.check_ZD = check_ZD;
@@ -168,8 +164,7 @@ dyn_info.descriptor = 0;
 
 % I/O
 dyn_info.func.u_IO = u_IO;
-% dyn_info.func.u_IO_phase = u_IO_phase;
-% dyn_info.func.u_IO_time = u_IO_time;
+dyn_info.func.u_IO_NMPC = u_IO_NMPC;
 dyn_info.func.v = f_v;
 dyn_info.func.h = f_h;
 dyn_info.func.dh = f_dh;
