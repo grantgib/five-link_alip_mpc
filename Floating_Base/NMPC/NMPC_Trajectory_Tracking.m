@@ -32,19 +32,18 @@ ctrl_info.mpc_info.DT = ctrl_info.DT;
 % IO info
 ctrl_info.IO_info.DT = ctrl_info.DT;
 ctrl_info.IO_info.type = "phase"; % time
-ctrl_info.IO_info.linear = 0; % true uses PD control only!
+ctrl_info.IO_info.linear = 1; % true uses PD control only!
 
 %% Load Desired Reference Trajectory
 tic
-ref_info.num_steps = 10;
+ref_info.num_steps = 100;
 ref_info.IC_disturbed = 0;
 ref_info.external_force = 0; % Occurs at specific iteration number in Update_State_IO
-ref_info.step_height = "0.10";
-ref_info.step_vel = "0.75";
-% ref_info.step_dir = "Ascend";
-ref_info.step_dir = "Descend";
+ref_info.step_height = "0";
+ref_info.step_vel = "0.50";
+ref_info.step_dir = "Ascend";
+% ref_info.step_dir = "Descend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
-
 
 % Load reference
 ref_info.better_traj = 0;
@@ -74,7 +73,7 @@ constr_info = struct;
 % Constrain swing foot height as a function of phase
 constr_info.obstacle.isObstacle = 0;
 constr_info.obstacle.height = 0.08;
-constr_info.obstacle.width = [0.4, 0.80]; % As a function of phase
+constr_info.obstacle.width = [0.45, 0.6]; % As a function of phase
 
 % constrain the Ground Reaction Forces
 constr_info.grf.active = 1;
@@ -157,10 +156,10 @@ end
 %% Plot
 close all;
 plotSettings = struct('x',0,...
-    'u',         1,...
-    'w',         1,...
+    'u',         0,...
+    'w',         0,...
     'xerr',      0,...
-    'y_sw',      0,...
+    'y_sw',      1,...
     's',         0,...
     'calc_time', 0,...
     'impact',    0,...

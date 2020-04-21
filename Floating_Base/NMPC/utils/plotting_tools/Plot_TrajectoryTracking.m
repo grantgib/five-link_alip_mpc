@@ -58,8 +58,8 @@ obs_height = constr_info.obstacle.height;
 
 
 %% Initialize variables
-q_header = {'$x$','$z$','$rot_Y$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
-dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{rot}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
+q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
+dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{\psi}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
 u_header = {'$u_{q_{1R}}$','$u_{q_{2R}}$','$u_{q_{1L}}$','$u_{q_{2L}}$'};
 w_header = {'$f_x$','$f_z$'};
 q_err_header = {'$x_{err}$','$z_{err}$','${rot_Y}_{err}$','${q_{1R}}_{err}$','${q_{2R}}_{err}$','${q_{1L}}_{err}$','${q_{2L}}_{err}$'}';
@@ -69,7 +69,7 @@ time_calc_header = {'Controller Calculation Time [sec]','interpreter','latex'};
 
 blue = [0, 0.4470, 0.7410];
 width_ref = 1;
-width_traj = 1;
+width_traj = 2;
 width_bound = 1;
 sz = 15;
 
@@ -79,20 +79,24 @@ if plotSettings.x
     figure 
     for i = 1:n_q
         subplot(3,3,i);
-        plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
-        hold on; plot(time_traj,x_traj(i,:),'--','LineWidth',width_traj);
+%         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
+        hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
         try
-            hold on; yline(args.lbx(i),'g','LineWidth',width_bound);
-            hold on; yline(args.ubx(i),'g','LineWidth',width_bound);
+            hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
+            hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    legend('reference',ctrl_type +" trajectory",'constraints');
+%     legend('reference',ctrl_type +" trajectory",'constraints');
+        legend("IO-NMPC trajectory",'State Constraints');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
+        set(gcf,'color','w');
+    sgtitle("State Position Trajectories (q) for N = 5");
+%         sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
+
 end
 
 % Velocities
@@ -152,15 +156,15 @@ if plotSettings.u
     figure
     for i = 1:n_u
         subplot(2,2,i);
-        plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
-        hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'--','LineWidth',width_traj);
+%         plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
+        hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'LineWidth',width_traj);
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
 %     legend('reference',ctrl_type +" trajectory",'location','best');
-      legend('reference',"IO-NMPC trajectory",'location','best');
+      legend("IO-NMPC trajectory",'location','best');
 %     sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
-    sgtitle("Control Torques (Saturated at 10 N-m)")
+    sgtitle("Control Torques")
         set(gcf,'color','w');
 
 end
@@ -181,9 +185,11 @@ if plotSettings.w
     plot(time_traj(1:end-1),mu_actual); hold on;
     ylabel('$\mu_s$','interpreter','latex');
     xlabel('Time (sec)','interpreter','latex');
+    title("IO-NMPC Friction Cone Satisfaction");
     yline(constr_info.grf.mu,'r');
     grid on; set(gca,'FontSize',sz)
     set(gcf,'color','w');
+    
 
 end
 
@@ -199,13 +205,19 @@ if plotSettings.y_sw
     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
     
     figure
-    subplot(1,2,1)
     scatter(s_traj,y_sw_traj(2,:),1); hold on
-    line([obs_start obs_start],[0 obs_height],'color','r'); hold on; 
-    line([obs_end obs_end],[0 obs_height],'color','r'); hold on;
+    line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on; 
+    line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
     line([obs_start obs_end],[obs_height obs_height],'color','r');
-    subplot(1,2,2)
-    plot(s_traj,y_sw_traj(2,:));
+    xlabel('Phase Variable (s)');
+    ylabel('Normalized Swing Foot Height (z_{sw})');
+    title('Obstacle Avoidance');
+        grid on; set(gca,'FontSize',sz)
+        set(gcf,'color','w');
+
+    
+figure;
+plot(s_traj,y_sw_traj(2,:));
     title("y_{sw} vs. s");
 end
 
