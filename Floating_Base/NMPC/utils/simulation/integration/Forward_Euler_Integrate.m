@@ -5,9 +5,14 @@ dq_init = params.dq_init;
 DT = params.DT;
 u = params.u;
 w = params.w;
+w_ext = params.w_ext;
 
 % Compute integration
-f_value = full(f(q_init,dq_init,u,w));
+if w_ext
+    f_value = full(f(q_init,dq_init,u,w,[w_ext;0]));
+else
+    f_value = full(f(q_init,dq_init,u,w));
+end
 x_next = x_init + DT*f_value;
 t_next = t_init + DT;
 

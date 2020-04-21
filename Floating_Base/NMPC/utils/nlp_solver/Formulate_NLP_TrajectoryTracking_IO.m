@@ -1,4 +1,4 @@
-function [ctrl_info] = Formulate_NLP_TrajectoryTracking_IO(dyn_info,ctrl_info,ref_info)
+function [ctrl_info] = Formulate_NLP_TrajectoryTracking_IO(dyn_info,ctrl_info,ref_info,constr_info)
 import casadi.*
 % Formulate NLP
 %   * Symbolically create the objective function and equality constraints
@@ -18,6 +18,10 @@ mpc_info = ctrl_info.mpc_info;
 N = mpc_info.N;
 
 % IO_info
+IO_info = ctrl_info.IO_info;
+if IO_info.linear
+    N = 0;
+end
 
 %% IPOPT settings
 mpc_info.opts = struct;
@@ -47,10 +51,9 @@ solver_NL_all = cell(N,1);
 for i = 1:1%mpc_info.N
     % Compute symbolic variables of quadratic program for N = 1:maxN.
     % stored in cells (used when implementing shrinking horizon
-    
     [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
-        Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,N);
-    
+        Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N);
+  
     % Settings
     % Decision variables to optimize
     DEC_variables{i} = [reshape(X_dec_all{i},n_x*(N+1),1);

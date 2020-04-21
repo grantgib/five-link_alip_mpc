@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Fri 17 Apr 2020 14:55:58 GMT-04:00
+ * Sun 19 Apr 2020 10:59:18 GMT-04:00
  */
 
 #ifndef J_DXDISCRETEMAPRIGHTIMPACT_HH

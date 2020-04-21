@@ -1,4 +1,4 @@
-function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,plotSettings)
+function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
 %% Extract variables from inputs
 % plotSettings
 plot_title = plotSettings.traj_title;
@@ -10,8 +10,8 @@ n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
 
 % ctrl_info
-% args = mpc_info.args;
 mpc_info = ctrl_info.mpc_info;
+args = mpc_info.args;
 N = mpc_info.N;
 DT = mpc_info.DT;
 ctrl_type = ctrl_info.type;
@@ -27,7 +27,6 @@ elseif ctrl_type == "IO"
     end
 end
 
-
 % traj_info
 if plotSettings.single_sol
     x_traj = traj_info.x_traj_all(:,:,1);
@@ -40,16 +39,22 @@ else
     x_traj = traj_info.x_traj;
     u_traj = traj_info.u_traj;
     w_traj = traj_info.w_traj;
-    s_traj = traj_info.s_traj;
-    y_traj = traj_info.y_traj;
-    dy_traj = traj_info.dy_traj;
-    theta_traj = traj_info.theta_traj;
 
+    y_traj = traj_info.y_traj;      % virtual constraints
+    dy_traj = traj_info.dy_traj;
+    s_traj = traj_info.s_traj;
+    theta_traj = traj_info.theta_traj;
     impact_traj = traj_info.impact_traj;
-    y_sw = traj_info.y_sw;
+    y_sw_traj = traj_info.y_sw_normal;
     x_ref_traj = traj_info.x_ref_traj;
     u_ref_traj = traj_info.u_ref_traj;
 end
+
+% contr_info
+obs_start = constr_info.obstacle.width(1);
+obs_end = constr_info.obstacle.width(2);
+obs_height = constr_info.obstacle.height;
+
 
 
 %% Initialize variables
@@ -76,8 +81,12 @@ if plotSettings.x
         subplot(3,3,i);
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'--','LineWidth',width_traj);
-%         hold on; yline(args.lbx(i),'g','LineWidth',width_bound);
-%         hold on; yline(args.ubx(i),'g','LineWidth',width_bound);
+        try
+            hold on; yline(args.lbx(i),'g','LineWidth',width_bound);
+            hold on; yline(args.ubx(i),'g','LineWidth',width_bound);
+        catch
+            disp("infinite bounds for x_" + i);
+        end
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -93,8 +102,12 @@ if plotSettings.x
         subplot(3,3,i);
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(n_q+i,:),'--','LineWidth',width_traj);
-%         hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
-%         hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+        try
+            hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
+            hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+        catch
+            disp("infinite bounds for dx_" + i);
+        end
         title(dq_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -158,18 +171,33 @@ if plotSettings.w
         grid on; set(gca,'FontSize',sz);
     end
     sgtitle(plot_title + " Wrench (N = " + mpc_info.N + ")");
+    
+    figure
+    mu_actual = abs(w_traj(1,:)./w_traj(2,:));
+    plot(time_traj(1:end-1),mu_actual); hold on;
+    yline(constr_info.grf.mu,'r');
 end
 
 %% Output - Swing Foot Position
 if plotSettings.y_sw
     figure
-    for i = 1:n_y
+    for i = 1:2
         subplot(1,2,i);
-        plot(time_traj(1:size(y_sw,2)),y_sw(i,:));
+        plot(time_traj(1:size(y_sw_traj,2)),y_sw_traj(i,:));
         title(y_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
+    
+    figure
+    subplot(1,2,1)
+    scatter(s_traj,y_sw_traj(2,:),1); hold on
+    line([obs_start obs_start],[0 obs_height],'color','r'); hold on; 
+    line([obs_end obs_end],[0 obs_height],'color','r'); hold on;
+    line([obs_start obs_end],[obs_height obs_height],'color','r');
+    subplot(1,2,2)
+    plot(s_traj,y_sw_traj(2,:));
+    title("y_{sw} vs. s");
 end
 
 %% Phase Variable
@@ -235,7 +263,7 @@ if plotSettings.virtuals
     scatter(time_traj,theta_traj,1);
     title("Theta vs time");
     subplot(1,2,2);
-    scatter(s_traj,theta_traj(1:end-1),1);
+    scatter(s_traj,theta_traj,1);
     title("Theta vs. s");
 end
 
@@ -268,8 +296,6 @@ if plotSettings.last_step
     title("Theta vs. s");
 
 end
-
-
 
 
 

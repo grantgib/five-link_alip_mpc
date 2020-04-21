@@ -1,22 +1,28 @@
-function args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,x_init,N,X_REF,U_REF)
+function args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,x_init,N,X_REF,U_REF)
 %% Extract variables
+n_q = dyn_info.dim.n_q;
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
 full_ref = ref_info.full_ref;
+s_func = ref_info.phase_based.s_func;
 
 %% Bounds
 % Relax bounds from trajectory generation for control
-relax_percent = 0.10;
+relax_percent = 0.50;
 x_lb = [full_ref.bounds.RightStance.states.x.lb - relax_percent*abs(full_ref.bounds.RightStance.states.x.lb),...
     full_ref.bounds.RightStance.states.dx.lb - relax_percent*abs(full_ref.bounds.RightStance.states.dx.lb)];
 x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bounds.RightStance.states.x.ub),...
     full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
 
+x_lb(1:2) = [-inf, -inf];   % bound should not exist for climbing up steps or should at minimum update with each impact (not done yet)
+x_ub(1:2) = [inf, inf];     % condition shouldnt exist for step climbing
+
 % Set control bounds
 if ~ctrl_info.IO_info.linear
-    u_lb = -1*ones(n_u,1);
-    u_ub = -u_lb;
+    u_percent = 10;
+    u_lb = u_percent*full_ref.bounds.RightStance.inputs.Control.u.lb;
+    u_ub = u_percent*full_ref.bounds.RightStance.inputs.Control.u.ub;
 else
     u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
     u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
@@ -58,9 +64,49 @@ for i = 1:n_w
     args.ubx((n_x+n_u)*(N+1)+i:n_w:(n_x+n_u+n_w)*(N+1)) = w_ub(i);
 end
 
+%% Add additional Inequality constraints to g
+if constr_info.obstacle.isObstacle
+    lbg_sw = zeros(1,N+1);
+    ubg_sw = zeros(1,N+1);
+    obs_start = constr_info.obstacle.width(1);
+    obs_end = constr_info.obstacle.width(2);
+    obs_height = constr_info.obstacle.height;
+    t_step = 0:ctrl_info.DT:N;
+    s_init = full(s_func(x_init(1:n_q)));
+    ds = 1.3033; % got from experiment
+    for i = 1:N+1
+        s_k(i) = s_init + ds*t_step(i);
+        if s_k(i) > obs_start && s_k(i) < obs_end
+            lbg_sw(i) = obs_height + traj_info.num_impacts*double(ref_info.step_height);
+            ubg_sw(i) = inf;
+        else
+            lbg_sw(i) = -inf;
+            ubg_sw(i) = inf;
+        end
+    end
+    args.lbg = [args.lbg, lbg_sw];
+    args.ubg = [args.ubg, ubg_sw];
+end
 
+%% Friction Cone Inequality
+if constr_info.grf.active
+    for k = 1:N+1
+        mu = constr_info.grf.mu;
+        lbg_fric = -mu;
+        ubg_fric = mu;
+        args.lbg = [args.lbg, lbg_fric];
+        args.ubg = [args.ubg, ubg_fric];  
+    end
+end
 
-
-
+%% Torque Saturation
+if constr_info.torque.sat
+    u_max = constr_info.torque.sat*ones(1,n_u);
+    u_min = -u_max;
+    for k = 1:N+1
+       args.lbg = [args.lbg, u_min];
+       args.ubg = [args.ubg, u_max];
+    end
+end
 
 

@@ -33,6 +33,9 @@ ddq_ref_current = ddq_ref(:,end);
 % dh_q = dq0(4:end);
     Kp = dyn_info.ctrl.Kp;
     Kd = dyn_info.ctrl.Kd;
+
+
+
 if IO_type == "phase"
     s_current = full(s_func(q0));
     h_d = bezier(alpha_h ,s_current);

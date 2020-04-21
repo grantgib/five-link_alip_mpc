@@ -46,7 +46,7 @@ C = [0 0 0 1 0 0 0;     % stance thigh
     0 0 0 0 0 1 0;     % swing leg
     0 0 0 0 0 0 1];    % swing leg
 Q_mat = [(C'*C), zeros(n_q,n_q);
-    zeros(n_q,n_q), 100*(C'*C)];
+    zeros(n_q,n_q), (C'*C)];
 
 % Control penalty
 R_vector = zeros(n_u,1);
@@ -64,7 +64,6 @@ if CLF_term
     Q_term = CLF_Terminal_Penalty(Q_mat,R_mat);
     Q_term = 1*Q_term;
     eig_Qterm = eig(Q_term);
-    
 else
     Q_term = 1e4*Q_mat;
 end
@@ -78,18 +77,20 @@ for k = 1:N+1
     u_k = Udec(:,k);   % current control
     x_ref_k = P((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+(n_x)));
     u_ref_k = P((k-1)*(n_x+n_u)+(n_x+(n_x+1)):(k-1)*(n_x+n_u)+(n_x+(n_x)+n_u));
+    h_k = x_k(4:7);     % virtual constraint
+    dh_k = x_k(11:end); % derivative
+    h_d_k = x_ref_k(4:7);
+    dh_d_k = x_ref_k(11:end);
+    y_k = h_k - h_d_k;
+    dh_k = dh_k - dh_d_k;
     if k < N+1
         % Running stage and control cost
         obj_vector(k) = (x_k - x_ref_k)'*Q_mat*(x_k - x_ref_k) + ...
             (u_k - u_ref_k)'*R_mat*(u_k - u_ref_k);
+%         obj_vector(k) = [y_k; dh_k]'*Q_term*[y_k; dh_k] + ...
+%             (u_k - u_ref_k)'*R_mat*(u_k - u_ref_k);
     else
-        ya_N = x_k(4:7);     % virtual constraint
-        dya_N = x_k(11:end); % derivative
-        yd_N = x_ref_k(4:7);
-        dyd_N = x_ref_k(11:end);
-        yerr_N = ya_N - yd_N;
-        dyerr_N = dya_N - dyd_N;
-        Term_cost = [yerr_N; dyerr_N]'*Q_term*[yerr_N; dyerr_N];
+        Term_cost = [y_k; dh_k]'*1e3*Q_term*[y_k; dh_k];
     end
 end
 obj = sum(obj_vector) + Term_cost;

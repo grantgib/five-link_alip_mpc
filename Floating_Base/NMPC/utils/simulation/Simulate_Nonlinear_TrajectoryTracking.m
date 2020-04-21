@@ -1,4 +1,4 @@
-function [traj_info,mpc_info] = ...
+function [traj_info,ctrl_info] = ...
     Simulate_Nonlinear_TrajectoryTracking(dyn_info,ctrl_info,ref_info)
 import casadi.*
 
@@ -74,7 +74,7 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     X0 = X0(:,1:N+1);
     
     % Set Parameter vector and Decision Variables
-    args = Update_Args_Nonlinear(dyn_info,ref_info,x_init,N,X_REF,U_REF);
+    args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,x_init,N,X_REF,U_REF);
     args.x0  = [reshape(X0(:,1:N+1),n_x*(N+1),1);
         reshape(U0(:,1:N+1),n_u*(N+1),1);
         reshape(W0(:,1:N+1),n_w*(N+1),1)];

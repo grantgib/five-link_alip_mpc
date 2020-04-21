@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Fri 17 Apr 2020 15:02:51 GMT-04:00
+ * Sun 19 Apr 2020 10:58:33 GMT-04:00
  */
 
 #ifndef J_OUTPUT_BOUNDARY_RIGHTSTANCE_HH

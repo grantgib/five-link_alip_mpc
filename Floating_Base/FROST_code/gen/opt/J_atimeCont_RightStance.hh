@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Fri 17 Apr 2020 15:01:20 GMT-04:00
+ * Sun 19 Apr 2020 10:56:42 GMT-04:00
  */
 
 #ifndef J_ATIMECONT_RIGHTSTANCE_HH

@@ -1,4 +1,4 @@
-function [dyn_info] = Generate_Dynamics_Nonlinear()
+function [dyn_info] = Generate_Dynamics_Nonlinear(ctrl_info)
 import casadi.*
 dyn_info = struct;
 %% CasADi symbolics
@@ -38,6 +38,7 @@ f_x = SX.sym('f_x');
 f_z = SX.sym('f_z');
 w = [f_x; f_z];
 n_w = length(w);
+w_ext = SX.sym('w_ext',n_w,1);
 
 %% Euler-Lagrange ODE 
 % old matrices
@@ -64,9 +65,14 @@ f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{rhs});  % nonlinear mapping fun
 lambda = ((Jc/D)*Jc') \ ((Jc/D)*(C*dq + G) - (Jc/D)*B*u -Jc_dot*dq);
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
-% Descriptor System
-E_nonlinear = 0;
-H_nonlinear = 0;
+%% External Force @ Hip Functions
+J_hip = Hip_Jacobian(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
+f_J_hip = Function('f_J_hip',{q},{J_hip});
+ddq_ext = D\(-C*dq -G + B*u + Jc'*w + J_hip'*w_ext);
+rhs_ext = [dq; ddq_ext];
+f_nonlinear_ext = Function('f_nonlinear_ext',{q,dq,u,w,w_ext},{rhs_ext});
+dyn_info.func.f_NL_ext = f_nonlinear_ext;
+
 
 %% Generate I/O Controller Parameters
 % Reference symbolics
@@ -86,13 +92,15 @@ Kp = SX.sym('Kp');
 Kd = SX.sym('Kd');
 
 % PD gains
-% damp = 0.9;
-% Ts = 0.1;
-damp = 1;
-Ts = 0.05;
+% damp = 0.8;
+% Ts = 0.3;
+damp = 0.9;
+Ts = 0.15;
 wn = 3.9/(Ts*damp);
 Kp_save = wn^2;
 Kd_save = 2*damp*wn;
+% Kp_save = 350;
+% Kd_save = 26;
 check_ZD = 0;    % if 0 then use Kp_save and Kd_save as gains
 
 % Virtual constraints
@@ -114,13 +122,41 @@ v = -Kd*dy - Kp*y;
 u_IO_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v);
 u_IO = Function('u_IO',{q,dq,h_d,dh_d,ddh_d,Kp,Kd},{u_IO_sym});
 
-%% I/O control law (NMPC desired zero dynamics)
+%% I/O-NMPC control law (NMPC desired zero dynamics)
 v_NMPC = SX.sym('v_NMPC',n_y,1);
-% u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v_NMPC);
-% u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,v_NMPC},{u_IO_NMPC_sym});
 
-u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)- Jh_dot*dq + ddh_d + v + v_NMPC); % remove ddh_d term for simplicity
-u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,Kp,Kd,v_NMPC},{u_IO_NMPC_sym});
+%     u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)-Jh_dot*dq+ddh_d+v_NMPC);
+%     u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,Kp,Kd,v_NMPC},{u_IO_NMPC_sym});
+
+    u_IO_NMPC_sym = ((Jh/D)*Hu) \ (-(Jh/D)*(-C*dq-G+Hlambda)- Jh_dot*dq + ddh_d + v + v_NMPC); % remove ddh_d term for simplicity
+    u_IO_NMPC = Function('u_IO_NMPC',{q,dq,h_d,dh_d,ddh_d,Kp,Kd,v_NMPC},{u_IO_NMPC_sym});
+
+%% Constraint Functions
+% Hip position
+pos_hip = Hip_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L); 
+f_pos_hip = Function('f_pos_hip',{q},{pos_hip});
+% Jacobian at hip (already defined)
+% center of mass position
+pos_COM = COM_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
+f_pos_COM = Function('f_pos_COM',{q},{pos_COM});
+% swing foot position
+pos_swing = Left_Swing_Foot_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
+f_pos_swing = Function('f_pos_swing',{q},{pos_swing});
+% swing foot Jacobian
+J_swing = jacobian(pos_swing,q);
+f_J_swing = Function('f_J_swing',{q},{J_swing});
+% stance foot position
+pos_stance = Right_Stance_Foot_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
+f_pos_stance = Function('f_pos_stance',{q},{pos_stance});
+% stance foot Jacobian - equivalent to Jc already defined as Jc
+
+% Output to dyn_info
+dyn_info.func.f_pos_hip = f_pos_hip;
+dyn_info.func.f_pos_COM = f_pos_COM;
+dyn_info.func.f_pos_swing = f_pos_swing;
+dyn_info.func.f_pos_stance = f_pos_stance;
+dyn_info.func.f_J_hip = f_J_hip;
+dyn_info.func.f_J_swing = f_J_swing;
 
 %% Generate additional functions
 f_D = Function('f_D',{q},{D});
@@ -148,8 +184,6 @@ dyn_info.dim.n_w = n_w;
 dyn_info.dim.n_y_sw = 2;   % swing foot position (x,z)
 dyn_info.dim.n_y = n_y;
 dyn_info.func.f_NL = f_nonlinear;
-dyn_info.func.E_NL = E_nonlinear;
-dyn_info.func.H_NL = H_nonlinear;
 dyn_info.func.D = f_D ;
 dyn_info.func.G = f_G ;
 dyn_info.func.B = f_B ;

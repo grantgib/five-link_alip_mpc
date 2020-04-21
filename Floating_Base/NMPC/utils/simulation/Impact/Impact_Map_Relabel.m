@@ -9,7 +9,8 @@ f_D = dyn_info.func.D;
 x_plus = zeros(2*n_q,1);
 x_plus(1:n_q) = q_minus;
 D = full(f_D(q_minus));         % mass-inertia matrix
-J_swing = J_leftFoot(q_minus);  % Jacobian of swing foot
+% J_swing = J_leftFoot(q_minus);  % Jacobian of swing foot
+J_swing = full(dyn_info.func.f_J_swing(q_minus));
 
 M = [D -J_swing'; J_swing zeros(2,2)];  
 temp = M\[D*dq_minus;zeros(2,1)]; % the first seven element in temp is dq, last 2 is Fg]

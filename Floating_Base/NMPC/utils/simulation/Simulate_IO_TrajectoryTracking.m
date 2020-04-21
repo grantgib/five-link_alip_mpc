@@ -1,5 +1,5 @@
 function [traj_info,ctrl_info] = ...
-    Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info)
+    Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info,constr_info)
 import casadi.*
 
 %% Extract inputs
@@ -16,7 +16,6 @@ IO_info = ctrl_info.IO_info;
 
 % mpc_info
 mpc_info = ctrl_info.mpc_info;
-DT = mpc_info.DT;
 N = mpc_info.N;
 solver = mpc_info.solvers_NL{1};
 
@@ -29,20 +28,22 @@ num_steps = ref_info.num_steps;
 s_func = ref_info.phase_based.s_func;
 
 %% Initialize Variables
-iter = 1;            % simulation iteration number (proportional to t_current)
+ctrl_info.iter = 1;            % simulation iteration number (proportional to t_current)
 t_current = 0;
 X_REF = X_REF_Original;
 U_REF = U_REF_Original;
 DDH_REF = DDH_REF_Original;
 stance_foot_pos = [0; 0];
 swing_foot_init = leftToePos(x_init(1:7))';
-num_impacts = 0;
+traj_info.num_impacts = 0;
 
-% Initialize IPOPT solver with reference state, control and wrench (similar
-% to a warm start
-X0 = X_REF(:,1:N+1);
-U0 = U_REF(:,1:N+1);
-W0 = zeros(n_w,N+1);
+if IO_info.linear == 0
+    % Initialize IPOPT solver with reference state, control and wrench (similar
+    % to a warm start
+    X0 = X_REF(:,1:N+1);
+    U0 = U_REF(:,1:N+1);
+    W0 = zeros(n_w,N+1);
+end
 
 % Initialize storage variables
 time_traj(1) = t_current;
@@ -53,22 +54,26 @@ w_traj = [];
 ddq_traj = [];
 u_mpc_traj = [];
 y_sw = swing_foot_init([1,3]);
+y_sw_normal = swing_foot_init([1 3]);
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
 w_traj_all = [];
 x_ref_traj = [];
 ddh_d_traj = [];
 u_ref_traj = [];
-s_traj = [];
+s_traj = full(s_func(x_init(1:n_q)));
 impact_traj = [];
 
 %% Main Loop
-while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
+while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF_Original,2))
     %% Solve for NMPC control law
     if IO_info.linear
         x_sol_mpc = [];
         u_sol_mpc = [];
         w_sol_mpc = [];
+        if ctrl_info.iter < 2
+            args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,x_init,N,X_REF,U_REF);
+        end
     else % use NMPC
         % Start solver computation timer
         solver_comp_time = tic;
@@ -90,7 +95,7 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
         X0 = X0(:,1:N+1);
         
         % Set Parameter vector and Decision Variables
-        args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,x_init,N,X_REF,U_REF);
+        args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,x_init,N,X_REF,U_REF);
         args.x0  = [reshape(X0(:,1:N+1),n_x*(N+1),1);
             reshape(U0(:,1:N+1),n_u*(N+1),1);
             reshape(W0(:,1:N+1),n_w*(N+1),1)];
@@ -114,47 +119,51 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     x_ref_traj = [x_ref_traj, X_REF(:,1)];
     ddh_d_traj = [ddh_d_traj, DDH_REF(:,1)];
     u_ref_traj = [u_ref_traj, U_REF(:,1)];
-    time_traj(iter) = t_current;
-    impact_traj = [impact_traj, num_impacts];
+    time_traj(ctrl_info.iter) = t_current;
+    impact_traj = [impact_traj, traj_info.num_impacts];
     
     %% Apply the control and forward integrate dynamics
-    [t_next, x_next,u_sol,w_sol,ddq_sol] = Update_State_IO(dyn_info,ctrl_info,ref_info,x_ref_traj,ddh_d_traj,t_current,x_init,u_sol_mpc,w_sol_mpc);
+    [t_next, x_next,u_sol,w_sol,ddq_sol] = Update_State_IO(dyn_info,ctrl_info,ref_info,constr_info,x_ref_traj,ddh_d_traj,t_current,x_init,u_sol_mpc,w_sol_mpc);
     u_traj = [u_traj , u_sol];
-    w_traj = [w_traj , w_sol];
+    w_traj = [w_traj , full(w_sol)];
     ddq_traj = [ddq_traj, ddq_sol];
     
     %% Check for impact & Apply Impact/Switch Map
     swing_foot_pos = leftToePos(x_next(1:7))';
     y_swingfoot = swing_foot_pos([1,3]);
-    if (y_swingfoot(2) < (num_impacts+1)*double(ref_info.step_height)) &&...
+    if (y_swingfoot(2) < (traj_info.num_impacts+1)*double(ref_info.step_height)) &&...
             (y_sw(2,end) > double(ref_info.step_height)) &&...
             (y_swingfoot(2) - y_sw(2,end) < 0) &&...
             (y_swingfoot(1) > stance_foot_pos(1))
-
+        
         disp("-> Impact occured, find when it happened!");
         % Forward Integrate until Impact, Apply Impact, Integrate until
         % t_current + DT has been reached
         [t_next, x_next] = ....
             Impact_Update_IO(dyn_info,ctrl_info,ref_info,t_current,x_init,...
-            u_sol,w_sol,num_impacts,x_ref_traj,ddh_d_traj);
+            u_sol,w_sol,traj_info.num_impacts,x_ref_traj,ddh_d_traj);
         
         % Update impact counter
-        num_impacts = num_impacts + 1;
-        disp("-> Step # " + num_impacts);
+        traj_info.num_impacts = traj_info.num_impacts + 1;
+        disp("-> Step # " + traj_info.num_impacts);
         
         % Update reference trajectory
         X_REF = X_REF_Original + ...
-            [(X_REF_Original(1:2,end)-X_REF_Original(1:2,1)).*(num_impacts*ones(2,size(X_REF,2)));
+            [(X_REF_Original(1:2,end)-X_REF_Original(1:2,1)).*(traj_info.num_impacts*ones(2,size(X_REF,2)));
             zeros(12,size(X_REF,2))];
         U_REF = U_REF_Original;
         
         % Update stance foot position with previous swing foot impact pos
         stance_foot_pos = y_swingfoot(1);
+        
+        % Update output trajectory
+        y_sw = [y_sw, y_swingfoot];
+        y_sw_normal = [y_sw_normal, y_swingfoot-traj_info.num_impacts.*double(ref_info.step_height)];
+    else
+        % Update output trajectory
+        y_sw = [y_sw, y_swingfoot];
+        y_sw_normal = [y_sw_normal, y_swingfoot-traj_info.num_impacts.*double(ref_info.step_height)];
     end
-    
-    % Update output trajectory
-    y_sw = [y_sw, y_swingfoot];
-    
     % Update s phase variable
     s_traj = [s_traj, full(s_func(x_next(1:n_q)))];
     
@@ -162,7 +171,7 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     %% Update state and time, warm start, shift reference
     t_current = t_next;
     x_init = x_next;
-    iter = iter + 1;  % update iteration counter
+    ctrl_info.iter = ctrl_info.iter + 1;  % update iteration counter
     
     % Warm start solver
     if ~IO_info.linear
@@ -180,8 +189,12 @@ while(num_impacts < num_steps && iter < num_steps*size(X_REF_Original,2))
     DDH_REF = [DDH_REF(:,2:end),DDH_REF(:,end)];
     
     % Print every n iterations
-    if mod(iter-1,10) == 0
-        disp("Iteration = " + (iter-1));
+    if mod(ctrl_info.iter-1,10) == 0
+        if constr_info.torque.sat
+            disp("Iteration = " + (ctrl_info.iter-1) + " (Torque Saturated at " + constr_info.torque.sat + " N-m)");
+        else
+            disp("Iteration = " + (ctrl_info.iter-1));
+        end
     end
 end
 % Finish updating trajectory and time after loop finishes
@@ -189,7 +202,7 @@ x_traj = [x_traj, x_next];
 x_ref_traj = [x_ref_traj, X_REF(:,1)]; % X_REF has been shifted so the next reference is the first column
 ddh_d_traj = [ddh_d_traj, DDH_REF(:,1)];
 time_traj(end+1) = time_traj(end) + DT;
-impact_traj = [impact_traj, num_impacts];
+impact_traj = [impact_traj, traj_info.num_impacts];
 
 %% End of Simulation Calculations
 x_traj_final_error = x_traj(:,end)-x_ref_traj(:,end);
@@ -227,6 +240,7 @@ traj_info.s_traj = s_traj;
 traj_info.ddq_traj = ddq_traj;
 traj_info.impact_traj = impact_traj;
 traj_info.y_sw = y_sw;
+traj_info.y_sw_normal = y_sw_normal;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;
 traj_info.w_traj_all = w_traj_all;
@@ -237,6 +251,8 @@ traj_info.stats.time_calc = time_calc;
 traj_info.stats.x_traj_final_error = x_traj_final_error;
 traj_info.stats.avg_calc_time = avg_calc_time;
 traj_info.stats.x_traj_error = x_traj_error;
-traj_info.stats.num_impacts = num_impacts;
+
+mpc_info.args = args;
+ctrl_info.mpc_info = mpc_info;
 
 end

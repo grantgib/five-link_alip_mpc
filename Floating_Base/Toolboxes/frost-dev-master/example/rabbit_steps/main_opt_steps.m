@@ -72,9 +72,9 @@ nlp.update;
 
 % Steps
 for i = 1:(nlp.Phase(1).NumNode-1)
-    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-0.11, Inf);
+    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-Inf, 0.11);
 end
-nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(0.05, 0.05);
+nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(-0.05, -0.05);
 nlp.update;
 
 % save expressions after you run the optimization. It will save all required
@@ -92,31 +92,11 @@ if COMPILE
     rabbit.ExportKinematics([export_path,'kinematics/']);
     compileConstraint(nlp,[],[],[export_path, 'opt/']);
     compileObjective(nlp,[],[],[export_path, 'opt/']);
+    beep
 end
 
 % Example constraint removal
 % removeConstraint(nlp.Phase(1),'u_friction_cone_RightToe');
-
-%% Velocity constraint
-
-removeConstraint(nlp.Phase(1),'average_velocity');
-velocity_desired = 0.2;
-DOF = 7;
-T  = SymVariable('t',[2,1]);
-X0  = SymVariable('x0',[DOF,1]);
-XF  = SymVariable('xF',[DOF,1]);
-avg_vel = (XF(1) - X0(1)) / (T(2) - T(1));
-avg_vel_fun = SymFunction('average_velocity', avg_vel, {T,X0,XF});
-
-avg_vel_cstr = NlpFunction('Name','average_velocity',...
-    'Dimension',1,...
-    'lb', velocity_desired,...
-    'ub', velocity_desired,...
-    'Type','Nonlinear',...
-    'SymFun',avg_vel_fun,...
-    'DepVariables',[nlp.Phase(1).OptVarTable.T(1); nlp.Phase(1).OptVarTable.x(1); nlp.Phase(1).OptVarTable.x(end)]);
-
-addConstraint(nlp.Phase(1), 'average_velocity', 'last', avg_vel_cstr);
 
 
 %% Create Ipopt solver
@@ -159,7 +139,7 @@ conGUI.anim = anim;
 
 %%
 SAVE_SOLUTION = 1;
-name_save = "Ascend_Ht(0.05)_Vel(0.20)";
+name_save = "Descend_Ht(0.05)_Vel(0.75)";
 if SAVE_SOLUTION
     %     data_name = string(datetime('now','TimeZone','local','Format','d-MMM-y-HH-mm-ssZ'));  %'local/longer_double_support_wider_step_dummy';
     %     name_save = [CHARACTER_NAME, '_', data_name];
@@ -170,37 +150,57 @@ if SAVE_SOLUTION
     save(fullfile(save_dir, file_name), 'gait', 'sol', 'info', 'bounds');
 end
 
-%% test SNOPT
-% %% Create Ipopt solver
-% addpath(genpath(export_path));
-% nlp.update;
-% solver = SnoptApplication(nlp);
-% rabbit_nlp.spc = which('rabbit.spc');
-% snspec (rabbit_nlp.spc);
-% % Run Optimization
-% tic
-% % old = load('x0');
-% % [sol, info] = optimize(solver, old.sol);
-% [sol_sn, info_sn] = optimize(solver);
-% toc
-% [tspan_sn, states_sn, inputs_sn, params_sn] = exportSolution(nlp, sol_sn);
-%
-% %% Animation
-% q_log_R = states_sn{1}.x; % Right stance
-% q_log_L = q_log_R([1:3,6:7,4:5],:); % symmetric Left stance
-% q_log_L(1:3,:) = q_log_L(1:3,:) + repmat((q_log_R(1:3,end)-q_log_R(1:3,1)),1,21);
-%
-% t_log_R = tspan_sn{1};
-% t_log_L = t_log_R + t_log_R(end);
-%
-% q_log = [q_log_R, q_log_L];
-% t_log = [t_log_R, t_log_L];
-%
-% anim = Animator.FiveLinkAnimator(t_log, q_log);
-% anim.pov = Animator.AnimatorPointOfView.West;
-% anim.Animate(true);
-% anim.isLooping = false;
-% anim.updateWorldPosition = true;
-% anim.endTime = 20;
-% conGUI = Animator.AnimatorControls();
-% conGUI.anim = anim;
+%% Calculate symbolic functions
+% Calculate COM position/velocity
+clc
+pos_COM = getComPosition(rabbit);
+
+% Calculate Hip Position/Jacobian
+pos_hip = getCartesianPosition(rabbit,rabbit.OtherPoints.Torso);
+H_hip = jacobian(pos_hip,rabbit.States.x);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

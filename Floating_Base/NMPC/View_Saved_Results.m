@@ -23,8 +23,7 @@ mpc_info.DT = 0.005;
 mpc_info.N = 5;
 step_dir = "Ascend";
 step_height = "0.05";
-% step_time = "0.45";
-step_vel = "0.20";
+step_vel = "0.75";
 
 %% Load Results
 % load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...

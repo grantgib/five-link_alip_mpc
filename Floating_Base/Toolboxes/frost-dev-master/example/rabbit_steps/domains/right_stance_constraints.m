@@ -31,7 +31,7 @@ function right_stance_constraints(nlp, bounds, varargin)
     addNodeConstraint(nlp, y_bound_fun, {'x'}, 'all', lb, ub,'Linear');
     
     % average velocity
-    velocity_desired = 0.2;
+    velocity_desired = 0.75;
     DOF = 7;
     T  = SymVariable('t',[2,1]);
     X0  = SymVariable('x0',[DOF,1]);
