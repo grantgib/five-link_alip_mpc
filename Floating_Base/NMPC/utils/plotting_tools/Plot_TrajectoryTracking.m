@@ -157,8 +157,12 @@ if plotSettings.u
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    legend('reference',ctrl_type +" trajectory",'location','best');
-    sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
+%     legend('reference',ctrl_type +" trajectory",'location','best');
+      legend('reference',"IO-NMPC trajectory",'location','best');
+%     sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
+    sgtitle("Control Torques (Saturated at 10 N-m)")
+        set(gcf,'color','w');
+
 end
 
 %% Wrench
@@ -175,7 +179,12 @@ if plotSettings.w
     figure
     mu_actual = abs(w_traj(1,:)./w_traj(2,:));
     plot(time_traj(1:end-1),mu_actual); hold on;
+    ylabel('$\mu_s$','interpreter','latex');
+    xlabel('Time (sec)','interpreter','latex');
     yline(constr_info.grf.mu,'r');
+    grid on; set(gca,'FontSize',sz)
+    set(gcf,'color','w');
+
 end
 
 %% Output - Swing Foot Position

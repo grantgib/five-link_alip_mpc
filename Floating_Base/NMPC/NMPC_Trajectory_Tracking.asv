@@ -26,20 +26,20 @@ ctrl_info.type = "IO";
 % ctrl_info.type = "NMPC";
 
 % MPC info
-ctrl_info.mpc_info.N = 2;
+ctrl_info.mpc_info.N = 1;
 ctrl_info.mpc_info.DT = ctrl_info.DT;
 
 % IO info
 ctrl_info.IO_info.DT = ctrl_info.DT;
 ctrl_info.IO_info.type = "phase"; % time
-ctrl_info.IO_info.linear = 1; % true uses PD control only!
+ctrl_info.IO_info.linear = 0; % true uses PD control only!
 
 %% Load Desired Reference Trajectory
 tic
-ref_info.num_steps = 40;
+ref_info.num_steps = 10;
 ref_info.IC_disturbed = 0;
 ref_info.external_force = 0; % Occurs at specific iteration number in Update_State_IO
-ref_info.step_height = "0.05";
+ref_info.step_height = "0.10";
 ref_info.step_vel = "0.75";
 ref_info.step_dir = "Ascend";
 % ref_info.step_dir = "Descend";
@@ -77,7 +77,7 @@ constr_info.obstacle.height = 0.08;
 constr_info.obstacle.width = [0.4, 0.80]; % As a function of phase
 
 % constrain the Ground Reaction Forces
-constr_info.grf.active = 0;
+constr_info.grf.active = 1;
 constr_info.grf.mu = 0.9;
 
 % Saturate the torque
@@ -87,7 +87,7 @@ disp("Constraint Information Saved!");
 %% Generate Dynamics Functions
 disp("Calculating Kinematics and Dynamics Functions...");
 tic
-[dyn_info] = Generate_Dynamics_Nonlinear();
+[dyn_info] = Generate_Dynamics_Nonlinear(ctrl_info);
 disp("Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
@@ -140,7 +140,7 @@ if false
         else
             save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
                 ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec).mat";
+                ")_Vel(" + ref_info.step_vel + " sec)_GRF.mat";
             save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
             disp("Saved IO-NMPC Trajectory!");
         end

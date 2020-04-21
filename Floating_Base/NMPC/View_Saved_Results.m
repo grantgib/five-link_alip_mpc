@@ -20,9 +20,9 @@ addpath(genpath('saved_results/'));
 %% Time Step, Prediction Horizon, Simulation Time
 mpc_info = struct;
 mpc_info.DT = 0.005;
-mpc_info.N = 5;
+mpc_info.N = 1;
 step_dir = "Ascend";
-step_height = "0.05";
+step_height = "0.10";
 step_vel = "0.75";
 
 %% Load Results
@@ -31,7 +31,7 @@ step_vel = "0.75";
 %         ")_Time(" + step_time + " sec).mat";
 load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...
         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
-        ")_Vel(" + step_vel + " sec).mat";
+        ")_Vel(" + step_vel + " sec)_GRF_torque.mat";
 results = load(fullfile('saved_results/',load_name));
 dyn_info = results.dyn_info;
 ref_info = results.ref_info;

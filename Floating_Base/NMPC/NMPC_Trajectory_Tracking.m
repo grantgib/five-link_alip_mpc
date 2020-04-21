@@ -41,8 +41,8 @@ ref_info.IC_disturbed = 0;
 ref_info.external_force = 0; % Occurs at specific iteration number in Update_State_IO
 ref_info.step_height = "0.10";
 ref_info.step_vel = "0.75";
-ref_info.step_dir = "Ascend";
-% ref_info.step_dir = "Descend";
+% ref_info.step_dir = "Ascend";
+ref_info.step_dir = "Descend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
 
 
@@ -77,7 +77,7 @@ constr_info.obstacle.height = 0.08;
 constr_info.obstacle.width = [0.4, 0.80]; % As a function of phase
 
 % constrain the Ground Reaction Forces
-constr_info.grf.active = 0;
+constr_info.grf.active = 1;
 constr_info.grf.mu = 0.9;
 
 % Saturate the torque
@@ -140,7 +140,7 @@ if false
         else
             save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
                 ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec).mat";
+                ")_Vel(" + ref_info.step_vel + " sec)_GRF_torque.mat";
             save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
             disp("Saved IO-NMPC Trajectory!");
         end
@@ -157,7 +157,7 @@ end
 %% Plot
 close all;
 plotSettings = struct('x',0,...
-    'u',         0,...
+    'u',         1,...
     'w',         1,...
     'xerr',      0,...
     'y_sw',      0,...
