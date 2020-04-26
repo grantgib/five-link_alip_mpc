@@ -233,7 +233,17 @@ LeftFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
 J_leftfoot = jacobian(LeftFootPos,rabbit.States.x);
 J_leftfoot = J_leftfoot([1,3],:);
 
+p_hip = getCartesianPosition(rabbit,rabbit.OtherPoints.Torso);
+J_hip = ;
 
+p_st_knee = ;
+J_st_knee = ;
+
+p_torso = ;
+J_torso = ;
+
+p_sw_knee = 
+J_sw_knee = 
 
 
 %exporting to mex

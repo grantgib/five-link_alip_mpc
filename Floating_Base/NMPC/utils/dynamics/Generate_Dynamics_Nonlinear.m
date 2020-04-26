@@ -92,10 +92,10 @@ Kp = SX.sym('Kp');
 Kd = SX.sym('Kd');
 
 % PD gains
-% damp = 0.8;
-% Ts = 0.3;
-damp = 0.9;
-Ts = 0.13;
+damp = 0.9;   % good for IO-NMPC
+Ts = 0.15;
+% damp = 0.9;
+% Ts = 0.05;
 wn = 3.9/(Ts*damp);
 Kp_save = wn^2;
 Kd_save = 2*damp*wn;

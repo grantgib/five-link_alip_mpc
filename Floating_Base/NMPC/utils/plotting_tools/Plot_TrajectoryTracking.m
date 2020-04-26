@@ -58,7 +58,7 @@ obs_height = constr_info.obstacle.height;
 
 
 %% Initialize variables
-q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
+q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$h_1=q_{1R}$','$h_2=q_{2R}$','$h_3=q_{1L}$','$h_4=q_{2L}$'}';
 dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{\psi}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
 u_header = {'$u_{q_{1R}}$','$u_{q_{2R}}$','$u_{q_{1L}}$','$u_{q_{2L}}$'};
 w_header = {'$f_x$','$f_z$'};
@@ -82,8 +82,8 @@ if plotSettings.x
 %         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
         try
-            hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
-            hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
+%             hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
+%             hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
@@ -107,8 +107,8 @@ if plotSettings.x
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(n_q+i,:),'--','LineWidth',width_traj);
         try
-            hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
-            hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+%             hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
+%             hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
         catch
             disp("infinite bounds for dx_" + i);
         end
@@ -120,6 +120,55 @@ if plotSettings.x
     sgtitle(plot_title + " State Velociites (N = " + mpc_info.N + ")");
 end
 
+%% x vs. s
+if plotSettings.x_s
+    figure 
+    wdxs = 1;
+    scat = 1;
+    for i = 1:n_q
+        subplot(3,3,i);
+%         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
+%         hold on; plot(s_traj,x_traj(i,:),'LineWidth',wdxs);
+        hold on; scatter(s_traj,x_traj(i,:),scat);
+        try
+%             hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
+%             hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
+        catch
+            disp("infinite bounds for x_" + i);
+        end
+        title(q_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+%     legend('reference',ctrl_type +" trajectory",'constraints');
+        legend("IO-NMPC trajectory",'State Constraints');
+    set(legend,'Position',[0.45 0.19 0.17 0.11]);
+        set(gcf,'color','w');
+    sgtitle("State Position Trajectories (q) for N = " + mpc_info.N + ")") ;
+%         sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
+
+end
+
+% Velocities
+if plotSettings.x_s
+    figure 
+    for i = 1:length(q_header)
+        subplot(3,3,i);
+%         scatter(s_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
+%         hold on; plot(s_traj,x_traj(n_q+i,:),'LineWidth',wdxs);
+        hold on; scatter(s_traj,x_traj(n_q+i,:),scat);
+        try
+%             hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
+%             hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+        catch
+            disp("infinite bounds for dx_" + i);
+        end
+        title(dq_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+    legend('reference',ctrl_type +" trajectory");
+    set(legend,'Position',[0.45 0.19 0.17 0.11]);
+    sgtitle(plot_title + " State Velociites (N = " + mpc_info.N + ")");
+end
 %% State Errors
 % Position
 if plotSettings.xerr
@@ -158,6 +207,7 @@ if plotSettings.u
         subplot(2,2,i);
 %         plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'LineWidth',width_traj);
+%         scatter(s_traj(1:end-1),u_traj(i,:),1);
         title(u_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -175,6 +225,7 @@ if plotSettings.w
     for i = 1:n_w
         subplot(1,2,i);
         plot(time_traj(1:size(w_traj,2)),w_traj(i,:));
+%         scatter(s_traj(1:end-1),w_traj(i,:),1);
         title(w_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
@@ -183,9 +234,11 @@ if plotSettings.w
     figure
     mu_actual = abs(w_traj(1,:)./w_traj(2,:));
     plot(time_traj(1:end-1),mu_actual); hold on;
+%     scatter(s_traj(1:end-1),mu_actual,1);
     ylabel('$\mu_s$','interpreter','latex');
     xlabel('Time (sec)','interpreter','latex');
-    title("IO-NMPC Friction Cone Satisfaction");
+%     title("IO-NMPC Friction Cone Satisfaction");
+    title("IO-L Friction Cone Violation");
     yline(constr_info.grf.mu,'r');
     grid on; set(gca,'FontSize',sz)
     set(gcf,'color','w');
@@ -252,12 +305,14 @@ if plotSettings.h_q_vs_s
     figure
     for i = 1:n_y
        subplot(2,4,i);
-       scatter(s_traj,y_traj(i,1:end-1),1);
+%        scatter(s_traj,y_traj(i,:),1);
+       plot(s_traj,y_traj(i,:));
        title("h_q(" + i + ")");
        xlabel('s');
        grid on; set(gca,'FontSize',sz);
        subplot(2,4,n_y+i);
-       scatter(s_traj,dy_traj(i,1:end-1),1);
+%        scatter(s_traj,dy_traj(i,:),1);
+       plot(s_traj,dy_traj(i,:));
        title("dh_q(" + i + ")");
        xlabel('s');
        grid on; set(gca,'FontSize',sz);

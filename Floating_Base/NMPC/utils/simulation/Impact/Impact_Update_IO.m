@@ -66,13 +66,17 @@ w_sol = f_w(q0,dq0,u_sol);
 %% Root finding impact time
 f_value = full(f_nonlinear(q0,dq0,u_sol,w_sol));
 y_func = @(delT) leftToeZ(x0(1:7)+(delT*f_value(1:7))) - step_height*(num_impacts+1);
+
 options = optimset('Display','iter'); % show iterations
 [DT_impact,fval,exitflag,output] = fzero(y_func,DT/4);     % Matlab root finding function
+
 if DT_impact > DT && y_func(DT) < 1e-5
     DT_impact = DT;
 elseif DT_impact > DT
+%     DT_impact = DT;
     error("Root finding method did not work. Guessed that impact occured outside of specified time interval. 0 <= t <= DT");
 end
+
 % Display impact height of swing foot
 height_impact = leftToeZ(x0(1:7)+(DT_impact*f_value(1:7)));
 t_minus = t0 + DT_impact;

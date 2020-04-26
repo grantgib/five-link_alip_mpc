@@ -26,7 +26,7 @@ ctrl_info.type = "IO";
 % ctrl_info.type = "NMPC";
 
 % MPC info
-ctrl_info.mpc_info.N = 1;
+ctrl_info.mpc_info.N = 3;
 ctrl_info.mpc_info.DT = ctrl_info.DT;
 
 % IO info
@@ -36,11 +36,11 @@ ctrl_info.IO_info.linear = 1; % true uses PD control only!
 
 %% Load Desired Reference Trajectory
 tic
-ref_info.num_steps = 100;
+ref_info.num_steps = 15;
 ref_info.IC_disturbed = 0;
 ref_info.external_force = 0; % Occurs at specific iteration number in Update_State_IO
-ref_info.step_height = "0";
-ref_info.step_vel = "0.50";
+ref_info.step_height = "0.10";
+ref_info.step_vel = "0.75";
 ref_info.step_dir = "Ascend";
 % ref_info.step_dir = "Descend";
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
@@ -80,14 +80,14 @@ constr_info.grf.active = 1;
 constr_info.grf.mu = 0.9;
 
 % Saturate the torque
-constr_info.torque.sat = 0;
+constr_info.torque.sat = 10;
 
 disp("Constraint Information Saved!");
 %% Generate Dynamics Functions
 disp("Calculating Kinematics and Dynamics Functions...");
 tic
 [dyn_info] = Generate_Dynamics_Nonlinear(ctrl_info);
-disp("Dynamic Functions Created!  (" + toc + " sec)");
+disp("Kinematics and Dynamic Functions Created!  (" + toc + " sec)");
 
 %% Build Nonlinear Program
 disp("Begin NLP formulation...");
@@ -116,33 +116,19 @@ if false
     penalties.Q = ctrl_info.mpc_info.Q;
     penalties.R = ctrl_info.mpc_info.R;
     if ctrl_info.IO_info.linear
-        if ref_info.IC_disturbed
             save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
                 ")_N(0-IO)_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec)_IC-Disturbed.mat";
-            save(fullfile('saved_results/IC_Disturbed/IO',save_name),'ref_info','traj_info','dyn_info','penalties','args');
-            disp("Saved IO Trajectory! (Disturbed IC)");
-        else
-            save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
-                ")_N(0-IO)_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec).mat";
+                ")_Vel(" + ref_info.step_vel + " sec)_grf_torques.mat";
             save(fullfile('saved_results/Nominal/IO',save_name),'ref_info','traj_info','dyn_info','penalties','args');
             disp("Saved IO Trajectory!");
-        end
+        
     else
-        if ref_info.IC_disturbed
-            save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
-                ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec)_Disturbed.mat";
-            save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
-            disp("Saved IO-NMPC Trajectory! (Disturbed IC)");
-        else
-            save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
-                ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec)_GRF_torque.mat";
-            save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
-            disp("Saved IO-NMPC Trajectory!");
-        end
+        
+        save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
+            ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
+            ")_Vel(" + ref_info.step_vel + " sec)_grf_torques.mat";
+        save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
+        disp("Saved IO-NMPC Trajectory!");
     end
 end
 
@@ -156,10 +142,11 @@ end
 %% Plot
 close all;
 plotSettings = struct('x',0,...
-    'u',         0,...
-    'w',         0,...
+    'x_s',       0,...
+    'u',         1,...
+    'w',         1,...
     'xerr',      0,...
-    'y_sw',      1,...
+    'y_sw',      0,...
     's',         0,...
     'calc_time', 0,...
     'impact',    0,...
@@ -177,8 +164,10 @@ animateSettings.traj = 1;
 animateSettings.ref = 0;
 animateSettings.speed = 0.5;
 animateSettings.single_sol = 0;
-Animate_MPC_Traj(ctrl_info,ref_info,traj_info,animateSettings);
+Animation_Grant(dyn_info,ctrl_info,ref_info,traj_info,animateSettings);
+% Animate_MPC_Traj(ctrl_info,ref_info,traj_info,animateSettings);
 disp('Finished Animation!');
+
 
 %% ============================== EXTRAS ==================================
 %% Check Bounds
