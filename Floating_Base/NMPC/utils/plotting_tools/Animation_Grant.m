@@ -5,6 +5,7 @@ import casadi.*
 n_q = dyn_info.dim.n_q;
 x_traj = traj_info.x_traj;
 q_traj = traj_info.x_traj(1:n_q,:);
+num_steps = ref_info.num_steps;
 
 
 %% Compute Positions throughout animation
@@ -41,33 +42,62 @@ button_restart = uicontrol('Units',    'pixels', ...
     'Value',    1);
 
 %% Draw Stairs
-num_steps = ref_info.num_steps;
-% length = 0.325; % IO 0.10,0.75
-length = 0.36; % IO-NMPC 0.10m,0.75m/s
-height = double(ref_info.step_height);
-col = [0 39/256 76/255];
-col2 = [1 203/255 5/255];
-if ref_info.step_dir == "Descend"
-    height = -height;
+
+if ref_info.step_dir == "Ascend"
+    % length = 0.325; % IO 0.10,0.75
+    length_step = 0.33; % IO-NMPC 0.10m,0.75m/s
+    height = ref_info.step_height_dbl;
+    col = [0 39/256 76/255];
+    offset = 0.1;
+    rect = rectangle('Position',[-1 -2*height 10 height]);
+        rect.FaceColor = col;
+        rect.EdgeColor = col;
+    for i = -2:num_steps
+        xst = length_step*i - offset;
+        xend = length_step*i + length_step - offset;
+        zst = height*(i-1);
+        zend = height*(i-1) + height;    
+        rect = rectangle('Position',[xst zst length_step*(num_steps+1-i) height]);
+        rect.FaceColor = col;
+        rect.EdgeColor = col;
+        %     line([xst xend],[zst zst],'LineWidth',wd,'color','k');
+        %     line([xend xend],[zst zend],'LineWidth',wd,'color','k');
+    end
+else % Descend
+    offset_start = 100;
+    length_step = 0.10;
+    col = [0 39/256 76/255];
+    offset_reg = 0.05;
+    for i = 1:num_steps+1
+        xst = length_step*i-offset_start;
+        zst = i*ref_info.step_height_dbl;
+        if i > num_steps
+            rect = rectangle('Position',[xst, zst, 100*offset_start-0.05, abs(ref_info.step_height_dbl)]);
+            rect.FaceColor = col;
+            rect.EdgeColor = col;
+        elseif i == 1
+            rect = rectangle('Position',[xst, zst, offset_start, abs(ref_info.step_height_dbl)]);
+            rect.FaceColor = col;
+            rect.EdgeColor = col;
+        else
+            rect = rectangle('Position',[xst, zst, offset_start+offset_reg*i, abs(ref_info.step_height_dbl)]);
+            rect.FaceColor = col;
+            rect.EdgeColor = col;
+        end
+    end  
 end
-wd = 5;
-offset = 0.1;
-gnd = 20;
-rect = rectangle('Position',[-1 -2*height 10 height]);
-    rect.FaceColor = col;
-    rect.EdgeColor = col;
-for i = -2:num_steps
-    
-    xst = length*i - offset;
-    xend = length*i + length - offset;
-    zst = height*(i-1);
-    zend = height*(i-1) + height;    
-    rect = rectangle('Position',[xst zst length*(num_steps+1-i) height]);
-    rect.FaceColor = col;
-    rect.EdgeColor = col;
-    %     line([xst xend],[zst zst],'LineWidth',wd,'color','k');
-    %     line([xend xend],[zst zend],'LineWidth',wd,'color','k');
-end
+
+% %% Draw Obstacle
+% maize = [256/256 204/256 6/256];
+% rect_obs = rectangle('Position',[0.08, 0, 0.2-0.08, 0.1]);
+% rect_obs.FaceColor = maize;
+% rect_obs.EdgeColor = maize;
+% uistack(rect_obs, 'top');
+
+
+
+
+
 
 
 %% Animate Robot
@@ -96,16 +126,18 @@ color_swing = 'r';
 color_torso = 'k';
 
 % Draw initial pose
-axis([p_hip(1,1)-1,...
+axis([p_hip(1,1)-0.5,...
         p_hip(1,1)+1,...
-        -2*height,...
-        2]);
+        -0.25,...
+        1.6]);
 set(link_st_shin,'LineWidth',2,'Color',color_stance,"LineWidth",sz);
 set(link_st_thigh,'LineWidth',2,'Color',color_stance,"LineWidth",sz);
 set(link_torso,'LineWidth',2,'Color',color_torso,"LineWidth",sz);
 set(link_sw_shin,'LineWidth',2,'Color',color_swing,"LineWidth",sz);
 set(link_sw_thigh,'LineWidth',2,'Color',color_swing,"LineWidth",sz);
 drawnow;
+
+shift = ref_info.step_height_dbl / (length(traj_info.time_traj)/ref_info.num_steps);
 
 % Animate
 while button_play.Value
@@ -132,10 +164,18 @@ for i = 1:size(x_traj,2)
         'YData',[p_hip(3,i) p_sw_knee(3,i)],"LineWidth",sz);
     set(link_sw_shin,'XData',[p_sw_knee(1,i) p_sw_foot(1,i)],...
         'YData',[p_sw_knee(3,i) p_sw_foot(3,i)],"LineWidth",sz);
-    axis([p_hip(1,i)-1,...
+    axis([p_hip(1,i)-0.5,...
         p_hip(1,i)+1,...
-        -2*height,...
-        2]);
+        -0.25 + shift*i,...
+        1.6 + shift*i]);
+        axis([p_hip(1,i)-0.5,...
+        p_hip(1,i)+1,...
+        -0.25 + shift,...
+        1.6 + shift]);
+%         axis([-0.2,...
+%         0.5,...
+%         0,...
+%         0.6]);
     
     drawnow ;       % Draws the newly updated lines onto the figure
     pause(0.005) ;

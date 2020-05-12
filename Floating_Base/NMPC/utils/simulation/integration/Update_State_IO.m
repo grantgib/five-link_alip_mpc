@@ -58,6 +58,13 @@ end
 if IO_info.linear
     u_sol = full(u_IO(q_current,dq_current,h_d,dh_d,ddh_d,Kp,Kd));
     w_sol = f_w(q_current,dq_current,u_sol);
+    if (constr_info.grf.active && abs(full(w_sol(1)/w_sol(2))) > constr_info.grf.mu) || constr_info.grf.fail
+        constr_info.grf.fail = 1;
+        x_next = x_init;
+        t_next = t_current + DT;
+        ddq_sol = full(f_ddq(q_current,dq_current,u_sol,w_sol));
+        return
+    end
 else % NMPC zero dynamics in I/O controller
 %     u_sol = full(u_IO_NMPC(q_current,dq_current,h_d,dh_d,ddh_d,u_mpc(:,1)));
     u_sol = full(u_IO_NMPC(q_current,dq_current,h_d,dh_d,ddh_d,Kp,Kd,u_mpc(:,1)));

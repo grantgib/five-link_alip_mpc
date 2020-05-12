@@ -24,8 +24,13 @@ X_REF_Original = ref_info.x_ref;
 U_REF_Original = ref_info.u_ref;
 DDH_REF_Original = ref_info.ddq_ref(4:end,:);
 x_init = ref_info.x_init;
+
 num_steps = ref_info.num_steps;
 s_func = ref_info.phase_based.s_func;
+
+
+y_sw_start = leftToePos(x_init(1:7))';
+y_sw_start = y_sw_start([1,3]);
 
 %% Initialize Variables
 ctrl_info.iter = 1;            % simulation iteration number (proportional to t_current)
@@ -54,7 +59,7 @@ w_traj = [];
 ddq_traj = [];
 u_mpc_traj = [];
 y_sw = swing_foot_init([1,3]);
-y_sw_normal = swing_foot_init([1 3]);
+y_sw_normal = [0;0];
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
 w_traj_all = [];
@@ -130,11 +135,10 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     
     %% Check for impact & Apply Impact/Switch Map
     swing_foot_pos = leftToePos(x_next(1:7))';
-    y_swingfoot = swing_foot_pos([1,3]);
-    if (y_swingfoot(2) < (traj_info.num_impacts+1)*double(ref_info.step_height)) &&...
-            (y_sw(2,end) > double(ref_info.step_height)) &&...
-            (y_swingfoot(2) - y_sw(2,end) < 0) &&...
-            (y_swingfoot(1) > stance_foot_pos(1))
+    y_sw_current = swing_foot_pos([1,3]);
+    if y_sw_current(2) < (traj_info.num_impacts+1)*ref_info.step_height_dbl &&...  % height at stairs
+            (y_sw_current(2) - y_sw(2,end) < 0) &&... % velocity is negative
+            (y_sw(2,end) > (traj_info.num_impacts+1)*ref_info.step_height_dbl)    % previous swing foot height was above the stair (fixes conditional when you switch leg coordinates)
         
         disp("-> Impact occured, find when it happened!");
         % Forward Integrate until Impact, Apply Impact, Integrate until
@@ -154,15 +158,21 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         U_REF = U_REF_Original;
         
         % Update stance foot position with previous swing foot impact pos
-        stance_foot_pos = y_swingfoot(1);
+        stance_foot_pos = y_sw_current(1);
         
         % Update output trajectory
-        y_sw = [y_sw, y_swingfoot];
-        y_sw_normal = [y_sw_normal, y_swingfoot-traj_info.num_impacts.*double(ref_info.step_height)];
+        y_sw_start = leftToePos(x_next(1:7))'; y_sw_start = y_sw_start([1,3]);
+        y_sw_current = y_sw_start;
+        y_sw = [y_sw, y_sw_current];
+        sw_offset = [y_sw_start(1)*(traj_info.num_impacts);
+            y_sw_start(2)*traj_info.num_impacts];
+        y_sw_normal = [y_sw_normal, (y_sw_current - sw_offset)];
     else
         % Update output trajectory
-        y_sw = [y_sw, y_swingfoot];
-        y_sw_normal = [y_sw_normal, y_swingfoot-traj_info.num_impacts.*double(ref_info.step_height)];
+        y_sw = [y_sw, y_sw_current];
+        sw_offset = [y_sw_start(1)*(traj_info.num_impacts+1);
+            y_sw_start(2)*(traj_info.num_impacts+1)];
+        y_sw_normal = [y_sw_normal, (y_sw_current-sw_offset)] ;
     end
     % Update s phase variable
     s_traj = [s_traj, full(s_func(x_next(1:n_q)))];

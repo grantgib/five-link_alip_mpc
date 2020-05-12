@@ -19,7 +19,7 @@ s_func = ref_info.phase_based.s_func;
 alpha_h = ref_info.phase_based.alpha_h;
 alpha_dh = ref_info.phase_based.alpha_dh;
 alpha_ddh = ref_info.phase_based.alpha_ddh;
-step_height = double(ref_info.step_height);
+step_height = ref_info.step_height_dbl;
 
 
 %% Compute u_sol and w_sol
@@ -33,8 +33,6 @@ ddq_ref_current = ddq_ref(:,end);
 % dh_q = dq0(4:end);
     Kp = dyn_info.ctrl.Kp;
     Kd = dyn_info.ctrl.Kd;
-
-
 
 if IO_type == "phase"
     s_current = full(s_func(q0));

@@ -147,7 +147,7 @@ for k = 1:N+1
 end
 obj = sum(obj_vector) + Term_cost;
 
-%% Check for Output Constraints
+%% Phased swing foot height Constraints
 if constr_info.obstacle.isObstacle
     for k = 1:N+1
         q_k = Xdec(1:n_q,k);
@@ -165,7 +165,6 @@ if constr_info.grf.active
         g = [g; fric];
     end
 end
-
 
 %% Torque Saturation
 if constr_info.torque.sat

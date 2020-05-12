@@ -29,8 +29,8 @@ else
 end
 
 % Set Wrench bounds
-w_lb = [-inf; 0];
-w_ub = [inf; inf];
+w_lb = [-inf; 0.01];
+w_ub = [1e15; 1e15];
 
 %% Compute full_refeters vector
 args = struct;
@@ -64,7 +64,7 @@ for i = 1:n_w
     args.ubx((n_x+n_u)*(N+1)+i:n_w:(n_x+n_u+n_w)*(N+1)) = w_ub(i);
 end
 
-%% Add additional Inequality constraints to g
+%% Add additional Inequality constraints to g   %% NOT WORKING
 if constr_info.obstacle.isObstacle
     lbg_sw = zeros(1,N+1);
     ubg_sw = zeros(1,N+1);
@@ -76,8 +76,8 @@ if constr_info.obstacle.isObstacle
     ds = 1.3033; % got from experiment
     for i = 1:N+1
         s_k(i) = s_init + ds*t_step(i);
-        if s_k(i) > obs_start && s_k(i) < obs_end
-            lbg_sw(i) = obs_height + traj_info.num_impacts*double(ref_info.step_height);
+        if s_k(i) > obs_start && s_k(i) < obs_end && traj_info.num_impacts == 0
+            lbg_sw(i) = obs_height + traj_info.num_impacts*ref_info.step_height_dbl;
             ubg_sw(i) = inf;
         else
             lbg_sw(i) = -inf;

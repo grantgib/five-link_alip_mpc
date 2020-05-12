@@ -26,7 +26,7 @@ ctrl_info.type = "IO";
 % ctrl_info.type = "NMPC";
 
 % MPC info
-ctrl_info.mpc_info.N = 3;
+ctrl_info.mpc_info.N = 10;
 ctrl_info.mpc_info.DT = ctrl_info.DT;
 
 % IO info
@@ -40,9 +40,14 @@ ref_info.num_steps = 15;
 ref_info.IC_disturbed = 0;
 ref_info.external_force = 0; % Occurs at specific iteration number in Update_State_IO
 ref_info.step_height = "0.10";
+ref_info.step_height_dbl = double(ref_info.step_height);
 ref_info.step_vel = "0.75";
 ref_info.step_dir = "Ascend";
 % ref_info.step_dir = "Descend";
+
+if ref_info.step_dir == "Descend"
+    ref_info.step_height_dbl = -double(ref_info.step_height);
+end
 ref_info.traj_name = ref_info.step_dir + "_Ht(" + ref_info.step_height + ')_Vel(' + ref_info.step_vel + ").mat";
 
 % Load reference
@@ -72,12 +77,13 @@ disp("Initial Condition Set!");
 constr_info = struct;
 % Constrain swing foot height as a function of phase
 constr_info.obstacle.isObstacle = 0;
-constr_info.obstacle.height = 0.08;
-constr_info.obstacle.width = [0.45, 0.6]; % As a function of phase
+constr_info.obstacle.height = 0.12;
+constr_info.obstacle.width = [0.73, 0.85]; % As a function of phase
 
 % constrain the Ground Reaction Forces
-constr_info.grf.active = 1;
+constr_info.grf.active = 0;
 constr_info.grf.mu = 0.9;
+constr_info.grf.fail = 0;
 
 % Saturate the torque
 constr_info.torque.sat = 10;
@@ -116,18 +122,17 @@ if false
     penalties.Q = ctrl_info.mpc_info.Q;
     penalties.R = ctrl_info.mpc_info.R;
     if ctrl_info.IO_info.linear
-            save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
-                ")_N(0-IO)_DT(" + ctrl_info.mpc_info.DT +...
-                ")_Vel(" + ref_info.step_vel + " sec)_grf_torques.mat";
-            save(fullfile('saved_results/Nominal/IO',save_name),'ref_info','traj_info','dyn_info','penalties','args');
-            disp("Saved IO Trajectory!");
-        
+        save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
+            ")_N(0-IO)_DT(" + ctrl_info.mpc_info.DT +...
+            ")_Vel(" + ref_info.step_vel + " sec)_grf_torques.mat";
+        save(fullfile('saved_results/Nominal/IO',save_name),'ref_info','traj_info','dyn_info','penalties','args');
+        disp("Saved IO Trajectory!");
     else
         
         save_name = "Stairs(" + ref_info.step_dir + ")_Ht(" + ref_info.step_height +...
             ")_N(" + ctrl_info.mpc_info.N + ")_DT(" + ctrl_info.mpc_info.DT +...
-            ")_Vel(" + ref_info.step_vel + " sec)_grf_torques.mat";
-        save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args');
+            ")_Vel(" + ref_info.step_vel + " sec)_unconstrained.mat";
+        save(fullfile('saved_results/Nominal/IO_NMPC',save_name),'ref_info','traj_info','dyn_info','penalties','args','ctrl_info');
         disp("Saved IO-NMPC Trajectory!");
     end
 end
@@ -142,18 +147,19 @@ end
 %% Plot
 close all;
 plotSettings = struct('x',0,...
-    'x_s',       0,...
-    'u',         1,...
-    'w',         1,...
-    'xerr',      0,...
-    'y_sw',      0,...
-    's',         0,...
-    'calc_time', 0,...
-    'impact',    0,...
-    'single_sol',0,...
-    'virtuals',  0,...
-    'h_q_vs_s',  0,...
-    'last_step', 0);
+    'x_s',          0,...
+    'u',            1,...
+    'w',            0,...
+    'xerr',         0,...
+    'y_sw',         0,...
+    'y_sw_normal',  0,...
+    's',            0,...
+    'calc_time',    0,...
+    'impact',       0,...
+    'single_sol',   0,...
+    'virtuals',     0,...
+    'h_q_vs_s',     0,...
+    'last_step',    0);
 plotSettings.traj_title = ref_info.step_height + "m " + ref_info.step_dir;
 Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings);
 disp('Finished Plotting!');
@@ -167,7 +173,6 @@ animateSettings.single_sol = 0;
 Animation_Grant(dyn_info,ctrl_info,ref_info,traj_info,animateSettings);
 % Animate_MPC_Traj(ctrl_info,ref_info,traj_info,animateSettings);
 disp('Finished Animation!');
-
 
 %% ============================== EXTRAS ==================================
 %% Check Bounds
