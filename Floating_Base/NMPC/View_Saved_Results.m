@@ -14,31 +14,69 @@ else
     import casadi.*
 end
 addpath(genpath('utils/'));
-addpath(genpath('../FROST_code'));
 addpath(genpath('saved_results/'));
 
-%% Time Step, Prediction Horizon, Simulation Time
-mpc_info = struct;
-mpc_info.DT = 0.005;
-mpc_info.N = 1;
-step_dir = "Ascend";
-step_height = "0.10";
-step_vel = "0.75";
+%% Trajectory Options
+DT = 0.005;
+grf_active = 0;         % 1 for GRF constraint active
+torque_sat = 0;         % if nonzero, number is the saturated torque value
+isObstacle = 0;         % 1 for obstacle
+step_dir = "Ascend";    % Descend
+step_height = "0.05";   % 0.05, 0.10
+step_vel = "0.50";      % 0.50 or 0.75
+if step_dir == "Ascend"
+    step_height_dbl = double(step_height);
+else
+    step_height_dbl = -double(step_height);
+end
+IO_linear = 1;          % 1 -> IO-L,    0 -> IO-NMPC
+N = 1;
 
 %% Load Results
-% load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...
-%         ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
-%         ")_Time(" + step_time + " sec).mat";
-load_name = "Stairs(" + step_dir + ")_Ht(" + step_height +...
-        ")_N(" + mpc_info.N + ")_DT(" + mpc_info.DT +...
-        ")_Vel(" + step_vel + " sec)_GRF_torque.mat";
-results = load(fullfile('saved_results/',load_name));
-dyn_info = results.dyn_info;
+extra_settings = "";
+if grf_active
+    extra_settings = extra_settings + "_GRF(mu = " + constr_info.grf.mu + ")";
+    load_dir = "GRF/";
+end
+if torque_sat
+    extra_settings = extra_settings + "_TorqueSaturate(" + constr_info.torque.sat + ")";
+    load_dir = "GRF_Torques/";
+end
+if isObstacle
+    extra_settings = extra_settings + "_Obstacle";
+    load_dir = "GRF_Torques_Obstacle/";
+end
+
+if ~grf_active && ~torque_sat && ~isObstacle
+    load_dir = "Unconstrained/";
+end
+
+if IO_linear
+    load_name = "Stairs(" + step_dir + ...
+        ")_Ht(" + string(step_height_dbl) + ...
+        " m)_N(0-IO)_DT(" + DT + ...
+        " s)_Vel(" + step_vel + " mps)" + ...
+        extra_settings + ".mat";
+    
+    results = load(fullfile('saved_results/IO/',load_dir,load_name));
+else
+    load_name = "Stairs(" + step_dir + ...
+        ")_Ht(" + string(step_height_dbl) + ...
+        " m)_N(" + N + ...
+        ")_DT(" + DT + ...
+        " s)_Vel(" + step_vel + " mps)_" + ...
+        extra_settings + ".mat";
+    
+    results = load(fullfile('saved_results/IO_NMPC/',load_dir,load_name));
+end
+
+%% Extract Loaded Data
+ctrl_info = results.ctrl_info;
 ref_info = results.ref_info;
+constr_info = results.constr_info;
+dyn_info = results.dyn_info;
 traj_info = results.traj_info;
-mpc_info.args = results.args;
-mpc_info.Q = results.penalties.Q;
-mpc_info.R = results.penalties.R;
+mpc_info = ctrl_info.mpc_info;
 
 %% Trajectory Statistics
 x_traj_final_error = traj_info.stats.x_traj_final_error;
@@ -53,59 +91,60 @@ disp("State Penalty (Q)"); disp(mpc_info.Q);
 disp("Control Inputs Penalty (R)"); disp(mpc_info.R);
 
 %% Plot
-plotSettings = struct;
-plotSettings.x = 1;
-plotSettings.u = 1;
-plotSettings.w = 0;
-plotSettings.xerr = 0;
-plotSettings.y = 0;
-plotSettings.calc_time = 0;
-plotSettings.single_sol = 0;
-plotSettings.traj_title = step_height + "m " + step_dir;
-Plot_TrajectoryTracking(dyn_info,mpc_info,ref_info,traj_info,plotSettings);
+plotSettings = struct('x',1,...
+    'x_s',          0,...
+    'u',            0,...
+    'w',            0,...
+    'xerr',         0,...
+    'y_sw',         0,...
+    'y_sw_normal',  0,...
+    's',            0,...
+    'calc_time',    0,...
+    'impact',       0,...
+    'virtuals',     0,...
+    'h_q_vs_s',     0,...
+    'last_step',    0,...
+    'single_sol',   0);
+plotSettings.traj_title = ref_info.step_height + "m " + ref_info.step_dir;
+Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings);
 disp('Finished Plotting!');
 
 %% Animation
-animateSettings = struct;
-animateSettings.traj = 1;
-animateSettings.ref = 0;
-animateSettings.single_sol = 0;
-Animate_MPC_Traj(mpc_info,ref_info,traj_info,animateSettings);
+animateSettings = struct('traj',1,...
+    'ref',          1,...
+    'speed',        1,...
+    'single_sol',   0);
+Animation_Grant(dyn_info,ctrl_info,ref_info,traj_info,animateSettings);
+% Animate_MPC_Traj(ctrl_info,ref_info,traj_info,animateSettings);
 disp('Finished Animation!');
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 %% end of code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

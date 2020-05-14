@@ -161,7 +161,8 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         stance_foot_pos = y_sw_current(1);
         
         % Update output trajectory
-        y_sw_start = leftToePos(x_next(1:7))'; y_sw_start = y_sw_start([1,3]);
+        y_sw_start = leftToePos(x_next(1:7))'; 
+        y_sw_start = y_sw_start([1,3]);
         y_sw_current = y_sw_start;
         y_sw = [y_sw, y_sw_current];
         sw_offset = [y_sw_start(1)*(traj_info.num_impacts);

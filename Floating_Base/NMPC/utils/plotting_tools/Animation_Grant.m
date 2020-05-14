@@ -87,12 +87,12 @@ else % Descend
     end  
 end
 
-% %% Draw Obstacle
-% maize = [256/256 204/256 6/256];
-% rect_obs = rectangle('Position',[0.08, 0, 0.2-0.08, 0.1]);
-% rect_obs.FaceColor = maize;
-% rect_obs.EdgeColor = maize;
-% uistack(rect_obs, 'top');
+%% Draw Obstacle
+maize = [256/256 204/256 6/256];
+rect_obs = rectangle('Position',[0.08, 0, 0.2-0.08, 0.1]);
+rect_obs.FaceColor = maize;
+rect_obs.EdgeColor = maize;
+uistack(rect_obs, 'top');
 
 
 
