@@ -9,6 +9,7 @@ n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
+pos_swingfoot = dyn_info.func.f_pos_swing;
 
 % ctrl_info
 DT = ctrl_info.DT;
@@ -28,9 +29,7 @@ x_init = ref_info.x_init;
 num_steps = ref_info.num_steps;
 s_func = ref_info.phase_based.s_func;
 
-
-y_sw_start = leftToePos(x_init(1:7))';
-y_sw_start = y_sw_start([1,3]);
+y_sw_start = full(pos_swingfoot(x_init(1:7)))';
 
 %% Initialize Variables
 ctrl_info.iter = 1;            % simulation iteration number (proportional to t_current)
@@ -39,7 +38,7 @@ X_REF = X_REF_Original;
 U_REF = U_REF_Original;
 DDH_REF = DDH_REF_Original;
 stance_foot_pos = [0; 0];
-swing_foot_init = leftToePos(x_init(1:7))';
+swing_foot_init = full(pos_swingfoot(x_init(1:7)))';
 traj_info.num_impacts = 0;
 
 if IO_info.linear == 0
@@ -58,7 +57,7 @@ u_traj = [];
 w_traj = [];
 ddq_traj = [];
 u_mpc_traj = [];
-y_sw = swing_foot_init([1,3]);
+y_sw = swing_foot_init;
 y_sw_normal = [0;0];
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
@@ -134,8 +133,7 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     ddq_traj = [ddq_traj, ddq_sol];
     
     %% Check for impact & Apply Impact/Switch Map
-    swing_foot_pos = leftToePos(x_next(1:7))';
-    y_sw_current = swing_foot_pos([1,3]);
+    y_sw_current = full(pos_swingfoot(x_next(1:7)))';
     if y_sw_current(2) < (traj_info.num_impacts+1)*ref_info.step_height_dbl &&...  % height at stairs
             (y_sw_current(2) - y_sw(2,end) < 0) &&... % velocity is negative
             (y_sw(2,end) > (traj_info.num_impacts+1)*ref_info.step_height_dbl)    % previous swing foot height was above the stair (fixes conditional when you switch leg coordinates)
@@ -161,8 +159,7 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         stance_foot_pos = y_sw_current(1);
         
         % Update output trajectory
-        y_sw_start = leftToePos(x_next(1:7))'; 
-        y_sw_start = y_sw_start([1,3]);
+        y_sw_start = full(pos_swingfoot(x_next(1:7)))'; 
         y_sw_current = y_sw_start;
         y_sw = [y_sw, y_sw_current];
         sw_offset = [y_sw_start(1)*(traj_info.num_impacts);

@@ -39,10 +39,8 @@ ddq_ref_current = ddy_ref_current(:,end);
 % h_q = q_current(4:end);       % just for reference
 % dh_q = dq_current(4:end);
 
-    Kp = dyn_info.ctrl.Kp;
-    Kd = dyn_info.ctrl.Kd;
-
-
+Kp = dyn_info.ctrl.Kp;
+Kd = dyn_info.ctrl.Kd;
 
 if IO_type == "phase"
     s_current = full(s_func(q_current));
@@ -66,7 +64,7 @@ if IO_info.linear
         return
     end
 else % NMPC zero dynamics in I/O controller
-%     u_sol = full(u_IO_NMPC(q_current,dq_current,h_d,dh_d,ddh_d,u_mpc(:,1)));
+    %     u_sol = full(u_IO_NMPC(q_current,dq_current,h_d,dh_d,ddh_d,u_mpc(:,1)));
     u_sol = full(u_IO_NMPC(q_current,dq_current,h_d,dh_d,ddh_d,Kp,Kd,u_mpc(:,1)));
     w_sol = w_mpc(:,1);
 end
@@ -94,10 +92,13 @@ else
 end
 
 %% forward integrate
-params_int = struct('q_init',q_current,'dq_init',dq_current,'u',u_sol,...
-    'w',w_sol,'DT',DT,'w_ext',w_ext);
-params_int.type = "Euler";
-% params_int.type = "RK4";
+params_int = struct('q_init',q_current,...
+    'dq_init',dq_current,...
+    'u',u_sol,...
+    'w',w_sol,...
+    'DT',DT,...
+    'w_ext',w_ext); % w_ext is the optional external force
+params_int.type = ctrl_info.int;
 if params_int.type == "Euler"
     [x_next,t_next] = Forward_Euler_Integrate(f_nonlinear,x_current,t_current,params_int);
 elseif params_int.type == "RK4"

@@ -1,5 +1,7 @@
 function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
 %% Extract variables from inputs
+disp("Plotting Results...");
+
 % plotSettings
 plot_title = plotSettings.traj_title;
 
@@ -78,11 +80,11 @@ if plotSettings.x
     figure
     for i = 1:n_q
         subplot(3,3,i);
-        %         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
+        plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
         try
-            %             hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
-            %             hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
+            hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
+            hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
@@ -245,22 +247,22 @@ if plotSettings.w
     
     
 end
-%% Output - Swing Foot Position 
+%% Output - Swing Foot Position
 if plotSettings.y_sw
-%     figure
-%     for i = 1:2
-%         subplot(1,2,i);
-%         plot(time_traj,y_sw_traj(i,:));
-%         title(y_header{i},'interpreter','latex');
-%         grid on; set(gca,'FontSize',sz);
-%     end
-%     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
+    %     figure
+    %     for i = 1:2
+    %         subplot(1,2,i);
+    %         plot(time_traj,y_sw_traj(i,:));
+    %         title(y_header{i},'interpreter','latex');
+    %         grid on; set(gca,'FontSize',sz);
+    %     end
+    %     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
     
     figure
     maize = [256/256 204/256 6/256];
     blue_color = [0 39/256 76/255];
     plot(s_traj(1,1:104),y_sw_traj(2,1:104),'LineWidth',1,'color',blue_color); hold on
-%     scatter(s_traj,y_sw_traj(2,:),1); hold on
+    %     scatter(s_traj,y_sw_traj(2,:),1); hold on
     rect = rectangle('Position',[obs_start, 0, obs_end-obs_start, obs_height]);
     rect.FaceColor = maize;
     rect.EdgeColor = maize;
@@ -269,9 +271,9 @@ if plotSettings.y_sw
     rect2.EdgeColor = maize;
     uistack(rect,'bottom');
     
-%     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_start obs_end],[obs_height obs_height],'color','r');
+    %     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_start obs_end],[obs_height obs_height],'color','r');
     xlabel('Phase Variable (s)');
     ylabel('Swing Foot Height ($p^z_{sw}$)','interpreter','latex');
     title('Obstacle Avoidance');
@@ -281,20 +283,20 @@ if plotSettings.y_sw
     
     figure
     scatter(s_traj,y_sw_traj(1,:),1); hold on
-%     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_start obs_end],[obs_height obs_height],'color','r');
+    %     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_start obs_end],[obs_height obs_height],'color','r');
     xlabel('Phase Variable (s)');
     ylabel('Swing Foot X (x_{sw})');
     title('Obstacle Avoidance');
     grid on; set(gca,'FontSize',sz)
     set(gcf,'color','w');
     
-%     figure
-%     plot(y_sw_traj(1,:),y_sw_traj(2,:));
-%     xlabel('x_sw'); ylabel('z_{sw}');
-%     title('x vs. z swing foot height'); grid on;
-%     
+    %     figure
+    %     plot(y_sw_traj(1,:),y_sw_traj(2,:));
+    %     xlabel('x_sw'); ylabel('z_{sw}');
+    %     title('x vs. z swing foot height'); grid on;
+    %
 end
 
 %% Output - Swing Foot Position Normalized
@@ -310,23 +312,23 @@ if plotSettings.y_sw_normal
     
     figure
     subplot(1,2,1);
-%     scatter(s_traj,y_sw_traj_normal(2,:),1); hold on
+    %     scatter(s_traj,y_sw_traj_normal(2,:),1); hold on
     plot(s_traj,y_sw_traj_normal(1,:)); hold on
-%     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_start obs_end],[obs_height obs_height],'color','r');
+    %     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_start obs_end],[obs_height obs_height],'color','r');
     xlabel('Phase Variable (s)');
     ylabel('Normalized Swing Foot X (x_{sw})');
     title('Obstacle Avoidance');
     grid on; set(gca,'FontSize',sz)
-%     set(gcf,'color','w');
+    %     set(gcf,'color','w');
     
     subplot(1,2,2);
-%     scatter(s_traj,y_sw_traj_normal(1,:),1); hold on
+    %     scatter(s_traj,y_sw_traj_normal(1,:),1); hold on
     plot(s_traj,y_sw_traj_normal(2,:)); hold on
-%     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
-%     line([obs_start obs_end],[obs_height obs_height],'color','r');
+    %     line([obs_start obs_start],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_end obs_end],[-0.02 obs_height],'color','r'); hold on;
+    %     line([obs_start obs_end],[obs_height obs_height],'color','r');
     xlabel('Phase Variable (s)');
     ylabel('Normalized Swing Foot Z (z_{sw})');
     title('Obstacle Avoidance');
@@ -386,7 +388,7 @@ if plotSettings.virtuals
     figure
     for i = 1:n_y
         subplot(2,4,i);
-%         scatter(theta_traj,y_traj(i,:),1);
+        %         scatter(theta_traj,y_traj(i,:),1);
         scatter(theta_traj(1:114),y_traj(i,1:114),1);
         title("h_q(" + i + ")");
         xlabel('theta');

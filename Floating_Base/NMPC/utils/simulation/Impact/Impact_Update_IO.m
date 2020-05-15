@@ -19,8 +19,7 @@ s_func = ref_info.phase_based.s_func;
 alpha_h = ref_info.phase_based.alpha_h;
 alpha_dh = ref_info.phase_based.alpha_dh;
 alpha_ddh = ref_info.phase_based.alpha_ddh;
-step_height = ref_info.step_height_dbl;
-
+step_height_dbl = ref_info.step_height_dbl;
 
 %% Compute u_sol and w_sol
 q0 = x0(1:n_q);
@@ -31,8 +30,8 @@ ddq_ref_current = ddq_ref(:,end);
 
 % h_q = q0(4:end);      % just for reference
 % dh_q = dq0(4:end);
-    Kp = dyn_info.ctrl.Kp;
-    Kd = dyn_info.ctrl.Kd;
+Kp = dyn_info.ctrl.Kp;
+Kd = dyn_info.ctrl.Kd;
 
 if IO_type == "phase"
     s_current = full(s_func(q0));
@@ -49,47 +48,52 @@ if IO_info.linear
     u_sol = full(u_IO(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd));
     w_sol = full(f_w(q0,dq0,u_sol));
 else % NMPC zero dynamics used in I/O controller
-%     u_sol = full(u_IO_NMPC(q0,dq0,h_d,dh_d,ddh_d,u_mpc));
+    %     u_sol = full(u_IO_NMPC(q0,dq0,h_d,dh_d,ddh_d,u_mpc));
     u_sol = full(u_IO_NMPC(q0,dq0,h_d,dh_d,ddh_d,Kp,Kd,u_mpc));
     w_sol = w_mpc;
 end
 w_sol = f_w(q0,dq0,u_sol);
-% if abs(full(w_check-w_sol)) > 1e-5
-%     error("Wrench computation not right")
-% end
-
-%% There could be an issue that the controller does not change immediately after impact.
-% Current Implementation makes sense for real world implementation but might be inducing too much error currently
 
 %% Root finding impact time
-f_value = full(f_nonlinear(q0,dq0,u_sol,w_sol));
-y_func = @(delT) leftToeZ(x0(1:7)+(delT*f_value(1:7))) - step_height*(num_impacts+1);
-
-options = optimset('Display','iter'); % show iterations
-[DT_impact,fval,exitflag,output] = fzero(y_func,DT/4);     % Matlab root finding function
-
-if DT_impact > DT && y_func(DT) < 1e-5
-    DT_impact = DT;
-elseif DT_impact > DT
-%     DT_impact = DT;
+[DT_impact,height_impact,x_minus] = Bisection_Root_Finder(dyn_info,ref_info,ctrl_info,q0,dq0,u_sol,w_sol,num_impacts);
+if DT_impact > DT
     error("Root finding method did not work. Guessed that impact occured outside of specified time interval. 0 <= t <= DT");
 end
 
 % Display impact height of swing foot
-height_impact = leftToeZ(x0(1:7)+(DT_impact*f_value(1:7)));
 t_minus = t0 + DT_impact;
 disp("-> Swing foot impacts step (" + height_impact + " m) at " + t_minus + " sec");
 
-%% Forward Integrate until update
-x_minus = x0 + DT_impact*f_value;
-
 %% Apply Impact Map and Relabel
-[x_plus, w_plus] = Impact_Map_Relabel(dyn_info,x_minus);
+[x_plus, delta_w] = Impact_Map_Relabel(dyn_info,x_minus);
 q_plus = x_plus(1:n_q);
 dq_plus = x_plus(n_q+1:end);
+w_plus = full(f_w(q_plus,dq_plus,u_sol));
 
 %% Forward Integrate until t0 + DT has been reached
-x_next = x_plus + (DT - DT_impact)*full(f_nonlinear(q_plus,dq_plus,u_sol,w_plus));
-t_next = t0 + DT;
+params_int = struct('q_init',q_plus,...
+    'dq_init',dq_plus,...
+    'u',u_sol,...
+    'w',w_plus,...
+    'DT',(DT-DT_impact),...
+    'w_ext',0); % w_ext is the optional external force
+params_int.type = ctrl_info.int;
+if params_int.type == "Euler"
+    [x_next,t_next] = Forward_Euler_Integrate(f_nonlinear,x_plus,t0+DT_impact,params_int);
+elseif params_int.type == "RK4"
+    [x_next,t_next] = Runge_Kutta_4_Integrate(f_nonlinear,x_plus,t0+DT_impact,params_int);
+end
 
 end
+
+
+
+
+
+
+
+
+
+
+
+
