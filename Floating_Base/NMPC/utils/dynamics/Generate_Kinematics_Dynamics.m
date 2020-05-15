@@ -47,7 +47,6 @@ G = -GravityVector(xbar,zbar,rotY,q1R,q2R,q1L,q2L); %7x1  %FROST gravity vector 
 C = zeros(n_q,n_q);
 B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
 pos_stance_foot = Right_Stance_Foot_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L)';
-pos_stance_foot = pos_stance_foot([1,3],:);
 Jc = jacobian(pos_stance_foot,q);
 Jc_dot = jacobian(Jc*dq,q);     % move dq term inside of the jacobian to avoid tensor and dq not function of q
 ddq = D\(-C*dq -G + B*u + Jc'*w);

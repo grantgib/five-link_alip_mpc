@@ -10,6 +10,7 @@ n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
 n_y = dyn_info.dim.n_y;
 pos_swingfoot = dyn_info.func.f_pos_swing;
+pos_stancefoot = dyn_info.func.f_pos_stance;
 
 % ctrl_info
 DT = ctrl_info.DT;
@@ -39,6 +40,7 @@ U_REF = U_REF_Original;
 DDH_REF = DDH_REF_Original;
 stance_foot_pos = [0; 0];
 swing_foot_init = full(pos_swingfoot(x_init(1:7)))';
+stance_foot_init = full(pos_stancefoot(x_init(1:7)))';
 traj_info.num_impacts = 0;
 
 if IO_info.linear == 0
@@ -58,6 +60,7 @@ w_traj = [];
 ddq_traj = [];
 u_mpc_traj = [];
 y_sw = swing_foot_init;
+y_st = stance_foot_init;
 y_sw_normal = [0;0];
 x_traj_all = [];    % stores entire solution from IPOPT at each timestep
 u_traj_all = [];
@@ -134,6 +137,7 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     
     %% Check for impact & Apply Impact/Switch Map
     y_sw_current = full(pos_swingfoot(x_next(1:7)))';
+    y_st_current = full(pos_stancefoot(x_next(1:7)))';
     if y_sw_current(2) < (traj_info.num_impacts+1)*ref_info.step_height_dbl &&...  % height at stairs
             (y_sw_current(2) - y_sw(2,end) < 0) &&... % velocity is negative
             (y_sw(2,end) > (traj_info.num_impacts+1)*ref_info.step_height_dbl)    % previous swing foot height was above the stair (fixes conditional when you switch leg coordinates)
@@ -156,18 +160,20 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         U_REF = U_REF_Original;
         
         % Update stance foot position with previous swing foot impact pos
-        stance_foot_pos = y_sw_current(1);
+        y_st_current = y_sw_current;
         
         % Update output trajectory
         y_sw_start = full(pos_swingfoot(x_next(1:7)))'; 
         y_sw_current = y_sw_start;
         y_sw = [y_sw, y_sw_current];
+        y_st = [y_st, y_st_current];
         sw_offset = [y_sw_start(1)*(traj_info.num_impacts);
             y_sw_start(2)*traj_info.num_impacts];
         y_sw_normal = [y_sw_normal, (y_sw_current - sw_offset)];
     else
         % Update output trajectory
         y_sw = [y_sw, y_sw_current];
+        y_st = [y_st, y_st_current];
         sw_offset = [y_sw_start(1)*(traj_info.num_impacts+1);
             y_sw_start(2)*(traj_info.num_impacts+1)];
         y_sw_normal = [y_sw_normal, (y_sw_current-sw_offset)] ;
@@ -248,6 +254,7 @@ traj_info.s_traj = s_traj;
 traj_info.ddq_traj = ddq_traj;
 traj_info.impact_traj = impact_traj;
 traj_info.y_sw = y_sw;
+traj_info.y_st = y_st;
 traj_info.y_sw_normal = y_sw_normal;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;

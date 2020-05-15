@@ -12,6 +12,6 @@ posR = [xb+(2/5).*(1+(-1).*cos(q2R)).*(cos(rotYb).*sin(q1R)+cos(q1R).* ...
   rotYb).*sin(q1R)+(-1).*cos(q1R).*sin(rotYb))+cos(q2R).*(cos(q1R).* ...
   cos(rotYb)+(-1).*sin(q1R).*sin(rotYb)))];
 
-
+posR = posR([1,3]);
 end
 

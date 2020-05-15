@@ -6,8 +6,11 @@ t0 = 0; % time-invariant so start time doesn't matter for bisection
 step_height_dbl = ref_info.step_height_dbl;
 pos_swingfoot = dyn_info.func.f_pos_swing;
 DT = ctrl_info.DT;
-params_int = struct('q_init',q0,...
+params_int = struct('f',f_nonlinear,...
+    't_init',t0,...
+    'q_init',q0,...
     'dq_init',dq0,...
+    'x_init',x0,...
     'u',u_sol,...
     'w',w_sol,...
     'w_ext',0,...
@@ -21,12 +24,7 @@ DT_max = DT;
 while true
     DT_guess = DT_min + (DT_max - DT_min) / 2;
     params_int.DT = DT_guess;
-    if params_int.type == "Euler"
-        [x_guess,t_guess] = Forward_Euler_Integrate(f_nonlinear,x0,t0,params_int);
-    elseif params_int.type == "RK4"
-        [x_guess,t_guess] = Runge_Kutta_4_Integrate(f_nonlinear,x0,t0,params_int);
-    end
-    
+    [x_guess,t_guess] = Forward_Integrate(params_int);
     value_guess = full(pos_swingfoot(x_guess(1:7)))' - step_height_dbl*(num_impacts+1);
     
     if abs(value_guess(2)) <= tol
@@ -43,7 +41,5 @@ DT_root = DT_guess;
 x_root = full(pos_swingfoot(x_guess(1:7)))';
 height_root = x_root(2);
 x_minus = x_guess;
-
-
 
 end

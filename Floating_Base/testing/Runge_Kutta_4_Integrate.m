@@ -1,8 +1,11 @@
 function [x_next,t_next] = ...
-    Runge_Kutta_4_Integrate(f,x_init,t_init,params)
-% Extract inputs
+    Runge_Kutta_4_Integrate(params)
+%% Extract inputs
+f = params.f;
+t_init = params.t_init;
 q_init = params.q_init;
 dq_init = params.dq_init;
+x_init = params.x_init;
 DT = params.DT;
 u = params.u;
 w = params.w;

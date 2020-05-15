@@ -49,6 +49,7 @@ else
     impact_traj = traj_info.impact_traj;
     y_sw_traj_normal = traj_info.y_sw_normal;
     y_sw_traj = traj_info.y_sw;
+    y_st_traj = traj_info.y_st;
     x_ref_traj = traj_info.x_ref_traj;
     u_ref_traj = traj_info.u_ref_traj;
 end
@@ -439,7 +440,13 @@ if plotSettings.last_step
 end
 
 
-
+%% Stance Foot Position
+if plotSettings.pos_stancefoot
+    figure
+    plot(time_traj,y_st_traj);
+    title("StanceFoot position versus time");
+    
+end
 
 
 
