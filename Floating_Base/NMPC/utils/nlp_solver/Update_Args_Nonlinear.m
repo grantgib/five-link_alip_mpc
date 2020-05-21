@@ -34,13 +34,18 @@ w_ub = [1e15; 1e15];
 
 %% Compute full_refeters vector
 args = struct;
-args.p(1:n_x) = x_init; % initial condition of the robot posture
-for k = 1:N+1 %   
-    args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
-        X_REF(:,k);
-    args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
-        U_REF(:,k);
-end
+X_REF_vect = reshape(X_REF,n_x*size(X_REF,2),1);
+U_REF_vect = reshape(U_REF,n_u*size(U_REF,2),1);
+args.p = [x_init;
+    X_REF_vect(1:n_x*(N+1),1);
+    U_REF_vect(1:n_u*(N+1),1)];
+% args.p(1:n_x) = x_init; % initial condition of the robot posture
+% for k = 1:N+1 %   
+%     args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
+%         X_REF(:,k);
+%     args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
+%         U_REF(:,k);
+% end
 
 %% Equality Constraints
 % simulation later so it is an output of this function]

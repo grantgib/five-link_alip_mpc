@@ -19,7 +19,7 @@ IO_info = ctrl_info.IO_info;
 % mpc_info
 mpc_info = ctrl_info.mpc_info;
 N = mpc_info.N;
-solver = mpc_info.solvers_NL{1};
+solver = mpc_info.solvers_NL; %solvers_NL{1};
 
 % ref_info
 X_REF_Original = ref_info.x_ref;
@@ -84,19 +84,6 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     else % use NMPC
         % Start solver computation timer
         solver_comp_time = tic;
-        
-        % Shrinking Horizon Check & Update parameters
-        %     if round(time_traj(end) + DT * N,3) > t_final
-        %         % Select fewer decision variables and solver with sizes
-        %         % corresponding to decreased prediction horizon (~lookup table)
-        %         N_new = round( (t_final - time_traj(end)) / DT );
-        %         if N_new < 1    % when we want step to continue until impact
-        %             N_new = 1;
-        %         end
-        %         indx = (mpc_info.N-N_new)+1;
-        %         solver = mpc_info.solvers_NL{indx};
-        %         N = N_new;
-        %     end
         
         % Resize if Prediction Horizons changes
         X0 = X0(:,1:N+1);

@@ -5,6 +5,8 @@ import casadi.*
 n_q = dyn_info.dim.n_q;
 x_traj = traj_info.x_traj;
 q_traj = traj_info.x_traj(1:n_q,:);
+impact_traj = traj_info.impact_traj;
+y_sw_traj = traj_info.y_sw;
 num_steps = ref_info.num_steps;
 
 
@@ -19,6 +21,15 @@ for i = 1:size(x_traj,2)
     p_sw_knee(:,i) = p_q2_left(q_i);
 end
 
+%% Compute Impact Times
+for i = 0:num_steps-1
+    impact_logic = (impact_traj == i*ones(1,size(impact_traj,2)));
+    sw_begin{i+1} = find(impact_logic,1,'first');
+    sw_end{i+1} = find(impact_logic,1,'last');
+end
+    
+    
+    
 %% Draw Region
 figure
 ylabel('$\mathbf{z [m]}$','interpreter','latex');
@@ -88,11 +99,11 @@ else % Descend
 end
 
 %% Draw Obstacle
-maize = [256/256 204/256 6/256];
-rect_obs = rectangle('Position',[0.08, 0, 0.2-0.08, 0.1]);
-rect_obs.FaceColor = maize;
-rect_obs.EdgeColor = maize;
-uistack(rect_obs, 'top');
+% maize = [256/256 204/256 6/256];
+% rect_obs = rectangle('Position',[0.08, 0, 0.2-0.08, 0.1]);
+% rect_obs.FaceColor = maize;
+% rect_obs.EdgeColor = maize;
+% uistack(rect_obs, 'top');
 
 
 
@@ -164,18 +175,24 @@ for i = 1:size(x_traj,2)
         'YData',[p_hip(3,i) p_sw_knee(3,i)],"LineWidth",sz);
     set(link_sw_shin,'XData',[p_sw_knee(1,i) p_sw_foot(1,i)],...
         'YData',[p_sw_knee(3,i) p_sw_foot(3,i)],"LineWidth",sz);
+    
+%     % Draw swingfoot trajectory
+%     if i <= sw_end{1}
+%         hold on; scatter(y_sw_traj(1,sw_begin{1}:sw_end{2}),y_sw_traj(2,sw_begin{1}:sw_end{2}),2); hold on;
+%     elseif i<= sw_end{2}
+%         hold on; scatter(y_sw_traj(1,sw_begin{2}:sw_end{3}),y_sw_traj(2,sw_begin{2}:sw_end{3}),2); hold on;
+%     elseif i<= sw_end{3}
+%         hold on; scatter(y_sw_traj(1,sw_begin{3}:sw_end{4}),y_sw_traj(2,sw_begin{3}:sw_end{4}),2); hold on;
+%     end
+    
     axis([p_hip(1,i)-0.5,...
         p_hip(1,i)+1,...
         -0.25 + shift*i,...
         1.6 + shift*i]);
-        axis([p_hip(1,i)-0.5,...
-        p_hip(1,i)+1,...
-        -0.25 + shift,...
-        1.6 + shift]);
-%         axis([-0.2,...
-%         0.5,...
-%         0,...
-%         0.6]);
+%         axis([p_hip(1,i)-0.5,...
+%         p_hip(1,i)+1,...
+%         -0.25 + shift,...
+%         1.6 + shift]);
     
     drawnow ;       % Draws the newly updated lines onto the figure
     pause(0.005) ;

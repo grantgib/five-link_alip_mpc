@@ -33,54 +33,53 @@ mpc_info.opts.ipopt.acceptable_obj_change_tol = 1e-8;
 mpc_info.opts.ipopt.acceptable_constr_viol_tol = 1e-20;
 
 %% Nonlinear Formulation
+[nlp_info] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N);
 
-DEC_variables = cell(N,1);
-X_dec_all = cell(N,1);
-U_dec_all = cell(N,1);
-W_dec_all = cell(N,1);
-P_dec_all = cell(N,1);
-obj_all = cell(N,1);
-obj_vector_all = cell(N,1);
-g_dec_all = cell(N,1);
-solver_NL_all = cell(N,1);
+% Extract nlp_info
+X_dec = nlp_info.X_dec;
+U_dec = nlp_info.U_dec;
+W_dec = nlp_info.W_dec;
+P_xinit = nlp_info.P_xinit;
+P_xref = nlp_info.P_xref;
+P_uref = nlp_info.P_uref;
+g_constraints = nlp_info.g_constraints;
+cost_sum = nlp_info.cost_sum;
+cost_running = nlp_info.cost_running;
+cost_terminal = nlp_info.cost_terminal;
 
-% Calculate all possible sizes for the decision variables and solvers so
-% that we can implement a shrinking horizon so that the reference
-% trajectory is not extrapolated (which would turn it to a regulator
-% problem that we don't want)
-for i = 1:1%mpc_info.N
-    % Compute symbolic variables of quadratic program for N = 1:maxN.
-    % stored in cells (used when implementing shrinking horizon
-    [X_dec_all{i},U_dec_all{i},W_dec_all{i},P_dec_all{i},obj_all{i},g_dec_all{i},obj_vector_all{i},Q,R,C] = ...
-        Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N);
-  
-    % Settings
-    % Decision variables to optimize
-    DEC_variables{i} = [reshape(X_dec_all{i},n_x*(N+1),1);
-        reshape(U_dec_all{i},n_u*(N+1),1);
-        reshape(W_dec_all{i},n_w*(N+1),1)];
-    
-    % Formulate nlp
-    nlp_prob = struct('f', obj_all{i},'x',DEC_variables{i},...
-        'g',g_dec_all{i},'p', P_dec_all{i});
-    
-    % Setup solver
-    solver_NL_all{i} = nlpsol('solver', 'ipopt', nlp_prob, mpc_info.opts);
-    
-    disp("N = " + N + " is done formulating");
-    N = N - 1;
-end
+% Settings
+% Decision variables to optimize
+DEC_variables = [reshape(X_dec,n_x*(N+1),1);
+    reshape(U_dec,n_u*(N+1),1);
+    reshape(W_dec,n_w*(N+1),1)];
+P = [P_xinit;
+    reshape(P_xref,n_x*(N+1),1);
+    reshape(P_uref,n_u*(N+1),1)];
+
+% Formulate nlp
+nlp_prob = struct('f',cost_sum,...
+    'x',DEC_variables,...
+    'g',g_constraints,...
+    'p', P);
+
+% Setup solver
+solver_NL = nlpsol('solver', 'ipopt', nlp_prob, mpc_info.opts);
 
 % Update mpc_info
-mpc_info.X_dec = X_dec_all;
-mpc_info.U_dec = U_dec_all;
-mpc_info.P_dec = P_dec_all;
-mpc_info.obj = obj_all;
-mpc_info.g_dec = g_dec_all;
-mpc_info.solvers_NL = solver_NL_all;
+mpc_info.X_dec = X_dec;
+mpc_info.U_dec = U_dec;
+mpc_info.P_xinit = P_xinit;
+mpc_info.P_xref = P_xref;
+mpc_info.P_uref = P_uref;
+mpc_info.P = P;
+mpc_info.obj = cost_sum;
+mpc_info.cost_running = cost_running;
+mpc_info.cost_terminal = cost_terminal;
+mpc_info.g_dec = g_constraints;
+mpc_info.solvers_NL = solver_NL;
 mpc_info.DEC_variables = DEC_variables;
-mpc_info.Q = Q;
-mpc_info.R = R;
-mpc_info.C = C;
+mpc_info.Q = nlp_info.Q_mat;
+mpc_info.R = nlp_info.R_mat;
+mpc_info.C = nlp_info.C_mat;
 ctrl_info.mpc_info = mpc_info;
 

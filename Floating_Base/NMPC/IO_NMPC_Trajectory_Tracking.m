@@ -37,9 +37,9 @@ ctrl_info.IO_info = struct('DT', ctrl_info.DT,...
 
 %% Load Desired Reference Trajectory
 tic
-ref_info = struct('num_steps', 50,...
+ref_info = struct('num_steps', 10,...
     'external_force',       0,...
-    'step_height',          "0.05",...
+    'step_height',          "0.10",...
     'step_vel',             "0.50");
 
 ref_info.step_dir = "Ascend";
@@ -88,6 +88,7 @@ disp("Kinematics and Dynamic Functions Created!  (" + toc + " sec)");
 disp("Begin NLP formulation...");
 tic
 if ctrl_info.type == "IO"
+%     [ctrl_info] = Formulate_NLP_TrajectoryTracking_IO_ShrinkingHorizon(dyn_info,ctrl_info,ref_info,constr_info);
     [ctrl_info] = Formulate_NLP_TrajectoryTracking_IO(dyn_info,ctrl_info,ref_info,constr_info);
 end
 disp("Finished formulating NLP! (N = " + ctrl_info.mpc_info.N + ", " + toc + " sec)");
