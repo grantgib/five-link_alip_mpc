@@ -41,15 +41,12 @@ U_REF_vect = reshape(U_REF,n_u*size(U_REF,2),1);
 args.p = [x_init;
     X_REF_vect(1:n_x*(N+1),1);
     U_REF_vect(1:n_u*(N+1),1)];
-% args.p(1:n_x) = x_init; % initial condition of the robot posture
-% for k = 1:N+1 %   
-%     args.p((k-1)*(n_x+n_u)+(n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x)) = ...
-%         X_REF(:,k);
-%     args.p((k-1)*(n_x+n_u)+(n_x+n_x+1):(k-1)*(n_x+n_u)+(n_x+n_x+n_u)) =...
-%         U_REF(:,k);
-% end
 
 %% Equality Constraints
+% Modify bound if impact is present 
+%   x(k+1) - x(k) = f(x(k)) - f'(x(k)) = bg(idx_preimpact+1)
+%   f  ~ continuous dynamics
+%   f' ~ impact map and relabel
 g_equality = zeros(n_x,1); % initial condition equality constraint
 for k = 1:N+1
     g_equality = [g_equality; zeros(n_w,1)];
@@ -72,13 +69,6 @@ end
 args.lbg = g_equality;
 args.ubg = g_equality;
 
-% args.lbg(1:(n_x)*(N+1)+n_w*(N+1),1) = 0; % Equality constraints
-% args.ubg(1:(n_x)*(N+1)+n_w*(N+1),1) = 0; % Equality constraints
-
-% Modify bound if impact is present 
-%   x(k+1) - x(k) = f(x(k)) - f'(x(k)) = bg(idx_preimpact+1)
-%   f  ~ continuous dynamics
-%   f' ~ impact map and relabel
 %% State and control bounds
 % state
 for i = 1:n_x
@@ -105,7 +95,7 @@ if constr_info.obstacle.isObstacle
     obs_height = constr_info.obstacle.height;
     t_step = 0:ctrl_info.DT:N;
     s_init = full(s_func(x_init(1:n_q)));
-    ds = 1.3033; % got from experiment
+    ds = 1.3033; % got from experiment (not sure what i meant here)
     for i = 1:N+1
         s_k(i) = s_init + ds*t_step(i);
         if s_k(i) > obs_start && s_k(i) < obs_end && traj_info.num_impacts == 0

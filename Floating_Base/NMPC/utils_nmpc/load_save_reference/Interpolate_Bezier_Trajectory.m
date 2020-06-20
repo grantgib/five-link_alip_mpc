@@ -1,9 +1,4 @@
 function traj = Interpolate_Bezier_Trajectory(gait,delT)
-%% Extract inputs
-
-
-
-
 %% get the traj for position and velocity
 traj = {};
 n_u = size(gait(1).inputs.u,1);
@@ -36,7 +31,7 @@ for i=1:2:length(gait)
     end
 end
 
-% Phase-Based Trajectory (Theta = absolute stance leg angle)
+%% Phase-Based Trajectory (Theta = absolute stance leg angle)
 traj{i}.theta = sum([traj{1}.q(3,:); traj{1}.q(4,:); traj{1}.q(5,:)./2]);
 traj{i}.theta_begin = traj{i}.theta(1);
 traj{i}.theta_end = traj{i}.theta(end);
@@ -49,7 +44,7 @@ for p = 1:length(tdes)
     s_points(p) = (traj{i}.theta(p)-traj{i}.theta_begin)/(traj{i}.theta_end-traj{i}.theta_begin);
 end
 
-M_h = 5;
+M_h = 8;
 free_h = [0 0 ones(1,M_h-3) 0 0]; % constrain position/derivative at
 traj{i}.alpha_h = bezfit(s_points,traj{i}.h_0,free_h);
 traj{i}.alpha_dh = bezfit(s_points,traj{i}.dh_0,free_h);
