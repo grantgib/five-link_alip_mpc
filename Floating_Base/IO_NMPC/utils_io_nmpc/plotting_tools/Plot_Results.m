@@ -1,4 +1,4 @@
-function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
+function [] = Plot_Results(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
 %% Extract variables from inputs
 disp("Plotting Results...");
 
@@ -30,6 +30,14 @@ elseif ctrl_type == "IO"
     end
 end
 
+% ref_info
+x_lb = ref_info.x_lb;
+x_ub = ref_info.x_ub;
+u_lb = ref_info.u_lb;
+u_ub = ref_info.u_ub;
+w_lb = ref_info.w_lb;
+w_ub = ref_info.w_ub;
+
 % traj_info
 if plotSettings.single_sol
     x_traj = traj_info.x_traj_all(:,:,1);
@@ -54,6 +62,7 @@ else
     y_st_traj = traj_info.y_st;
     x_ref_traj = traj_info.x_ref_traj;
     u_ref_traj = traj_info.u_ref_traj;
+    w_ref_traj = traj_info.w_ref_traj;
 end
 
 % contr_info
@@ -86,8 +95,8 @@ if plotSettings.x
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
         try
-            hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
-            hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
+            hold on; yline(x_lb(i),'r','LineWidth',width_bound);
+            hold on; yline(x_ub(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
@@ -95,7 +104,7 @@ if plotSettings.x
         grid on; set(gca,'FontSize',sz)
     end
     %     legend('reference',ctrl_type +" trajectory",'constraints');
-    legend("IO-NMPC trajectory",'State Constraints');
+    legend("reference","IO-NMPC trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
     set(gcf,'color','w');
     sgtitle("State Position Trajectories (q) for N = 5");
@@ -111,8 +120,8 @@ if plotSettings.x
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(n_q+i,:),'--','LineWidth',width_traj);
         try
-            %             hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
-            %             hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+            hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
+            hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
         catch
             disp("infinite bounds for dx_" + i);
         end
@@ -229,11 +238,13 @@ if plotSettings.w
     figure
     for i = 1:n_w
         subplot(1,2,i);
+        plot(time_traj(1:size(w_ref_traj,2)),w_ref_traj(i,:),'LineWidth',width_ref); hold on;
         plot(time_traj(1:size(w_traj,2)),w_traj(i,:));
         %         scatter(s_traj(1:end-1),w_traj(i,:),1);
         title(w_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
+    legend("reference","IO-NMPC trajectory");
     sgtitle(plot_title + " Wrench (N = " + mpc_info.N + ")");
     
     figure
@@ -457,11 +468,11 @@ if plotSettings.x_all
     set(gcf, 'Position',  [100, -500, 3000, 1200])
     for i = 1:n_q
         subplot(3,3,i)
-        x_reference{i} = plot(time_traj(1:),x_ref_traj(i,1:),'g'); hold on;
+        x_reference{i} = plot(time_traj(1:round(size(x_traj_all,3)*per)),x_ref_traj(i,1:round(size(x_traj_all,3)*per)),'g'); hold on;
         x_predict{i} = plot(time_traj(1:N+1),x_traj_all(i,:,1),'b--o'); hold on;
         x_actual{i} = plot(time_traj(1),x_traj(i,1),'r','LineWidth',2); hold on;
+        title(q_header{i},'interpreter','latex'); xlabel('Time [sec]'); set(gca,'FontSize',sz)
     end
-    
     
     for j = 1:round(size(x_traj_all,3)*per)
         k = 1;
@@ -500,7 +511,7 @@ if plotSettings.x_all
         set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
         
         drawnow;
-        pause(0.01);
+        pause(0.1);
     end
 end
 

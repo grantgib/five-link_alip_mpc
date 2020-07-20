@@ -39,6 +39,30 @@ alpha_h = trajRef{1}.alpha_h;
 alpha_dh = trajRef{1}.alpha_dh;
 alpha_ddh = trajRef{1}.alpha_ddh;
 
+%% Set Bounds
+relax_percent = 0.10;
+x_lb = [full_ref.bounds.RightStance.states.x.lb - relax_percent*abs(full_ref.bounds.RightStance.states.x.lb),...
+    full_ref.bounds.RightStance.states.dx.lb - relax_percent*abs(full_ref.bounds.RightStance.states.dx.lb)];
+x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bounds.RightStance.states.x.ub),...
+    full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
+
+x_lb(1:2) = [-inf, -inf];   % bound should not exist for climbing up steps or should at minimum update with each impact (not done yet)
+x_ub(1:2) = [inf, inf];     % condition shouldnt exist for step climbing
+
+% Set control bounds
+if ~ctrl_info.IO_info.linear
+    u_percent = 10;
+    u_lb = u_percent*full_ref.bounds.RightStance.inputs.Control.u.lb;
+    u_ub = u_percent*full_ref.bounds.RightStance.inputs.Control.u.ub;
+else
+    u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
+    u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
+end
+
+% Set Wrench bounds
+w_lb = [-inf; 1e-5];
+w_ub = [inf; inf];
+
 %% Return ref_info
 ref_info.q_ref = Q_REF;
 ref_info.dq_ref = DQ_REF;
@@ -51,5 +75,12 @@ ref_info.phase_based.alpha_h = alpha_h;
 ref_info.phase_based.alpha_dh = alpha_dh;
 ref_info.phase_based.alpha_ddh = alpha_ddh;
 ref_info.full_ref = full_ref;
+ref_info.x_lb = x_lb;
+ref_info.x_ub = x_ub;
+ref_info.u_lb = u_lb;
+ref_info.u_ub = u_ub;
+ref_info.w_lb = w_lb;
+ref_info.w_ub = w_ub;
+
 
 end

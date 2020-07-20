@@ -10,29 +10,12 @@ s_func = ref_info.phase_based.s_func;
 index_impact = traj_info.idx_preimpact(1) + 1;     % index of X_REF where new ref begins and impact has just occurred
 
 %% Bounds
-% Relax bounds from trajectory generation for control
-relax_percent = 0.50;
-x_lb = [full_ref.bounds.RightStance.states.x.lb - relax_percent*abs(full_ref.bounds.RightStance.states.x.lb),...
-    full_ref.bounds.RightStance.states.dx.lb - relax_percent*abs(full_ref.bounds.RightStance.states.dx.lb)];
-x_ub = [full_ref.bounds.RightStance.states.x.ub + relax_percent*abs(full_ref.bounds.RightStance.states.x.ub),...
-    full_ref.bounds.RightStance.states.dx.ub + relax_percent*abs(full_ref.bounds.RightStance.states.dx.ub)]; 
-
-x_lb(1:2) = [-inf, -inf];   % bound should not exist for climbing up steps or should at minimum update with each impact (not done yet)
-x_ub(1:2) = [inf, inf];     % condition shouldnt exist for step climbing
-
-% Set control bounds
-if ~ctrl_info.IO_info.linear
-    u_percent = 10;
-    u_lb = u_percent*full_ref.bounds.RightStance.inputs.Control.u.lb;
-    u_ub = u_percent*full_ref.bounds.RightStance.inputs.Control.u.ub;
-else
-    u_lb = full_ref.bounds.RightStance.inputs.Control.u.lb;
-    u_ub = full_ref.bounds.RightStance.inputs.Control.u.ub;
-end
-
-% Set Wrench bounds
-w_lb = [-inf; 0.01];
-w_ub = [1e15; 1e15];
+x_lb = ref_info.x_lb;
+x_ub = ref_info.x_ub;
+u_lb = ref_info.u_lb;
+u_ub = ref_info.u_ub;
+w_lb = ref_info.w_lb;
+w_ub = ref_info.w_ub;
 
 %% Compute full_refeters vector
 args = struct;

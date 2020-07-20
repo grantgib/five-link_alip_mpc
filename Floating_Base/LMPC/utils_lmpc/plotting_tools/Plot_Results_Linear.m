@@ -1,4 +1,4 @@
-function [] = Plot_TrajectoryTracking(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
+function [] = Plot_Results_Linear(dyn_info,ctrl_info,ref_info,traj_info,constr_info,plotSettings)
 %% Extract variables from inputs
 disp("Plotting Results...");
 
@@ -10,52 +10,52 @@ n_q = dyn_info.dim.n_q;
 n_x = dyn_info.dim.n_x;
 n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
-n_y = dyn_info.dim.n_y;
+% n_y = dyn_info.dim.n_y;
 
 % ctrl_info
-mpc_info = ctrl_info.mpc_info;
-args = mpc_info.args;
-N = mpc_info.N;
-DT = mpc_info.DT;
+lmpc_info = ctrl_info.lmpc_info;
+N = lmpc_info.N;
+DT = lmpc_info.DT;
 ctrl_type = ctrl_info.type;
-IO_type = ctrl_info.IO_info.type;
 
-if ctrl_type == "NMPC"
-    ctrl_type = "NMPC";
-elseif ctrl_type == "IO"
-    if IO_type == "time"
-        ctrl_type = "IO-time";
-    elseif IO_type == "phase"
-        ctrl_type = "IO-phase";
-    end
-end
+% ref_info
+x_lb = ref_info.x_lb;
+x_ub = ref_info.x_ub;
+u_lb = ref_info.u_lb;
+u_ub = ref_info.u_ub;
+w_lb = ref_info.w_lb;
+w_ub = ref_info.w_ub;
 
 % traj_info
-if plotSettings.single_sol
-    x_traj = traj_info.x_traj_all(:,:,1);
-    u_traj = traj_info.u_traj_all(:,:,1);
-    w_traj = traj_info.w_traj_all(:,:,1);
-    time_traj = linspace(0,DT*N,N+1);
-else
-    time_traj = traj_info.time_traj;
-    time_calc = traj_info.stats.time_calc;
-    x_traj = traj_info.x_traj;
-    x_traj_all = traj_info.x_traj_all;
-    u_traj = traj_info.u_traj;
-    w_traj = traj_info.w_traj;
-    
-    y_traj = traj_info.y_traj;      % virtual constraints
-    dy_traj = traj_info.dy_traj;
-    s_traj = traj_info.s_traj;
-    theta_traj = traj_info.theta_traj;
-    impact_traj = traj_info.impact_traj;
-    y_sw_traj_normal = traj_info.y_sw_normal;
-    y_sw_traj = traj_info.y_sw;
-    y_st_traj = traj_info.y_st;
-    x_ref_traj = traj_info.x_ref_traj;
-    u_ref_traj = traj_info.u_ref_traj;
-    w_ref_traj = traj_info.w_ref_traj;
-end
+time_traj = traj_info.time_traj;
+time_calc = traj_info.stats.time_calc;
+
+delta_x_traj = traj_info.delta_x_traj;
+delta_u_traj = traj_info.delta_u_traj;
+delta_w_traj = traj_info.delta_w_traj;
+
+delta_x_traj_all = traj_info.delta_x_traj_all;
+delta_u_traj_all = traj_info.delta_u_traj_all;
+delta_w_traj_all = traj_info.delta_w_traj_all;
+
+x_traj = traj_info.x_traj;
+u_traj = traj_info.u_traj;
+w_traj = traj_info.w_traj;
+
+x_traj_all = traj_info.x_traj_all;
+u_traj_all = traj_info.u_traj_all;
+w_traj_all = traj_info.w_traj_all;
+
+s_traj = traj_info.s_traj;
+impact_traj = traj_info.impact_traj;
+
+y_sw_traj_normal = traj_info.y_sw_normal;
+y_sw_traj = traj_info.y_sw;
+y_st_traj = traj_info.y_st;
+
+x_ref_traj = traj_info.x_ref_traj;
+u_ref_traj = traj_info.u_ref_traj;
+w_ref_traj = traj_info.w_ref_traj;
 
 % contr_info
 obs_start = constr_info.obstacle.width(1);
@@ -63,6 +63,10 @@ obs_end = constr_info.obstacle.width(2);
 obs_height = constr_info.obstacle.height;
 
 %% Initialize variables
+delta_q_header = {'$\delta \bar{x}$','$\delta \bar{z}$','$\delta \psi$','$\delta q_{1R}$','$\delta q_{2R}$','$\delta q_{1L}$','$\delta q_{2L}$'}';
+delta_dq_header = {'$\delta \dot{x}$','$\delta \dot{z}$','$\delta \dot{\psi}_Y$','$\delta \dot{q}_{1R}$','$\delta \dot{q}_{2R}$','$\delta \dot{q}_{1L}$','$\delta \dot{q}_{2L}$'}';
+delta_u_header = {'$\delta u_{q_{1R}}$','$\delta u_{q_{2R}}$','$\delta u_{q_{1L}}$','$\delta u_{q_{2L}}$'};
+
 q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$h_1=q_{1R}$','$h_2=q_{2R}$','$h_3=q_{1L}$','$h_4=q_{2L}$'}';
 dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{\psi}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
 u_header = {'$u_{q_{1R}}$','$u_{q_{2R}}$','$u_{q_{1L}}$','$u_{q_{2L}}$'};
@@ -78,7 +82,7 @@ width_traj = 2;
 width_bound = 1;
 sz = 15;
 
-%% States
+%% x
 % Positions
 if plotSettings.x
     figure
@@ -87,46 +91,132 @@ if plotSettings.x
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
         try
-            hold on; yline(args.lbx(i),'r','LineWidth',width_bound);
-            hold on; yline(args.ubx(i),'r','LineWidth',width_bound);
+            hold on; yline(x_lb(i),'r','LineWidth',width_bound);
+            hold on; yline(x_ub(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    %     legend('reference',ctrl_type +" trajectory",'constraints');
-    legend("reference","IO-NMPC trajectory");
+    legend("LMPC trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
     set(gcf,'color','w');
     sgtitle("State Position Trajectories (q) for N = 5");
     %         sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
     
-end
-
-% Velocities
-if plotSettings.x
+    % Velocities
     figure
     for i = 1:length(q_header)
         subplot(3,3,i);
         plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(n_q+i,:),'LineWidth',width_ref);
         hold on; plot(time_traj,x_traj(n_q+i,:),'--','LineWidth',width_traj);
         try
-            %             hold on; yline(args.lbx(n_q+i),'m','LineWidth',width_bound);
-            %             hold on; yline(args.ubx(n_q+i),'m','LineWidth',width_bound);
+            hold on; yline(x_lb(n_q+i),'m','LineWidth',width_bound);
+            hold on; yline(x_ub(n_q+i),'m','LineWidth',width_bound);
         catch
             disp("infinite bounds for dx_" + i);
         end
         title(dq_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    legend('reference',ctrl_type +" trajectory");
+    legend("LMPC Trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title + " State Velociites (N = " + mpc_info.N + ")");
+    sgtitle(plot_title + " State Velociites (N = " + lmpc_info.N + ")");
+end
+
+
+
+%% u
+if plotSettings.u
+    figure
+    for i = 1:n_u
+        subplot(2,2,i);
+        %         plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
+        hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'LineWidth',width_traj);
+        %         scatter(s_traj(1:end-1),u_traj(i,:),1);
+        title(u_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+    %     legend('reference',ctrl_type +" trajectory",'location','best');
+    legend("LMPC trajectory",'location','best');
+    %     sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
+    sgtitle("Control Torques")
+    set(gcf,'color','w');
+    
+end
+
+%% w
+if plotSettings.w
+    figure
+    for i = 1:n_w
+        subplot(1,2,i);
+        plot(time_traj(1:size(w_ref_traj,2)),w_ref_traj(i,:),'LineWidth',width_ref); hold on;
+        plot(time_traj(1:size(w_traj,2)),w_traj(i,:));
+        title(w_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz);
+    end
+    legend("reference","IO-NMPC trajectory");
+    sgtitle(plot_title + " Wrench (N = " + lmpc_info.N + ")");
+    
+    figure
+    mu_actual = abs(w_traj(1,:)./w_traj(2,:));
+    plot(time_traj(1:end-1),mu_actual); hold on;
+    ylabel('$\mu_s$','interpreter','latex');
+    xlabel('Time (sec)','interpreter','latex');
+    title("NMPC Friction Cone Violation");
+    yline(constr_info.grf.mu,'r');
+    grid on; set(gca,'FontSize',sz)
+    set(gcf,'color','w');
+    
+end
+
+%% delta_x
+if plotSettings.delta_x
+    % positions
+    figure
+    for i = 1:n_q
+        subplot(3,3,i);
+        hold on; plot(time_traj,delta_x_traj(i,:),'LineWidth',width_traj);
+        title(delta_q_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+    legend("LMPC Trajectory");
+    set(legend,'Position',[0.45 0.19 0.17 0.11]);
+    set(gcf,'color','w');
+    sgtitle("State Position Trajectories (q) for N = 5");
+    
+    % velocities
+    figure
+    for i = 1:length(q_header)
+        subplot(3,3,i);
+        hold on; plot(time_traj,delta_x_traj(n_q+i,:),'--','LineWidth',width_traj);
+        title(delta_dq_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+    legend("LMPC Trajectory");
+    set(legend,'Position',[0.45 0.19 0.17 0.11]);
+    sgtitle(plot_title + " State Velociites (N = " + lmpc_info.N + ")");
+    
+end
+
+%% delta_u
+if plotSettings.delta_u
+    figure
+    for i = 1:n_u
+        subplot(2,2,i);
+        hold on; plot(time_traj(1:end-1),delta_u_traj(i,1:size(time_traj(1:end-1),2)),'LineWidth',width_traj);
+        title(delta_u_header{i},'interpreter','latex');
+        grid on; set(gca,'FontSize',sz)
+    end
+    legend("LMPC Control Inputs",'location','best');
+    sgtitle("Delta Control Torques")
+    set(gcf,'color','w');
+    
 end
 
 %% x vs. s
-if plotSettings.x_s
+if plotSettings.x_vs_s
     figure
     wdxs = 1;
     scat = 1;
@@ -148,13 +238,11 @@ if plotSettings.x_s
     legend("IO-NMPC trajectory",'State Constraints');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
     set(gcf,'color','w');
-    sgtitle("State Position Trajectories (q) for N = " + mpc_info.N + ")") ;
+    sgtitle("State Position Trajectories (q) for N = " + lmpc_info.N + ")") ;
     %         sgtitle(plot_title+" State Positions (N = " + mpc_info.N + ")");
     
-end
 
 % Velocities
-if plotSettings.x_s
     figure
     for i = 1:length(q_header)
         subplot(3,3,i);
@@ -172,12 +260,12 @@ if plotSettings.x_s
     end
     legend('reference',ctrl_type +" trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title + " State Velociites (N = " + mpc_info.N + ")");
+    sgtitle(plot_title + " State Velociites (N = " + lmpc_info.N + ")");
 end
 
-%% State Errors
+%% x errors
 % Position
-if plotSettings.xerr
+if plotSettings.x_err
     q_error = x_traj(1:n_q,:) - x_ref_traj(1:n_q,:);
     figure
     for i = 1:n_q
@@ -188,11 +276,9 @@ if plotSettings.xerr
     end
     legend('Error');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title+" Position Error (N = " + mpc_info.N + ")");
-end
+    sgtitle(plot_title+" Position Error (N = " + lmpc_info.N + ")");
 
 % Velocity
-if plotSettings.xerr
     dq_error = x_traj(n_q+1:end,:) - x_ref_traj(n_q+1:end,:);
     figure
     for i = 1:n_q
@@ -203,67 +289,14 @@ if plotSettings.xerr
     end
     legend('Error');
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
-    sgtitle(plot_title + " Velocity Error (N = " + mpc_info.N + ")");
+    sgtitle(plot_title + " Velocity Error (N = " + lmpc_info.N + ")");
 end
 
-%% Control inputs
-if plotSettings.u
-    figure
-    for i = 1:n_u
-        subplot(2,2,i);
-        %         plot(time_traj(1:size(u_ref_traj,2)),u_ref_traj(i,:),'LineWidth',width_ref);
-        hold on; plot(time_traj(1:end-1),u_traj(i,1:size(time_traj(1:end-1),2)),'LineWidth',width_traj);
-        %         scatter(s_traj(1:end-1),u_traj(i,:),1);
-        title(u_header{i},'interpreter','latex');
-        grid on; set(gca,'FontSize',sz)
-    end
-    %     legend('reference',ctrl_type +" trajectory",'location','best');
-    legend("IO-NMPC trajectory",'location','best');
-    %     sgtitle(plot_title+" Control Inputs (N = " + mpc_info.N + ")");
-    sgtitle("Control Torques")
-    set(gcf,'color','w');
-    
-end
 
-%% Wrench
-if plotSettings.w
-    figure
-    for i = 1:n_w
-        subplot(1,2,i);
-        plot(time_traj(1:size(w_ref_traj,2)),w_ref_traj(i,:),'LineWidth',width_ref); hold on;
-        plot(time_traj(1:size(w_traj,2)),w_traj(i,:));
-        %         scatter(s_traj(1:end-1),w_traj(i,:),1);
-        title(w_header{i},'interpreter','latex');
-        grid on; set(gca,'FontSize',sz);
-    end
-    legend("reference","IO-NMPC trajectory");
-    sgtitle(plot_title + " Wrench (N = " + mpc_info.N + ")");
-    
-    figure
-    mu_actual = abs(w_traj(1,:)./w_traj(2,:));
-    plot(time_traj(1:end-1),mu_actual); hold on;
-    %     scatter(s_traj(1:end-1),mu_actual,1);
-    ylabel('$\mu_s$','interpreter','latex');
-    xlabel('Time (sec)','interpreter','latex');
-    %     title("IO-NMPC Friction Cone Satisfaction");
-    title("IO-L Friction Cone Violation");
-    yline(constr_info.grf.mu,'r');
-    grid on; set(gca,'FontSize',sz)
-    set(gcf,'color','w');
-    
-    
-end
+
+
 %% Output - Swing Foot Position
-if plotSettings.y_sw
-    %     figure
-    %     for i = 1:2
-    %         subplot(1,2,i);
-    %         plot(time_traj,y_sw_traj(i,:));
-    %         title(y_header{i},'interpreter','latex');
-    %         grid on; set(gca,'FontSize',sz);
-    %     end
-    %     sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
-    
+if plotSettings.y_sw    
     figure
     maize = [256/256 204/256 6/256];
     blue_color = [0 39/256 76/255];
@@ -314,7 +347,7 @@ if plotSettings.y_sw_normal
         title(y_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
-    sgtitle(plot_title + " Swing Foot Positions (N = " + mpc_info.N + ")");
+    sgtitle(plot_title + " Swing Foot Positions (N = " + lmpc_info.N + ")");
     
     figure
     subplot(1,2,1);
@@ -357,7 +390,7 @@ end
 if plotSettings.calc_time
     figure
     plot(time_traj(1:size(time_calc,2)),time_calc);
-    title("Controller Calculation Time [sec] (N = " + mpc_info.N + ")");
+    title("Controller Calculation Time [sec] (N = " + lmpc_info.N + ")");
     grid on; set(gca,'FontSize',sz);
 end
 
@@ -453,55 +486,49 @@ if plotSettings.pos_stancefoot
     
 end
 
-%% x_traj_all from mpc solutions
-if plotSettings.x_all
-    per = 0.3;
+%% delta_x_traj_all 
+if plotSettings.delta_x_all
+    per = 1;
     figure
     set(gcf, 'Position',  [100, -500, 3000, 1200])
     for i = 1:n_q
         subplot(3,3,i)
-        x_reference{i} = plot(time_traj(1:round(size(x_traj_all,3)*per)),x_ref_traj(i,1:round(size(x_traj_all,3)*per)),'g'); hold on;
+%         x_reference{i} = plot(time_traj(1:round(size(x_traj_all,3)*per)),x_ref_traj(i,1:round(size(x_traj_all,3)*per)),'g'); hold on;
+        delta_x_predict{i} = plot(time_traj(1:N+1),delta_x_traj_all(i,:,1),'b--o'); hold on;
+        delta_x_actual{i} = plot(time_traj(1),delta_x_traj(i,1),'r','LineWidth',2); hold on;
+        title(delta_q_header{i},'interpreter','latex'); xlabel('Time [sec]'); set(gca,'FontSize',sz)
+    end
+    
+    for j = 1:round(size(x_traj_all,3)*per)-1
+        for k = 1:n_q
+            subplot(3,3,k);
+            set(delta_x_predict{k},'XData',time_traj(j:j+N),'YData',delta_x_traj_all(k,:,j));
+            set(delta_x_actual{k},'XData',time_traj(1:j),'YData',delta_x_traj(k,1:j));
+        end
+        drawnow;
+        pause(0.1);
+    end
+end
+
+%% x_traj_all from mpc solutions
+if plotSettings.x_all
+    per = 1;
+    figure
+    set(gcf, 'Position',  [100, -500, 3000, 1200])
+    for i = 1:n_q
+        subplot(3,3,i)
+        x_reference{i} = plot(time_traj,x_ref_traj(i,:),'g'); hold on;
         x_predict{i} = plot(time_traj(1:N+1),x_traj_all(i,:,1),'b--o'); hold on;
         x_actual{i} = plot(time_traj(1),x_traj(i,1),'r','LineWidth',2); hold on;
         title(q_header{i},'interpreter','latex'); xlabel('Time [sec]'); set(gca,'FontSize',sz)
     end
     
-    for j = 1:round(size(x_traj_all,3)*per)
-        k = 1;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 2;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 3;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 4;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 5;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 6;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 7;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
+    for j = 1:size(x_traj_all,3)
+        for k = 1:n_q
+            subplot(3,3,k);
+            set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
+            set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
+        end
         drawnow;
         pause(0.1);
     end

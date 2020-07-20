@@ -7,6 +7,6 @@ else
     addpath('../Toolboxes/casadi-windows-matlabR2014b-3.5.1');
     import casadi.*
 end
-addpath(genpath('utils_nmpc/'));
+addpath(genpath('utils_lmpc/'));
 addpath(genpath('../reference_trajectories/'));
 addpath(genpath('../FROST_code'));

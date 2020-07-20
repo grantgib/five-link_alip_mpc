@@ -1,4 +1,4 @@
-function traj = Interpolate_Bezier_Trajectory(gait,delT)
+ function traj = Interpolate_Bezier_Trajectory(gait,delT)
 %% get the traj for position and velocity
 traj = {};
 n_u = size(gait(1).inputs.u,1);

@@ -8,7 +8,7 @@ q_traj = traj_info.x_traj(1:n_q,:);
 impact_traj = traj_info.impact_traj;
 y_sw_traj = traj_info.y_sw;
 num_steps = ref_info.num_steps;
-
+look_ahead = ctrl_info.step_look_ahead;
 
 %% Compute Positions throughout animation
 for i = 1:size(x_traj,2)
@@ -27,7 +27,7 @@ for i = 0:num_steps-1
     sw_begin{i+1} = find(impact_logic,1,'first');
     sw_end{i+1} = find(impact_logic,1,'last');
 end
-    
+pred_plot = 0;
     
     
 %% Draw Region
@@ -55,8 +55,7 @@ button_restart = uicontrol('Units',    'pixels', ...
 %% Draw Stairs
 
 if ref_info.step_dir == "Ascend"
-    % length = 0.325; % IO 0.10,0.75
-    length_step = 0.33; % IO-NMPC 0.10m,0.75m/s
+    length_step = 0.38; % IO-NMPC 0.10m,0.75m/s
     height = ref_info.step_height_dbl;
     col = [0 39/256 76/255];
     offset = 0.1;
@@ -71,13 +70,11 @@ if ref_info.step_dir == "Ascend"
         rect = rectangle('Position',[xst zst length_step*(num_steps+1-i) height]);
         rect.FaceColor = col;
         rect.EdgeColor = col;
-        %     line([xst xend],[zst zst],'LineWidth',wd,'color','k');
-        %     line([xend xend],[zst zend],'LineWidth',wd,'color','k');
     end
 else % Descend
     offset_start = 100;
     length_step = 0.10;
-    col = [0 39/256 76/255];
+    col = [0 39/256 76/255]; % mich blue
     offset_reg = 0.05;
     for i = 1:num_steps+1
         xst = length_step*i-offset_start;
@@ -104,12 +101,6 @@ end
 % rect_obs.FaceColor = maize;
 % rect_obs.EdgeColor = maize;
 % uistack(rect_obs, 'top');
-
-
-
-
-
-
 
 %% Animate Robot
 % Initialize robot pose
@@ -138,18 +129,28 @@ color_torso = 'k';
 
 % Draw initial pose
 axis([p_hip(1,1)-0.5,...
-        p_hip(1,1)+1,...
+        p_hip(1,1)+2,...
         -0.25,...
         1.6]);
-set(link_st_shin,'LineWidth',2,'Color',color_stance,"LineWidth",sz);
-set(link_st_thigh,'LineWidth',2,'Color',color_stance,"LineWidth",sz);
-set(link_torso,'LineWidth',2,'Color',color_torso,"LineWidth",sz);
-set(link_sw_shin,'LineWidth',2,'Color',color_swing,"LineWidth",sz);
-set(link_sw_thigh,'LineWidth',2,'Color',color_swing,"LineWidth",sz);
-drawnow;
+set(link_st_shin,'Color',color_stance,"LineWidth",sz);
+set(link_st_thigh,'Color',color_stance,"LineWidth",sz);
+set(link_torso,'Color',color_torso,"LineWidth",sz);
+set(link_sw_shin,'Color',color_swing,"LineWidth",sz);
+set(link_sw_thigh,'Color',color_swing,"LineWidth",sz);
 
+% Prediction horizon swing foot trajectories
+hold on; traj_swing = scatter(y_sw_traj(1,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}),y_sw_traj(2,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}),1,'g');
+
+% Lidar scan
+hold on;
+lidar = patch([p_hip(1,1) p_hip(1,1)+1.5 p_hip(1,1)+0.1],[p_hip(3,1) p_hip(3,1)-0.4 p_hip(3,1)-1.5],'r');
+lidar.FaceAlpha = 0.2;
+% uistack(lidar, 'bottom');
+
+% variable for axis shift
 shift = ref_info.step_height_dbl / (length(traj_info.time_traj)/ref_info.num_steps);
 
+drawnow;
 % Animate
 while button_play.Value
    % wait to start  
@@ -176,26 +177,27 @@ for i = 1:size(x_traj,2)
     set(link_sw_shin,'XData',[p_sw_knee(1,i) p_sw_foot(1,i)],...
         'YData',[p_sw_knee(3,i) p_sw_foot(3,i)],"LineWidth",sz);
     
-%     % Draw swingfoot trajectory
-%     if i <= sw_end{1}
-%         hold on; scatter(y_sw_traj(1,sw_begin{1}:sw_end{2}),y_sw_traj(2,sw_begin{1}:sw_end{2}),2); hold on;
-%     elseif i<= sw_end{2}
-%         hold on; scatter(y_sw_traj(1,sw_begin{2}:sw_end{3}),y_sw_traj(2,sw_begin{2}:sw_end{3}),2); hold on;
-%     elseif i<= sw_end{3}
-%         hold on; scatter(y_sw_traj(1,sw_begin{3}:sw_end{4}),y_sw_traj(2,sw_begin{3}:sw_end{4}),2); hold on;
-%     end
+    % Draw swingfoot trajectory
+    if impact_traj(i) == pred_plot
+        set(traj_swing,'XData',y_sw_traj(1,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}),'YData',y_sw_traj(2,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}))
+        pred_plot = pred_plot + 1;
+    end
+    
+    % Draw lidar
+    set(lidar,'XData',[p_hip(1,i) p_hip(1,i)+1.5 p_hip(1,i)+0.1],...
+        'YData',[p_hip(3,i) p_hip(3,i)-0.4 p_hip(3,i)-1.5]);
     
     axis([p_hip(1,i)-0.5,...
-        p_hip(1,i)+1,...
-        -0.25 + shift*i,...
-        1.6 + shift*i]);
+          p_hip(1,i)+2,...
+          -0.25 + shift*i,...
+          1.6 + shift*i]);
 %         axis([p_hip(1,i)-0.5,...
 %         p_hip(1,i)+1,...
 %         -0.25 + shift,...
 %         1.6 + shift]);
     
     drawnow ;       % Draws the newly updated lines onto the figure
-    pause(0.005) ;
+    pause(0.01) ;
 end
 
 if ~button_restart.Value
