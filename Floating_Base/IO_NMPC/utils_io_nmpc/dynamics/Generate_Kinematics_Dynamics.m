@@ -58,6 +58,9 @@ f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{rhs});  % nonlinear mapping fun
 lambda = ((Jc/D)*Jc') \ ((Jc/D)*(C*dq + G) - (Jc/D)*B*u -Jc_dot*dq);
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
 
+
+
+
 %% External Force @ Hip Functions
 J_hip = Hip_Jacobian(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
 f_J_hip = Function('f_J_hip',{q},{J_hip});
@@ -153,6 +156,17 @@ dyn_info.func.f_pos_swing = f_pos_swing;
 dyn_info.func.f_pos_stance = f_pos_stance;
 dyn_info.func.f_J_hip = f_J_hip;
 dyn_info.func.f_J_swing = f_J_swing;
+
+%% Impact Map
+dq_plus = [D -J_swing'; J_swing zeros(2,2)]\[D*dq;zeros(2,1)];
+x_impact = [q; dq_plus(1:n_q)];
+Relabel = [eye(3), zeros(3,2), zeros(3,2);
+    zeros(2,3), zeros(2,2), eye(2);
+    zeros(2,3), eye(2), zeros(2,2)];
+
+x_relabel = [Relabel*x_impact(1:n_q); Relabel*x_impact(n_q+1:end)];
+f_impact_relabel = Function('f_impact_relabel',{q,dq},{x_relabel});
+dyn_info.func.f_impact_relabel = f_impact_relabel;
 
 %% Generate additional functions
 f_D = Function('f_D',{q},{D});

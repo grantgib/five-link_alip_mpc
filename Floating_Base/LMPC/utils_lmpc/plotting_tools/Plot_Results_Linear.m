@@ -88,8 +88,8 @@ if plotSettings.x
     figure
     for i = 1:n_q
         subplot(3,3,i);
-        plot(time_traj(1:size(x_ref_traj,2)),x_ref_traj(i,:),'LineWidth',width_ref);
-        hold on; plot(time_traj,x_traj(i,:),'LineWidth',width_traj);
+        plot(time_traj,x_ref_traj(i,:),'LineWidth',width_ref);
+        hold on; plot(time_traj,x_traj(i,:),'--','LineWidth',width_traj);
         try
             hold on; yline(x_lb(i),'r','LineWidth',width_bound);
             hold on; yline(x_ub(i),'r','LineWidth',width_bound);

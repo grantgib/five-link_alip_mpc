@@ -160,9 +160,9 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
                       'W_REF',              W_REF);
     
     % Check bounds on optimization variables
-    if ctrl_info.iter == 0.5*num_steps*size(X_REF_Original,2)
-        Plot_Bounds(dyn_info,ctrl_info,sol_info,args);
-    end
+%     if ctrl_info.iter == 0.5*num_steps*size(X_REF_Original,2)
+%         Plot_Bounds(dyn_info,ctrl_info,sol_info,args);
+%     end
     
     %% Apply control & Update state (includes check/update for impacts)
     params = struct('y_sw_traj', y_sw_traj);

@@ -475,40 +475,11 @@ if plotSettings.x_all
     end
     
     for j = 1:round(size(x_traj_all,3)*per)
-        k = 1;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 2;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 3;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 4;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 5;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 6;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
-        
-        k = 7;
-        subplot(3,3,k);
-        set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
-        set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
+        for k = 1:n_q
+            subplot(3,3,k);
+            set(x_predict{k},'XData',time_traj(j:j+N),'YData',x_traj_all(k,:,j));
+            set(x_actual{k},'XData',time_traj(1:j),'YData',x_traj(k,1:j));
+        end
         
         drawnow;
         pause(0.1);
