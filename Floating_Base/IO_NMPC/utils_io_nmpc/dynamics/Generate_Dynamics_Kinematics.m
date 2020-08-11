@@ -1,4 +1,4 @@
-function [dyn_info] = Generate_Kinematics_Dynamics()
+function [dyn_info] = Generate_Dynamics_Kinematics()
 import casadi.*
 dyn_info = struct;
 %% CasADi symbolics
@@ -57,9 +57,6 @@ f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{rhs});  % nonlinear mapping fun
 % Wrench as decision variable
 lambda = ((Jc/D)*Jc') \ ((Jc/D)*(C*dq + G) - (Jc/D)*B*u -Jc_dot*dq);
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
-
-
-
 
 %% External Force @ Hip Functions
 J_hip = Hip_Jacobian(xbar,zbar,rotY,q1R,q2R,q1L,q2L);

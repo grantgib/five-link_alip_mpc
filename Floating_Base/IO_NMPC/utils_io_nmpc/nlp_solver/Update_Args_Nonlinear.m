@@ -7,8 +7,6 @@ n_w = dyn_info.dim.n_w;
 full_ref = ref_info.full_ref;
 s_func = ref_info.phase_based.s_func;
 
-index_impact = traj_info.idx_preimpact(1) + 1;     % index of X_REF where new ref begins and impact has just occurred
-
 %% Bounds
 x_lb = ref_info.x_lb;
 x_ub = ref_info.x_ub;
@@ -26,28 +24,17 @@ args.p = [x_init;
     U_REF_vect(1:n_u*(N+1),1)];
 
 %% Equality Constraints
-% Modify bound if impact is present 
-%   x(k+1) - x(k) = f(x(k)) - f'(x(k)) = bg(idx_preimpact+1)
-%   f  ~ continuous dynamics
-%   f' ~ impact map and relabel
+% Modify bound if impact is present
+%   x(k+1) - x(k) = 0
+%   x(k+1) can either be forward euler or impact map update. The solver implements the specific version
 g_equality = zeros(n_x,1); % initial condition equality constraint
 for k = 1:N+1
-    g_equality = [g_equality; zeros(n_w,1)];
     if k < N+1
-        if k+(traj_info.iter_impact) == index_impact
-            x_impact = X_REF_FULL(:,index_impact);
-            x_forward_euler = X_REF_FULL(:,index_impact-1);
-            impact_offset = x_impact - x_forward_euler;
-            g_equality = [g_equality; impact_offset];
-        elseif k == 1 && traj_info.iter_impact >= index_impact
-            x_impact = X_REF_FULL(:,index_impact);
-            x_forward_euler = X_REF_FULL(:,index_impact-1);
-            impact_offset = x_impact - x_forward_euler;
-            g_equality = [g_equality; impact_offset];
-        else
-            g_equality = [g_equality; zeros(n_x,1)];
-        end
+        g_equality = [g_equality; zeros(n_x,1)];
     end
+end
+for k = 1:N+1
+    g_equality = [g_equality; zeros(n_w,1)];
 end
 args.lbg = g_equality;
 args.ubg = g_equality;
@@ -55,13 +42,13 @@ args.ubg = g_equality;
 %% State and control bounds
 % state
 for i = 1:n_x
-    args.lbx(i:n_x:n_x*(N+1),1) = x_lb(i);              
+    args.lbx(i:n_x:n_x*(N+1),1) = x_lb(i);
     args.ubx(i:n_x:n_x*(N+1),1) = x_ub(i);
 end
 % control
 for i = 1:n_u
-    args.lbx(n_x*(N+1)+i:n_u:n_x*(N+1)+n_u*(N+1),1) = u_lb(i);  
-    args.ubx(n_x*(N+1)+i:n_u:n_x*(N+1)+n_u*(N+1),1) = u_ub(i);    
+    args.lbx(n_x*(N+1)+i:n_u:n_x*(N+1)+n_u*(N+1),1) = u_lb(i);
+    args.ubx(n_x*(N+1)+i:n_u:n_x*(N+1)+n_u*(N+1),1) = u_ub(i);
 end
 % wrench
 for i = 1:n_w
@@ -100,7 +87,7 @@ if constr_info.grf.active
         lbg_fric = -mu;
         ubg_fric = mu;
         args.lbg = [args.lbg; lbg_fric];
-        args.ubg = [args.ubg; ubg_fric];  
+        args.ubg = [args.ubg; ubg_fric];
     end
 end
 
@@ -109,8 +96,8 @@ if constr_info.torque.sat
     u_max = constr_info.torque.sat*ones(n_u,1);
     u_min = -u_max;
     for k = 1:N+1
-       args.lbg = [args.lbg; u_min];
-       args.ubg = [args.ubg; u_max];
+        args.lbg = [args.lbg; u_min];
+        args.ubg = [args.ubg; u_max];
     end
 end
 

@@ -1,4 +1,4 @@
-function [nlp_info] = Objective_Constraints_Linear(dyn_info,ctrl_info,ref_info,constr_info,N)
+function [nlp_info,g_constraints] = Objective_Constraints_Linear(dyn_info,ctrl_info,ref_info,constr_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -9,6 +9,7 @@ n_w = dyn_info.dim.n_w;
 f_linear = dyn_info.func.f_L;
 f_w = dyn_info.func.wrench;
 f_sw_pos = dyn_info.func.f_pos_swing;
+f_impact_relabel_linear = dyn_info.func.f_impact_relabel_linear;
 
 % ctrl_info
 lmpc_info = ctrl_info.lmpc_info;
@@ -27,48 +28,76 @@ P_uref = SX.sym('P_uref',n_u,N+1);              % [u_0ref | ... | u_Nref]
 P_wref = SX.sym('P_wref',n_w,N+1);              % [w_0ref | ... | w_Nref]
 
 %% Define Penalties
-% Bryson's rule (Normalize weights)
-% Q_vector = zeros(2*n_q,1);
-% for i = 1:n_q
-%     Q_vector(i) = 1/full_ref.bounds.RightStance.states.x.ub(i);
-%     Q_vector(n_q+i) = 1/full_ref.bounds.RightStance.states.dx.ub(i);
-% end
-% Q_weights = [1, 1, 50, 15, 15, 5, 5,...
-%     1, 1, 1, 1, 1, 1, 1]';
-% Q = Q_weights.*Q_vector;
-% Q_mat = diag(Q);
-C = [0 0 0 1 0 0 0;     % stance thigh
-    0 0 1 1 1 0 0;     % torso, stance leg together
-    0 0 0 0 0 1 0;     % swing leg
-    0 0 0 0 0 0 1];    % swing leg
+% State penalty
+% C = [0 0 0 1 0 0 0;     % stance thigh
+%      0 0 1 1 1 0 0;     % torso, stance leg together
+%      0 0 0 0 0 1 0;     % swing leg
+%      0 0 0 0 0 0 1];    % swing leg
+C = [0 0 1 1 1 0 0;     % stance thigh
+     0 0 0 0 1 0 0;     % torso, stance leg together
+     0 0 0 0 0 1 0;     % swing thigh
+     0 0 0 0 0 0 1];    % swing leg
 Q_mat = [C'*C, zeros(n_q,n_q);
     zeros(n_q,n_q), C'*C];
 
 % Terminal penalty
-Q_term = 10*Q_mat;
+Q_term = 1e4*Q_mat;
 
 % Control penalty
-% R_vector = zeros(n_u,1);
-% for i = 1:n_u
-%     R_vector(i) = 1/full_ref.bounds.RightStance.inputs.Control.u.ub(i);
-% end
-% R_weights = 0.1*[1, 1, 1, 1]';
-% R = R_weights.*R_vector;
-% R_mat = diag(R);
 R_mat = 1e-10*eye(n_u);
 
-%% Equality Constraints (Dynamics)
-g_constraints = [];                          % initialize equality constraints vector
-g_constraints = [g_constraints; dX_dec(:,1) - P_delta_xinit];    % initial condition constraints
-cost_running = SX.zeros(N+1,1);    % initialize objective function (scalar output)
+%% Equality Constraint (Initial Condition)
+constr_init = dX_dec(:,1) - P_delta_xinit;    % initial condition constraints
 
+%% Equality Constraint (Dynamics)
+constr_dyn = cell(N+1,1);
+for imp = 1:N+1
+    for k = 1:N+1
+        % delta syms
+        delta_q_k = dX_dec(1:n_q,k);
+        delta_dq_k = dX_dec(n_q+1:2*n_q,k);
+        delta_x_k = [delta_q_k; delta_dq_k];
+        delta_u_k = dU_dec(:,k);
+        delta_w_k = dW_dec(:,k);
+        
+        % ref syms
+        q_ref_k = P_xref(1:n_q,k);
+        dq_ref_k = P_xref(n_q+1:end,k);
+        u_ref_k = P_uref(:,k);
+        w_ref_k = P_wref(:,k);
+        
+        % total syms
+        q_k = q_ref_k + delta_q_k;
+        dq_k = dq_ref_k + delta_dq_k;
+        x_k = [q_k; dq_k];
+        u_k = u_ref_k + delta_u_k;
+        w_k = w_ref_k + delta_w_k;
+        
+        % Forward Integration dynamics constraint
+        if k < N+1
+            delta_x_k_1 = dX_dec(:,k+1);
+            delta_xdot = f_linear(q_k,dq_k,u_k,w_k,delta_q_k,delta_dq_k,delta_u_k,delta_w_k);           % Linear dynamics propogation
+            delta_x_k_1_euler = delta_x_k + (DT*delta_xdot);                                            % Forward Euler Discretization prediction
+            delta_x_k_1_impact = f_impact_relabel_linear(q_k,dq_k,delta_q_k,delta_dq_k);
+            if k == (imp-1)
+                constr_dyn{imp} = [constr_dyn{imp}; delta_x_k_1 - delta_x_k_1_impact];   
+            else
+                constr_dyn{imp} = [constr_dyn{imp}; delta_x_k_1 - delta_x_k_1_euler];   
+            end
+        end 
+    end
+    disp("g_constraints. Impact in prediction horizon at N = " + (imp-1));
+end
+%% Equality Constraint (Wrench & Cost Function)
+cost_running = SX.zeros(N+1,1);    % initialize objective function (scalar output)
+constr_wrench = [];
 for k = 1:N+1
     % delta syms
     delta_q_k = dX_dec(1:n_q,k);
     delta_dq_k = dX_dec(n_q+1:2*n_q,k);
-    delta_x_k = [delta_q_k; delta_dq_k];          
+    delta_x_k = [delta_q_k; delta_dq_k];
     delta_u_k = dU_dec(:,k);
-    delta_w_k = dW_dec(:,k); 
+    delta_w_k = dW_dec(:,k);
     
     % ref syms
     q_ref_k = P_xref(1:n_q,k);
@@ -82,20 +111,12 @@ for k = 1:N+1
     x_k = [q_k; dq_k];
     u_k = u_ref_k + delta_u_k;
     w_k = w_ref_k + delta_w_k;
-     
-    %% Contact constraint
+    
+    % Contact constraint
     w_sym_k = f_w(q_k,dq_k,u_k);
-    g_constraints = [g_constraints; w_k - w_sym_k];
+    constr_wrench = [constr_wrench; w_k - w_sym_k];
     
-    %% Forward Integration dynamics constraint
-    if k < N+1
-        delta_x_k_1 = dX_dec(:,k+1);
-        delta_xdot = f_linear(q_k,dq_k,u_k,w_k,delta_q_k,delta_dq_k,delta_u_k,delta_w_k);          % Nonlinear dynamics propogation
-        delta_x_k_1_euler = delta_x_k + (DT*delta_xdot);  % Forward Euler Discretization prediction
-        g_constraints = [g_constraints; delta_x_k_1 - delta_x_k_1_euler];   % Update constraints vector
-    end
-    
-    %% Objective
+    % Objective
     if k < N+1
         cost_running(k) = delta_x_k'*Q_mat*delta_x_k + ...
             delta_u_k'*R_mat*delta_u_k;
@@ -105,6 +126,14 @@ for k = 1:N+1
 end
 cost_sum = sum(cost_running) + cost_terminal;
 
+%% Compile Equality Constraints
+g_constraints = cell(N+1,1);
+for imp = 1:N+1
+    g_constraints{imp} = [constr_init;
+        constr_dyn{imp};
+        constr_wrench];
+end
+
 %% Phased swing foot height Constraints
 if constr_info.obstacle.isObstacle
     for k = 1:N+1
@@ -113,7 +142,9 @@ if constr_info.obstacle.isObstacle
         q_k = q_ref_k + delta_q_k;
         sw_k = f_sw_pos(q_k);
         z_sw_k = sw_k(2);
-        g_constraints = [g_constraints; z_sw_k];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; z_sw_k];
+        end
     end
 end
 
@@ -123,7 +154,9 @@ if constr_info.grf.active
         delta_w_k = dW_dec(:,k);
         w_k = w_ref_k + delta_w_k;
         fric = w_k(1)./w_k(2);
-        g_constraints = [g_constraints; fric];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; fric];
+        end
     end
 end
 
@@ -133,7 +166,9 @@ if constr_info.torque.sat
         delta_u_k = dU_dec(:,k);
         u_ref_k = P_uref(:,k);
         u_k = u_ref_k + delta_u_k;
-        g_constraints = [g_constraints; u_k];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; u_k];
+        end
     end
 end
 
@@ -145,7 +180,6 @@ nlp_info = struct('dX_dec', dX_dec,...
     'P_xref',               P_xref,...
     'P_uref',               P_uref,...
     'P_wref',               P_wref,...
-    'g_constraints',        g_constraints,...
     'cost_sum',             cost_sum,...
     'cost_running',         cost_running,...
     'cost_terminal',        cost_terminal,...

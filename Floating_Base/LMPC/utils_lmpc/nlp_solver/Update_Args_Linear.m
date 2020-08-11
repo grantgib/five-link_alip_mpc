@@ -31,34 +31,28 @@ args.p = [delta_x_init;
 
 %% Equality Constraints
 % Modify bound if impact is present
-%   x(k+1) - x(k) = f(x(k)) - f'(x(k)) = bg(idx_preimpact+1)
-%   f  ~ continuous dynamics
-%   f' ~ impact map and relabel
+%   x(k+1) - x(k) = 0
+%   x(k+1) can either be forward euler or impact map update. The solver implements the specific version
+
+% initial condition
 g_equality = zeros(n_x,1); % initial condition equality constraint
+
+% euler/impact dynamics
 for k = 1:N+1
-    g_equality = [g_equality; zeros(n_w,1)];
     if k < N+1
         g_equality = [g_equality; zeros(n_x,1)];
-        %         if k+(traj_info.iter_impact) == index_impact
-        %             x_impact = X_REF_FULL(:,index_impact);
-        %             x_forward_euler = X_REF_FULL(:,index_impact-1);
-        %             impact_offset = x_impact - x_forward_euler;
-        %             g_equality = [g_equality; impact_offset];
-        %         elseif k == 1 && traj_info.iter_impact >= index_impact
-        %             x_impact = X_REF_FULL(:,index_impact);
-        %             x_forward_euler = X_REF_FULL(:,index_impact-1);
-        %             impact_offset = x_impact - x_forward_euler;
-        %             g_equality = [g_equality; impact_offset];
-        %         else
-        %             g_equality = [g_equality; zeros(n_x,1)];
-        %         end
     end
 end
+
+% wrench
+for k = 1:N+1
+    g_equality = [g_equality; zeros(n_w,1)];
+end
+
 args.lbg = g_equality;
 args.ubg = g_equality;
 
 %% State and control bounds
-
 delta_x_lb = repmat(x_lb,1,N+1) - X_REF(:,1:N+1);
 delta_x_ub = repmat(x_ub,1,N+1) - X_REF(:,1:N+1);
 
@@ -82,28 +76,6 @@ args.lbx = [reshape(delta_x_lb,n_x*(N+1),1);
 args.ubx = [reshape(delta_x_ub,n_x*(N+1),1);
     reshape(delta_u_ub,n_u*(N+1),1);
     reshape(delta_w_ub,n_w*(N+1),1)];
-
-% for k = 1:N+1
-%     % state
-%     for i = 1:n_x
-%         args.lbx(n_x*(k-1)+i,1) = x_lb(i) - X_REF(i,k);
-%         args.ubx(n_x*(k-1)+i,1) = x_ub(i) - X_REF(i,k);
-%     end
-% end
-% for k = 1:N+1
-%     % control
-%     for i = 1:n_u
-%         args.lbx(n_x*(N+1) + n_u*(k-1)+i,1) = u_lb(i) - U_REF(i,k);
-%         args.ubx(n_x*(N+1) + n_u*(k-1)+i,1) = u_ub(i) - U_REF(i,k);
-%     end
-% end
-% for k = 1:N+1
-%     % wrench
-%     for i = 1:n_w
-%         args.lbx((n_x+n_u)*(N+1) + n_w*(k-1)+i,1) = w_lb(i) - W_REF(i,k);
-%         args.ubx((n_x+n_u)*(N+1) + n_w*(k-1)+i,1) = w_ub(i) - W_REF(i,k);
-%     end
-% end
 
 %% Add additional Inequality constraints to g
 if constr_info.obstacle.isObstacle

@@ -40,53 +40,37 @@ mpc_info.opts.ipopt.hessian_constant = 'yes';
 % mpc_info.opts.ipopt.max_cpu_time = 0.5;
 
 %% Nonlinear Program Formulation
-[nlp_info] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N);
+[nlp_info,g_constraints] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N);
 
-% Extract nlp_info
-X_dec = nlp_info.X_dec;
-U_dec = nlp_info.U_dec;
-W_dec = nlp_info.W_dec;
-P_xinit = nlp_info.P_xinit;
-P_xref = nlp_info.P_xref;
-P_uref = nlp_info.P_uref;
-g_constraints = nlp_info.g_constraints;
-cost_sum = nlp_info.cost_sum;
-cost_running = nlp_info.cost_running;
-cost_terminal = nlp_info.cost_terminal;
+% Decision variables and reference data
+DEC_variables = [reshape(nlp_info.X_dec,n_x*(N+1),1);
+    reshape(nlp_info.U_dec,n_u*(N+1),1);
+    reshape(nlp_info.W_dec,n_w*(N+1),1)];
 
-% Settings
-% Decision variables to optimize
-DEC_variables = [reshape(X_dec,n_x*(N+1),1);
-    reshape(U_dec,n_u*(N+1),1);
-    reshape(W_dec,n_w*(N+1),1)];
-P = [P_xinit;
-    reshape(P_xref,n_x*(N+1),1);
-    reshape(P_uref,n_u*(N+1),1)];
-
-% Formulate nlp
-nlp_prob = struct('f',cost_sum,...
-    'x',DEC_variables,...
-    'g',g_constraints,...
-    'p', P);
+P = [nlp_info.P_xinit;
+    reshape(nlp_info.P_xref,n_x*(N+1),1);
+    reshape(nlp_info.P_uref,n_u*(N+1),1)];
 
 % Setup solver
-solver_NL = nlpsol('solver', 'ipopt', nlp_prob, mpc_info.opts);
+nlp_prob = cell(N+1,1);
+solvers_NLP = cell(N+1,1);
+for imp = 1:N+1
+    nlp_prob{imp} = struct('f',  nlp_info.cost_sum,...
+                      'x',  DEC_variables,...
+                      'g',  g_constraints{imp},...
+                      'p',  P);
+    solvers_NLP{imp} = nlpsol('solver', 'ipopt', nlp_prob{imp}, mpc_info.opts);
+end
+
+
 
 % Update mpc_info
-mpc_info.X_dec = X_dec;
-mpc_info.U_dec = U_dec;
-mpc_info.P_xinit = P_xinit;
-mpc_info.P_xref = P_xref;
-mpc_info.P_uref = P_uref;
-mpc_info.P = P;
-mpc_info.obj = cost_sum;
-mpc_info.cost_running = cost_running;
-mpc_info.cost_terminal = cost_terminal;
-mpc_info.g_dec = g_constraints;
-mpc_info.solvers_NL = solver_NL;
-mpc_info.DEC_variables = DEC_variables;
+mpc_info.nlp_info = nlp_info;
 mpc_info.Q = nlp_info.Q_mat;
 mpc_info.R = nlp_info.R_mat;
 mpc_info.C = nlp_info.C_mat;
+mpc_info.DEC_variables = DEC_variables;
+mpc_info.P = P;
+mpc_info.solvers_NLP = solvers_NLP;
 ctrl_info.mpc_info = mpc_info;
 

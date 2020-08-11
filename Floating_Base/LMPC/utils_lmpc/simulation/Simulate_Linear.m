@@ -17,7 +17,7 @@ DT = ctrl_info.DT;
 % mpc_info
 lmpc_info = ctrl_info.lmpc_info;
 N = lmpc_info.N;
-solver = lmpc_info.solvers_NL; %solvers_NL{1};
+solvers_linear = lmpc_info.solvers_linear; 
 
 % ref_info
 delta_x_init = ref_info.delta_x_init;
@@ -30,7 +30,6 @@ s_func = ref_info.phase_based.s_func;
 %% Initialize Variables
 % traj_info struct
 traj_info.num_impacts = 0;
-ctrl_info.step_look_ahead = 3;
 
 % reference trajectories
 X_REF = X_REF_Original;
@@ -88,19 +87,19 @@ u_traj_all = zeros(n_u,N+1,traj_size);
 w_traj_all = zeros(n_w,N+1,traj_size);
 
 % bounds traj (the delta bounds are varying because of the linearization)
-delta_x_lb_traj = zeros(n_x,N+1,traj_size);
-delta_x_ub_traj = zeros(n_x,N+1,traj_size);
-delta_u_lb_traj = zeros(n_u,N+1,traj_size);
-delta_u_ub_traj = zeros(n_u,N+1,traj_size);
-delta_w_lb_traj = zeros(n_w,N+1,traj_size);
-delta_w_ub_traj = zeros(n_w,N+1,traj_size);
+delta_x_lb_traj_all = zeros(n_x,N+1,traj_size);
+delta_x_ub_traj_all = zeros(n_x,N+1,traj_size);
+delta_u_lb_traj_all = zeros(n_u,N+1,traj_size);
+delta_u_ub_traj_all = zeros(n_u,N+1,traj_size);
+delta_w_lb_traj_all = zeros(n_w,N+1,traj_size);
+delta_w_ub_traj_all = zeros(n_w,N+1,traj_size);
 
-x_lb_traj = zeros(n_x,N+1,traj_size);
-x_ub_traj = zeros(n_x,N+1,traj_size);
-u_lb_traj = zeros(n_u,N+1,traj_size);
-u_ub_traj = zeros(n_u,N+1,traj_size);
-w_lb_traj = zeros(n_w,N+1,traj_size);
-w_ub_traj = zeros(n_w,N+1,traj_size);
+x_lb_traj_all = zeros(n_x,N+1,traj_size);
+x_ub_traj_all = zeros(n_x,N+1,traj_size);
+u_lb_traj_all = zeros(n_u,N+1,traj_size);
+u_ub_traj_all = zeros(n_u,N+1,traj_size);
+w_lb_traj_all = zeros(n_w,N+1,traj_size);
+w_ub_traj_all = zeros(n_w,N+1,traj_size);
 
 x_lb_traj_actual = zeros(n_x,N+1,traj_size);
 x_ub_traj_actual = zeros(n_x,N+1,traj_size);
@@ -129,6 +128,23 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     args.x0  = [reshape(delta_X_guess(:,1:N+1),n_x*(N+1),1);
         reshape(delta_U_guess(:,1:N+1),n_u*(N+1),1);
         reshape(delta_W_guess(:,1:N+1),n_w*(N+1),1)];
+    
+    % Choose solver based on if impact occurs during prediction horizon
+    index_impact = traj_info.idx_preimpact(1) + 1;     % index of X_REF where new ref begins and impact has just occurred
+        for k = 1:N
+            if k+(traj_info.iter_impact) == index_impact
+                solver = solvers_linear{k+1};
+                disp("Prediction Horizon has Impact at position " + k);
+                break;
+            elseif k == 1 && traj_info.iter_impact >= index_impact
+                solver = solvers_linear{k+1};
+                disp("Prediction Horizon has Impact at position " + k);
+                break;
+            else
+                solver = solvers_linear{1};
+            end
+            solver = solvers_linear{1};
+        end    
     
     % Solve MPC NLP (uses IPOPT)
     solver_comp_time = tic;    % Start solver computation timer
@@ -167,7 +183,7 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     %% Apply control & Update state (includes check/update for impacts)
     params = struct('y_sw_traj', y_sw_traj);
     [t_next,x_next,impact_occurred] = Update_State(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
-    %     [t_next,x_next,impact_occurred] = Update_State_Linear(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
+%     [t_next,x_next,impact_occurred] = Update_State_Linear(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
     delta_x_next = x_next - X_REF(:,2);
     u_sol = U_REF(:,1) + delta_u_sol_mpc(:,1);
     w_sol = W_REF(:,1) + delta_w_sol_mpc(:,1);
@@ -203,19 +219,19 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     w_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_traj_all(:,:,ctrl_info.iter);
     
     % bound traj
-    delta_x_lb_traj(:,:,ctrl_info.iter) = args.delta_x_lb;
-    delta_x_ub_traj(:,:,ctrl_info.iter) = args.delta_x_ub;
-    delta_u_lb_traj(:,:,ctrl_info.iter) = args.delta_u_lb;
-    delta_u_ub_traj(:,:,ctrl_info.iter) = args.delta_u_ub;
-    delta_w_lb_traj(:,:,ctrl_info.iter) = args.delta_w_lb;
-    delta_w_ub_traj(:,:,ctrl_info.iter) = args.delta_w_ub;
+    delta_x_lb_traj_all(:,:,ctrl_info.iter) = args.delta_x_lb;
+    delta_x_ub_traj_all(:,:,ctrl_info.iter) = args.delta_x_ub;
+    delta_u_lb_traj_all(:,:,ctrl_info.iter) = args.delta_u_lb;
+    delta_u_ub_traj_all(:,:,ctrl_info.iter) = args.delta_u_ub;
+    delta_w_lb_traj_all(:,:,ctrl_info.iter) = args.delta_w_lb;
+    delta_w_ub_traj_all(:,:,ctrl_info.iter) = args.delta_w_ub;
     
-    x_lb_traj(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_lb_traj(:,:,ctrl_info.iter);
-    x_ub_traj(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_ub_traj(:,:,ctrl_info.iter);
-    u_lb_traj(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_lb_traj(:,:,ctrl_info.iter);
-    u_ub_traj(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_ub_traj(:,:,ctrl_info.iter);
-    w_lb_traj(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_lb_traj(:,:,ctrl_info.iter);
-    w_ub_traj(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_ub_traj(:,:,ctrl_info.iter);
+    x_lb_traj_all(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_lb_traj_all(:,:,ctrl_info.iter);
+    x_ub_traj_all(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_ub_traj_all(:,:,ctrl_info.iter);
+    u_lb_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_lb_traj_all(:,:,ctrl_info.iter);
+    u_ub_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_ub_traj_all(:,:,ctrl_info.iter);
+    w_lb_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_lb_traj_all(:,:,ctrl_info.iter);
+    w_ub_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_ub_traj_all(:,:,ctrl_info.iter);
     
     x_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.x_lb,1,N+1);
     x_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.x_ub,1,N+1);
@@ -224,6 +240,8 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     w_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_lb,1,N+1);
     w_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_ub,1,N+1);
     
+%     disp(x_lb_traj_actual(:,:,ctrl_info.iter) - x_lb_traj_all(:,:,ctrl_info.iter))
+
     % Time traj
     time_traj(ctrl_info.iter) = t_init;
     
@@ -233,10 +251,7 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     % store foot positions
     y_sw_traj = [y_sw_traj, y_sw_next];
     y_st_traj = [y_st_traj, y_st_next];
-    sw_offset = [y_sw_init(1)*(traj_info.num_impacts+1);
-        y_sw_init(2)*(traj_info.num_impacts+1)];
-    y_sw_normal = [y_sw_normal, (y_sw_next-sw_offset)] ;
-    
+        
     % store phasing variable  (WRONG)
     s_traj = [s_traj, 0];
     
@@ -255,8 +270,11 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     
     % Change reference if impact occurred
     if impact_occurred
+%         X_REF_FULL = X_REF_FULL + ...
+%             [(X_REF(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+%             zeros(12,size(X_REF_FULL,2))];
         X_REF_FULL = X_REF_FULL + ...
-            [(x_next(1:2) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+            [(x_next(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
             zeros(12,size(X_REF_FULL,2))];
         X_REF = X_REF_FULL;
         U_REF = U_REF_FULL;
@@ -300,6 +318,7 @@ disp("-> Average MPC Calculation Time = " + avg_calc_time);
 % disp("State Penalty (Q)"); disp(mpc_info.Q);
 % disp("Control Inputs Penalty (R)"); disp(mpc_info.R);
 
+
 %% Update function outputs
 traj_info.time_traj = time_traj;
 
@@ -313,6 +332,12 @@ traj_info.delta_w_traj = delta_w_traj;
 traj_info.delta_x_traj_all = delta_x_traj_all;
 traj_info.delta_u_traj_all = delta_u_traj_all;
 traj_info.delta_w_traj_all = delta_w_traj_all;
+traj_info.delta_x_lb_traj = delta_x_lb_traj_all;
+traj_info.delta_x_ub_traj = delta_x_ub_traj_all;
+traj_info.delta_u_lb_traj = delta_u_lb_traj_all;
+traj_info.delta_u_ub_traj = delta_u_ub_traj_all;
+traj_info.delta_w_lb_traj = delta_w_lb_traj_all;
+traj_info.delta_w_ub_traj = delta_w_ub_traj_all;
 
 traj_info.x_traj = x_traj;
 traj_info.u_traj = u_traj;
@@ -320,6 +345,12 @@ traj_info.w_traj = w_traj;
 traj_info.x_traj_all = x_traj_all;
 traj_info.u_traj_all = u_traj_all;
 traj_info.w_traj_all = w_traj_all;
+traj_info.x_lb_traj = delta_x_lb_traj_all;
+traj_info.x_ub_traj = delta_x_ub_traj_all;
+traj_info.u_lb_traj = delta_u_lb_traj_all;
+traj_info.u_ub_traj = delta_u_ub_traj_all;
+traj_info.w_lb_traj = delta_w_lb_traj_all;
+traj_info.w_ub_traj = delta_w_ub_traj_all;
 
 traj_info.y_sw = y_sw_traj;
 traj_info.y_st = y_st_traj;

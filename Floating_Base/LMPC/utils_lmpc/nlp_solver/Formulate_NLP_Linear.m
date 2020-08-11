@@ -33,61 +33,46 @@ lmpc_info.opts.ipopt.mu_init = 1e-6;
 
 % Cost and constraint simplification options
 % mpc_info.opts.ipopt.hessian_constant = 'yes';
+% mpc_info.opts.ipopt.jac_c_constant = 'yes';  %Indicates whether all equality constraints are linear
+% mpc_info.opts.ipopt.jac_d_constant = 'yes';  % Indicates whether all inequality constraints are linear
+% linear equality constraints option
 
 % Iteration/time simplification
 % mpc_info.opts.ipopt.max_cpu_time = 0.5;
 
 %% Nonlinear Program Formulation
-[nlp_info] = Objective_Constraints_Linear(dyn_info,ctrl_info,ref_info,constr_info,N);
+[program_info,g_constraints] = Objective_Constraints_Linear(dyn_info,ctrl_info,ref_info,constr_info,N);
 
-% Extract nlp_info
-dX_dec = nlp_info.dX_dec;
-dU_dec = nlp_info.dU_dec;
-dW_dec = nlp_info.dW_dec;
-P_delta_xinit = nlp_info.P_delta_xinit;
-P_xref = nlp_info.P_xref;
-P_uref = nlp_info.P_uref;
-P_wref = nlp_info.P_wref;
-g_constraints = nlp_info.g_constraints;
-cost_sum = nlp_info.cost_sum;
-cost_running = nlp_info.cost_running;
-cost_terminal = nlp_info.cost_terminal;
+% Decision variables and reference data
+DEC_variables = [reshape(program_info.dX_dec,n_x*(N+1),1);
+    reshape(program_info.dU_dec,n_u*(N+1),1);
+    reshape(program_info.dW_dec,n_w*(N+1),1)];
 
-% Settings
-% Decision variables to optimize
-DEC_variables = [reshape(dX_dec,n_x*(N+1),1);
-    reshape(dU_dec,n_u*(N+1),1);
-    reshape(dW_dec,n_w*(N+1),1)];
-P = [P_delta_xinit;
-    reshape(P_xref,n_x*(N+1),1);
-    reshape(P_uref,n_u*(N+1),1);
-    reshape(P_wref,n_w*(N+1),1)];
-
-% Formulate nlp
-nlp_prob = struct('f',cost_sum,...
-    'x',DEC_variables,...
-    'g',g_constraints,...
-    'p', P);
+P = [program_info.P_delta_xinit;
+    reshape(program_info.P_xref,n_x*(N+1),1);
+    reshape(program_info.P_uref,n_u*(N+1),1);
+    reshape(program_info.P_wref,n_w*(N+1),1)];
 
 % Setup solver
-solver_NL = nlpsol('solver', 'ipopt', nlp_prob, lmpc_info.opts);
+nlp_prob = cell(N+1,1);
+solvers_linear = cell(N+1,1);
+disp("CREATING SOLVERS...");
+for imp = 1:N+1
+    nlp_prob{imp} = struct('f',  program_info.cost_sum,...
+                      'x',  DEC_variables,...
+                      'g',  g_constraints{imp},...
+                      'p',  P);
+    solvers_linear{imp} = nlpsol('solver', 'ipopt', nlp_prob{imp}, lmpc_info.opts);
+    disp("Solver made for Impact in Prediction Horizon at N = " + (imp-1));
+end
 
 % Update mpc_info
-lmpc_info.dX_dec = dX_dec;
-lmpc_info.dU_dec = dU_dec;
-lmpc_info.dW_dec = dW_dec;
-lmpc_info.P_delta_xinit = P_delta_xinit;
-lmpc_info.P_xref = P_xref;
-lmpc_info.P_uref = P_uref;
-lmpc_info.P = P;
-lmpc_info.obj = cost_sum;
-lmpc_info.cost_running = cost_running;
-lmpc_info.cost_terminal = cost_terminal;
-lmpc_info.g_dec = g_constraints;
-lmpc_info.solvers_NL = solver_NL;
+lmpc_info.nlp_info = program_info;
+lmpc_info.Q = program_info.Q_mat;
+lmpc_info.R = program_info.R_mat;
+lmpc_info.C = program_info.C_mat;
 lmpc_info.DEC_variables = DEC_variables;
-lmpc_info.Q = nlp_info.Q_mat;
-lmpc_info.R = nlp_info.R_mat;
-lmpc_info.C = nlp_info.C_mat;
+lmpc_info.P = P;
+lmpc_info.solvers_linear = solvers_linear;
 ctrl_info.lmpc_info = lmpc_info;
 

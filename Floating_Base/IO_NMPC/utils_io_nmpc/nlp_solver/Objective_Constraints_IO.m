@@ -1,4 +1,4 @@
-function [nlp_info] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N)
+function [nlp_info,g_constraints] = Objective_Constraints_IO(dyn_info,ctrl_info,ref_info,constr_info,N)
 import casadi.*
 %% Extract variables
 % dyn_info
@@ -10,6 +10,7 @@ n_y = dyn_info.dim.n_y;
 f = dyn_info.func.f_NL;
 f_w = dyn_info.func.wrench;
 f_sw_pos = dyn_info.func.f_pos_swing;
+f_impact_relabel = dyn_info.func.f_impact_relabel;
 
 % ctrl_info
 mpc_info = ctrl_info.mpc_info;
@@ -66,15 +67,66 @@ R_mat = diag(R);
 % Terminal state penalty (LQR of closed-loop linear system y'' = v)
 Q_term = CLF_Terminal_Penalty(Q_mat,R_mat);
 
-%% Equality Constraints (Dynamics)
-g_constraints = [];                          % initialize equality constraints vector
-g_constraints = [g_constraints; X_dec(:,1) - P_xinit];    % initial condition constraints
-cost_running = SX.zeros(N+1,1);    % initialize objective function (scalar output)
+%% Equality Constraint (Initial Condition)
+constr_init = X_dec(:,1) - P_xinit;    % initial condition constraints
 
+%% Equality Constraint (Dynamics)
+constr_dyn = cell(N+1,1);
+for imp = 1:N+1  % impact in prediction horizon (0 means no impact and a number corresponds to where in the prediction horizon an impact occurs   
+    constr_dyn{imp} = [];
+    for k = 1:N+1
+        q_k = X_dec(1:n_q,k);
+        dq_k = X_dec(n_q+1:2*n_q,k);
+        x_k = [q_k; dq_k];            % current state
+        v_NL_k = U_dec(:,k);           % current control
+        w_k = W_dec(:,k);              % current wrench
+        x_ref_k = P_xref(:,k);
+        u_ref_k = P_uref(:,k);
+        
+        % virtual constraints
+        h_k = x_k(4:n_q);     % virtual constraint
+        dh_k = x_k(11:end); % derivative
+        
+        % Compute IO input
+        if IO_info.type == "time"
+            h_d_k = x_ref_k(4:n_q);
+            dh_d_k = x_ref_k(n_q+4:end);
+            ddh_d_k = zeros(n_y,1);
+        elseif IO_info.type == "phase"
+            s_k = s_func(x_k(1:n_q));
+            h_d_k = bezier_casadi(alpha_h,s_k);
+            dh_d_k = bezier_casadi(alpha_dh,s_k);
+            ddh_d_k = bezier_casadi(alpha_ddh,s_k);
+        end
+        
+        if ctrl_info.IO_info.linear
+            u_IO_k = dyn_info.func.u_IO(q_k,dq_k,h_d_k,dh_d_k,ddh_d_k,Kp,Kd);
+        else
+            u_IO_k = dyn_info.func.u_IO_NMPC(q_k,dq_k,h_d_k,dh_d_k,ddh_d_k,Kp,Kd,v_NL_k);
+        end
+        u_k = u_IO_k;
+        
+        % Forward Integration dynamics constraint
+        if k < N+1
+            x_k_1 = X_dec(:,k+1);
+            xdot = f(q_k,dq_k,u_k,w_k);          % Nonlinear dynamics propogation
+            x_k_1_euler = x_k + (DT*xdot);  % Forward Euler Discretization prediction
+            x_k_1_impact = f_impact_relabel(q_k,dq_k);
+            if k == (imp-1)
+                constr_dyn{imp} = [constr_dyn{imp}; x_k_1 - x_k_1_impact];
+            else   
+                constr_dyn{imp} = [constr_dyn{imp}; x_k_1 - x_k_1_euler];   % Update constraints vector
+            end
+        end
+    end
+end
+%% Wrench Constraint & Objective function
+cost_running = SX.zeros(N+1,1);    % initialize objective function (scalar output)
+constr_wrench = [];
 for k = 1:N+1
     q_k = X_dec(1:n_q,k);
     dq_k = X_dec(n_q+1:2*n_q,k);
-    x_k = [q_k; dq_k];            % current state
+    x_k = [q_k; dq_k];             % current state
     v_NL_k = U_dec(:,k);           % current control
     w_k = W_dec(:,k);              % current wrench
     x_ref_k = P_xref(:,k);
@@ -103,19 +155,11 @@ for k = 1:N+1
     end
     u_k = u_IO_k;
     
-    %% Contact constraint
+    % Contact constraint
     w_sym_k = f_w(q_k,dq_k,u_k);
-    g_constraints = [g_constraints; w_k - w_sym_k];
+    constr_wrench = [constr_wrench; w_k - w_sym_k];
     
-    %% Forward Integration dynamics constraint
-    if k < N+1
-        x_k_1 = X_dec(:,k+1);
-        xdot = f(q_k,dq_k,u_k,w_k);          % Nonlinear dynamics propogation
-        x_k_1_euler = x_k + (DT*xdot);  % Forward Euler Discretization prediction
-        g_constraints = [g_constraints; x_k_1 - x_k_1_euler];   % Update constraints vector
-    end
-    
-    %% Objective
+    % Objective
     if k < N+1
         y_k = h_k - h_d_k;
         dy_k = dh_k - dh_d_k;
@@ -142,13 +186,23 @@ for k = 1:N+1
 end
 cost_sum = sum(cost_running) + cost_terminal;
 
+%% Compile equality constraints
+g_constraints = cell(N+1,1);
+for imp = 1:N+1
+g_constraints{imp} = [constr_init;
+    constr_dyn{imp};
+    constr_wrench];
+end
+
 %% Phased swing foot height Constraints
 if constr_info.obstacle.isObstacle
     for k = 1:N+1
         q_k = X_dec(1:n_q,k);
         sw_k = f_sw_pos(q_k);
         z_sw_k = sw_k(2);
-        g_constraints = [g_constraints; z_sw_k];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; z_sw_k];
+        end
     end
 end
 
@@ -157,7 +211,9 @@ if constr_info.grf.active
     for k = 1:N+1
         w_k = W_dec(:,k);
         fric = w_k(1)./w_k(2);
-        g_constraints = [g_constraints; fric];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; fric];
+        end
     end
 end
 
@@ -186,25 +242,25 @@ if constr_info.torque.sat
             u_IO_k = dyn_info.func.u_IO_NMPC(q_k,dq_k,h_d_k,dh_d_k,ddh_d_k,Kp,Kd,v_NL_k);
         end
         u_k = u_IO_k;
-        g_constraints = [g_constraints; u_k];
+        for imp = 1:N+1
+            g_constraints{imp} = [g_constraints{imp}; u_k];
+        end
     end
 end
 
-
 %% Return output
-nlp_info = struct('X_dec',  X_dec,...
-    'U_dec',                U_dec,...
-    'W_dec',                W_dec,...
-    'P_xinit',              P_xinit,...
-    'P_xref',               P_xref,...
-    'P_uref',               P_uref,...
-    'g_constraints',        g_constraints,...
-    'cost_sum',             cost_sum,...
-    'cost_running',         cost_running,...
-    'cost_terminal',        cost_terminal,...
-    'Q_mat',                Q_mat,...
-    'R_mat',                R_mat,...
-    'C_mat',                C);
+nlp_info = struct('X_dec',          X_dec,...
+                  'U_dec',          U_dec,...
+                  'W_dec',          W_dec,...
+                  'P_xinit',        P_xinit,...
+                  'P_xref',         P_xref,...
+                  'P_uref',         P_uref,...
+                  'cost_sum',       cost_sum,...
+                  'cost_running',   cost_running,...
+                  'cost_terminal',  cost_terminal,...
+                  'Q_mat',          Q_mat,...
+                  'R_mat',          R_mat,...
+                  'C_mat',          C);
 end
 
 

@@ -468,7 +468,7 @@ if plotSettings.x_all
     set(gcf, 'Position',  [100, -500, 3000, 1200])
     for i = 1:n_q
         subplot(3,3,i)
-        x_reference{i} = plot(time_traj(1:round(size(x_traj_all,3)*per)),x_ref_traj(i,1:round(size(x_traj_all,3)*per)),'g'); hold on;
+        x_reference{i} = plot(time_traj,x_ref_traj(i,:),'g'); hold on;
         x_predict{i} = plot(time_traj(1:N+1),x_traj_all(i,:,1),'b--o'); hold on;
         x_actual{i} = plot(time_traj(1),x_traj(i,1),'r','LineWidth',2); hold on;
         title(q_header{i},'interpreter','latex'); xlabel('Time [sec]'); set(gca,'FontSize',sz)
@@ -482,7 +482,7 @@ if plotSettings.x_all
         end
         
         drawnow;
-        pause(0.1);
+        pause(0.5);
     end
 end
 

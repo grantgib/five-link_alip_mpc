@@ -57,6 +57,26 @@ x_ref_traj = traj_info.x_ref_traj;
 u_ref_traj = traj_info.u_ref_traj;
 w_ref_traj = traj_info.w_ref_traj;
 
+delta_x_lb_all = traj_info.delta_x_lb_traj;
+delta_x_ub_all = traj_info.delta_x_ub_traj;
+delta_u_lb_all = traj_info.delta_u_lb_traj;
+delta_u_ub_all = traj_info.delta_u_ub_traj;
+delta_w_lb_all = traj_info.delta_w_lb_traj;
+delta_w_ub_all = traj_info.delta_w_ub_traj;
+
+delta_x_lb_traj = reshape(delta_x_lb_all(:,1,:),n_x,size(delta_x_lb_all,3));
+delta_x_lb_traj(:,all(~delta_x_lb_traj,1)) = [];
+delta_x_ub_traj = reshape(delta_x_ub_all(:,1,:),n_x,size(delta_x_ub_all,3));
+delta_x_ub_traj(:,all(~delta_x_ub_traj,1)) = [];
+
+
+x_lb_traj = traj_info.x_lb_traj;
+x_ub_traj = traj_info.x_ub_traj;
+u_lb_traj = traj_info.u_lb_traj;
+u_ub_traj = traj_info.u_ub_traj;
+w_lb_traj = traj_info.w_lb_traj;
+w_ub_traj = traj_info.w_ub_traj;
+
 % contr_info
 obs_start = constr_info.obstacle.width(1);
 obs_end = constr_info.obstacle.width(2);
@@ -89,17 +109,17 @@ if plotSettings.x
     for i = 1:n_q
         subplot(3,3,i);
         plot(time_traj,x_ref_traj(i,:),'LineWidth',width_ref);
-        hold on; plot(time_traj,x_traj(i,:),'--','LineWidth',width_traj);
+        hold on; plot(time_traj,x_traj(i,:),':','LineWidth',width_traj);
         try
-            hold on; yline(x_lb(i),'r','LineWidth',width_bound);
-            hold on; yline(x_ub(i),'r','LineWidth',width_bound);
+%             hold on; yline(x_lb(i),'r','LineWidth',width_bound);
+%             hold on; yline(x_ub(i),'r','LineWidth',width_bound);
         catch
             disp("infinite bounds for x_" + i);
         end
         title(q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    legend("LMPC trajectory");
+    legend("Reference","LMPC trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
     set(gcf,'color','w');
     sgtitle("State Position Trajectories (q) for N = 5");
@@ -120,7 +140,7 @@ if plotSettings.x
         title(dq_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
-    legend("LMPC Trajectory");
+    legend("Reference","LMPC Trajectory");
     set(legend,'Position',[0.45 0.19 0.17 0.11]);
     sgtitle(plot_title + " State Velociites (N = " + lmpc_info.N + ")");
 end
@@ -178,6 +198,8 @@ if plotSettings.delta_x
     for i = 1:n_q
         subplot(3,3,i);
         hold on; plot(time_traj,delta_x_traj(i,:),'LineWidth',width_traj);
+        hold on; plot(time_traj(1:end-1),delta_x_lb_traj(i,:));
+        hold on; plot(time_traj(1:end-1),delta_x_ub_traj(i,:));
         title(delta_q_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz)
     end
@@ -493,9 +515,12 @@ if plotSettings.delta_x_all
     set(gcf, 'Position',  [100, -500, 3000, 1200])
     for i = 1:n_q
         subplot(3,3,i)
-%         x_reference{i} = plot(time_traj(1:round(size(x_traj_all,3)*per)),x_ref_traj(i,1:round(size(x_traj_all,3)*per)),'g'); hold on;
+        delta_x_full = plot(time_traj,delta_x_traj(i,:)); hold on;
         delta_x_predict{i} = plot(time_traj(1:N+1),delta_x_traj_all(i,:,1),'b--o'); hold on;
         delta_x_actual{i} = plot(time_traj(1),delta_x_traj(i,1),'r','LineWidth',2); hold on;
+        delta_x_lb{i} = plot(time_traj(1:N+1),delta_x_lb_all(i,:,1),'k'); hold on;
+        delta_x_ub{i} = plot(time_traj(1:N+1),delta_x_ub_all(i,:,1),'k'); hold on;
+        xlim([0 time_traj(end)]);
         title(delta_q_header{i},'interpreter','latex'); xlabel('Time [sec]'); set(gca,'FontSize',sz)
     end
     
@@ -504,9 +529,11 @@ if plotSettings.delta_x_all
             subplot(3,3,k);
             set(delta_x_predict{k},'XData',time_traj(j:j+N),'YData',delta_x_traj_all(k,:,j));
             set(delta_x_actual{k},'XData',time_traj(1:j),'YData',delta_x_traj(k,1:j));
+            set(delta_x_lb{k},'XData',time_traj(j:j+N),'YData',delta_x_lb_all(k,:,j));
+            set(delta_x_ub{k},'XData',time_traj(j:j+N),'YData',delta_x_ub_all(k,:,j));
         end
         drawnow;
-        pause(0.1);
+        pause(0.25);
     end
 end
 

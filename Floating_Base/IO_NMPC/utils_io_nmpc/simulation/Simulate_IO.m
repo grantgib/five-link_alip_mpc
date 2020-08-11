@@ -1,5 +1,5 @@
 function [traj_info,ctrl_info] = ...
-    Simulate_IO_TrajectoryTracking(dyn_info,ctrl_info,ref_info,constr_info)
+    Simulate_IO(dyn_info,ctrl_info,ref_info,constr_info)
 import casadi.*
 
 %% Extract inputs
@@ -19,7 +19,7 @@ IO_info = ctrl_info.IO_info;
 % mpc_info
 mpc_info = ctrl_info.mpc_info;
 N = mpc_info.N;
-solver = mpc_info.solvers_NL; %solvers_NL{1};
+solvers_NL = mpc_info.solvers_NLP; %solvers_NL{1};
 
 % ref_info
 X_REF_Original = ref_info.x_ref;
@@ -106,15 +106,26 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         if ctrl_info.iter < 2
             args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,x_init,N,X_REF,U_REF,X_REF_FULL);
         end
-    else % use NMPC
-        % Resize if Prediction Horizons changes
-        X0 = X0(:,1:N+1);
-        
+    else % use NMPC      
         % Set Parameter vector and Decision Variables
         args = Update_Args_Nonlinear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,x_init,N,X_REF,U_REF,X_REF_FULL);
         args.x0  = [reshape(X0(:,1:N+1),n_x*(N+1),1);
             reshape(U0(:,1:N+1),n_u*(N+1),1);
             reshape(W0(:,1:N+1),n_w*(N+1),1)];
+        
+        % Choose solver based on if impact occurs during prediction horizon
+        index_impact = traj_info.idx_preimpact(1) + 1;     % index of X_REF where new ref begins and impact has just occurred
+        for k = 1:N
+            if k+(traj_info.iter_impact) == index_impact
+                solver = solvers_NL{k+1};
+                break;
+            elseif k == 1 && traj_info.iter_impact >= index_impact
+                solver = solvers_NL{k+1};
+                break;
+            else
+                solver = solvers_NL{1};
+            end
+        end
         
         % Solve MPC NLP (uses IPOPT)
         solver_comp_time = tic;    % Start solver computation timer
@@ -178,8 +189,11 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
         disp("-> Step # " + traj_info.num_impacts);
         
         % Update reference trajectory
+%         X_REF_FULL = X_REF_FULL + ...
+%             [(x_next(1:2) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+%             zeros(12,size(X_REF_FULL,2))];
         X_REF_FULL = X_REF_FULL + ...
-            [(x_next(1:2) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+            [(X_REF(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
             zeros(12,size(X_REF_FULL,2))];
         X_REF = X_REF_FULL;
         U_REF = U_REF_FULL;

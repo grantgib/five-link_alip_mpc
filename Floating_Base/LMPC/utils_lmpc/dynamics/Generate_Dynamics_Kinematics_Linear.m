@@ -1,4 +1,4 @@
-function [dyn_info] = Generate_Kinematics_Dynamics()
+function [dyn_info] = Generate_Dynamics_Kinematics_Linear()
 import casadi.*
 dyn_info = struct;
 %% Symbolic state, control, and wrench variables
@@ -97,6 +97,16 @@ Bulin = jacobian(xdot,u);
 Bwlin = jacobian(xdot,w);
 delta_xdot = Alin*delta_x + Bulin*delta_u + Bwlin*delta_w;
 f_linear = Function('f_linear',{q,dq,u,w,delta_q,delta_dq,delta_u,delta_w},{delta_xdot});
+f_Ax = Function('f_Ax',{x,u,w},{Alin});
+f_Bu = Function('f_Bu',{x,u,w},{Bulin});
+f_Bw = Function('f_Bw',{x,u,w},{Bwlin});
+
+% Linearize wrench
+Wx = jacobian(lambda,x);
+Wu = jacobian(lambda,u);
+f_Wx = Function('f_Wx',{x,u},{Wx});
+f_Wu = Function('f_Wu',{x,u},{Wu});
+
 
 %% External Force @ Hip Functions
 w_ext = SX.sym('w_ext',n_w,1);
@@ -132,6 +142,42 @@ f_pos_stance = Function('f_pos_stance',{q},{pos_stance});
 
 % stance foot Jacobian - equivalent to Jc already defined as Jc
 
+%% Impact Map
+impact_map = [D -J_swing'; J_swing zeros(2,2)]\[D*dq;zeros(2,1)];
+x_impact = [q; impact_map(1:n_q)];
+Relabel = [eye(3), zeros(3,2), zeros(3,2);
+    zeros(2,3), zeros(2,2), eye(2);
+    zeros(2,3), eye(2), zeros(2,2)];
+
+x_relabel = [Relabel*x_impact(1:n_q); Relabel*x_impact(n_q+1:end)];
+f_impact_relabel = Function('f_impact_relabel',{q,dq},{x_relabel});
+dyn_info.func.f_impact_relabel = f_impact_relabel;
+
+%% Linearized Impact Map
+% J_impact_q = jacobian(x_impact,q);
+% J_impact_dq = jacobian(x_impact,dq);
+% delta_x_impact = J_impact_q*delta_q + J_impact_dq*delta_dq;
+% delta_x_relabel = [Relabel*delta_x_impact(1:n_q); Relabel*delta_x_impact(n_q+1:end)];
+% f_impact_relabel_linear = Function('f_impact_relabel_linear',{q,dq,delta_q,delta_dq},{delta_x_relabel});
+% dyn_info.func.f_impact_relabel_linear = f_impact_relabel_linear;
+
+De = [D, -Jc'; Jc, zeros(n_w,n_w)];
+Ce = [C; jacobian(Jc*dq,q)];
+Ge = [G; zeros(n_w,1)];
+Be = [B; zeros(n_w,n_u)];
+dq_plus = impact_map(1:n_q);
+w_impulse = impact_map(n_q+1:end);
+
+linear_impact_map = De\(jacobian([D*dq; zeros(n_w,1)] - De*[dq_plus; w_impulse],q)*delta_q + ...
+    [D; zeros(n_w,n_q)]*delta_dq);
+delta_x_impact = [delta_q; linear_impact_map(1:n_q)];
+delta_w_impulse = linear_impact_map(n_q+1:end);
+
+delta_x_relabel = [Relabel*delta_x_impact(1:n_q); Relabel*delta_x_impact(n_q+1:end)];
+f_impact_relabel_linear = Function('f_impact_relabel_linear',{q,dq,delta_q,delta_dq},{delta_x_relabel});
+dyn_info.func.f_impact_relabel_linear = f_impact_relabel_linear;
+
+
 %% Generate additional functions
 f_D = Function('f_D',{q},{D});
 f_G = Function('f_G',{q},{G});
@@ -146,6 +192,11 @@ dyn_info.dim.n_u = n_u;
 dyn_info.dim.n_w = n_w;
 dyn_info.func.f_NL = f_nonlinear;
 dyn_info.func.f_L = f_linear;
+dyn_info.func.f_Ax = f_Ax;
+dyn_info.func.f_Bu = f_Bu;
+dyn_info.func.f_Bw = f_Bw;
+dyn_info.func.f_Wx = f_Wx;
+dyn_info.func.f_Wu = f_Wu;
 dyn_info.func.D = f_D ;
 dyn_info.func.G = f_G ;
 dyn_info.func.B = f_B ;
