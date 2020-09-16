@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:54:06 GMT-04:00
+ * Wed 26 Aug 2020 19:06:48 GMT-04:00
  */
 
 #ifndef J_OUTPUT_BOUNDARY_RIGHTSTANCE_HH
@@ -27,7 +27,7 @@ namespace RightStance
 
 	
     // - Outputs
-    assert_size_matrix(p_output1, 4, 1);
+    assert_size_matrix(p_output1, 5, 1);
 
 
     // set zero the matrix

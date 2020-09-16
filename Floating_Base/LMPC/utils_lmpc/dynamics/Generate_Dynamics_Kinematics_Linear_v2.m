@@ -1,10 +1,9 @@
-function [dyn_info] = Generate_Dynamics_Kinematics_Linear()
+function [dyn_info] = Generate_Dynamics_Kinematics_Linear_v2()
 import casadi.*
 dyn_info = struct;
 %% Symbolic state, control, and wrench variables
 %   state:      [x,z,roty,q1R,q2R,q1L,q2L],
 %   control:    [u_q1R,u_q2R,u_q1L,u_q2L], (R is stance leg)
-%   wrench:     [f_x,f_z]
 
 % State
 xbar = SX.sym('xbar');
@@ -35,11 +34,7 @@ u_q2L = SX.sym('u_q2L');
 u = [u_q1R; u_q2R; u_q1L; u_q2L];
 n_u = length(u);
 
-% Wrench
-f_x = SX.sym('f_x');
-f_z = SX.sym('f_z');
-w = [f_x; f_z];
-n_w = length(w);
+n_w = 2;
 
 %% Linearization symbolics
 % Delta State
@@ -68,11 +63,6 @@ delta_u_q1L = SX.sym('delta_u_q1L');
 delta_u_q2L = SX.sym('delta_u_q2L');
 delta_u = [delta_u_q1R; delta_u_q2R; delta_u_q1L; delta_u_q2L];
 
-% Delta Wrench
-delta_f_x = SX.sym('delta_f_x');
-delta_f_z = SX.sym('delta_f_z');
-delta_w = [delta_f_x; delta_f_z];
-
 %% Euler-Lagrange ODE
 % Dynamics (Mmat*ddq + G = B*u + Jc'*w)~ ignoring coriolis for now
 D = Mass_Inertia_Matrix(xbar,zbar,rotY,q1R,q2R,q1L,q2L); % 7x7
@@ -82,40 +72,22 @@ B = 50*[zeros(3,4); eye(4)];    % Multiply by 50 b/c of gear reduction
 pos_stance_foot = Right_Stance_Foot_Position(xbar,zbar,rotY,q1R,q2R,q1L,q2L)';
 Jc = jacobian(pos_stance_foot,q);
 Jc_dot = jacobian(Jc*dq,q);     % move dq term inside of the jacobian to avoid tensor and dq not function of q
-ddq = D\(-C*dq -G + B*u + Jc'*w);
-xdot = [dq; ddq]; % omit Coriolis for now
-f_ddq = Function('f_ddq',{q,dq,u,w},{ddq});
-f_nonlinear = Function('f_nonlinear',{q,dq,u,w},{xdot});  % nonlinear mapping function f(x,u)
-
-% Wrench as decision variable
 lambda = ((Jc/D)*Jc') \ ((Jc/D)*(C*dq + G) - (Jc/D)*B*u -Jc_dot*dq);
+ddq = D\(-C*dq -G + B*u + Jc'*lambda);
+xdot = [dq; ddq]; % omit Coriolis for now
+
+% functions
 f_lambda = Function('f_lambda',{q,dq,u},{lambda});
+f_ddq = Function('f_ddq',{q,dq,u},{ddq});
+f_nonlinear = Function('f_nonlinear',{q,dq,u},{xdot});  % nonlinear mapping function f(x,u)
 
 % Linearization EOM
 Alin = jacobian(xdot,x);
 Bulin = jacobian(xdot,u);
-Bwlin = jacobian(xdot,w);
-delta_xdot = Alin*delta_x + Bulin*delta_u + Bwlin*delta_w;
-f_linear = Function('f_linear',{q,dq,u,w,delta_q,delta_dq,delta_u,delta_w},{delta_xdot});
-f_Ax = Function('f_Ax',{x,u,w},{Alin});
-f_Bu = Function('f_Bu',{x,u,w},{Bulin});
-f_Bw = Function('f_Bw',{x,u,w},{Bwlin});
-
-% Linearize wrench
-Wx = jacobian(lambda,x);
-Wu = jacobian(lambda,u);
-f_Wx = Function('f_Wx',{x,u},{Wx});
-f_Wu = Function('f_Wu',{x,u},{Wu});
-
-
-%% External Force @ Hip Functions
-w_ext = SX.sym('w_ext',n_w,1);
-J_hip = Hip_Jacobian(xbar,zbar,rotY,q1R,q2R,q1L,q2L);
-f_J_hip = Function('f_J_hip',{q},{J_hip});
-ddq_ext = D\(-C*dq -G + B*u + Jc'*w + J_hip'*w_ext);
-rhs_ext = [dq; ddq_ext];
-f_nonlinear_ext = Function('f_nonlinear_ext',{q,dq,u,w,w_ext},{rhs_ext});
-dyn_info.func.f_NL_ext = f_nonlinear_ext;
+delta_xdot = Alin*delta_x + Bulin*delta_u;
+f_linear = Function('f_linear',{q,dq,u,delta_q,delta_dq,delta_u},{delta_xdot});
+f_Ax = Function('f_Ax',{x,u},{Alin});
+f_Bu = Function('f_Bu',{x,u},{Bulin});
 
 %% Kinematic Functions for Constraints
 % Hip position
@@ -161,21 +133,21 @@ dyn_info.func.f_impact_relabel = f_impact_relabel;
 % f_impact_relabel_linear = Function('f_impact_relabel_linear',{q,dq,delta_q,delta_dq},{delta_x_relabel});
 % dyn_info.func.f_impact_relabel_linear = f_impact_relabel_linear;
 
-De = [D, -Jc'; Jc, zeros(n_w,n_w)];
-Ce = [C; jacobian(Jc*dq,q)];
-Ge = [G; zeros(n_w,1)];
-Be = [B; zeros(n_w,n_u)];
-dq_plus = impact_map(1:n_q);
-w_impulse = impact_map(n_q+1:end);
-
-linear_impact_map = De\(jacobian([D*dq; zeros(n_w,1)] - De*[dq_plus; w_impulse],q)*delta_q + ...
-    [D; zeros(n_w,n_q)]*delta_dq);
-delta_x_impact = [delta_q; linear_impact_map(1:n_q)];
-delta_w_impulse = linear_impact_map(n_q+1:end);
-
-delta_x_relabel = [Relabel*delta_x_impact(1:n_q); Relabel*delta_x_impact(n_q+1:end)];
-f_impact_relabel_linear = Function('f_impact_relabel_linear',{q,dq,delta_q,delta_dq},{delta_x_relabel});
-dyn_info.func.f_impact_relabel_linear = f_impact_relabel_linear;
+% De = [D, -Jc'; Jc, zeros(n_w,n_w)];
+% Ce = [C; jacobian(Jc*dq,q)];
+% Ge = [G; zeros(n_w,1)];
+% Be = [B; zeros(n_w,n_u)];
+% dq_plus = impact_map(1:n_q);
+% w_impulse = impact_map(n_q+1:end);
+% 
+% linear_impact_map = De\(jacobian([D*dq; zeros(n_w,1)] - De*[dq_plus; w_impulse],q)*delta_q + ...
+%     [D; zeros(n_w,n_q)]*delta_dq);
+% delta_x_impact = [delta_q; linear_impact_map(1:n_q)];
+% delta_w_impulse = linear_impact_map(n_q+1:end);
+% 
+% delta_x_relabel = [Relabel*delta_x_impact(1:n_q); Relabel*delta_x_impact(n_q+1:end)];
+% f_impact_relabel_linear = Function('f_impact_relabel_linear',{q,dq,delta_q,delta_dq},{delta_x_relabel});
+% dyn_info.func.f_impact_relabel_linear = f_impact_relabel_linear;
 
 
 %% Generate additional functions
@@ -194,8 +166,6 @@ dyn_info.func.f_NL = f_nonlinear;
 dyn_info.func.f_L = f_linear;
 dyn_info.func.f_Ax = f_Ax;
 dyn_info.func.f_Bu = f_Bu;
-dyn_info.func.f_Bw = f_Bw;
-dyn_info.func.f
 dyn_info.func.D = f_D ;
 dyn_info.func.G = f_G ;
 dyn_info.func.B = f_B ;
@@ -209,7 +179,7 @@ dyn_info.func.f_pos_hip = f_pos_hip;
 dyn_info.func.f_pos_COM = f_pos_COM;
 dyn_info.func.f_pos_swing = f_pos_swing;
 dyn_info.func.f_pos_stance = f_pos_stance;
-dyn_info.func.f_J_hip = f_J_hip;
+% dyn_info.func.f_J_hip = f_J_hip;
 dyn_info.func.f_J_swing = f_J_swing;
 
 end

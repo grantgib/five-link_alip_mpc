@@ -74,7 +74,7 @@ delta_f_z = SX.sym('delta_f_z');
 delta_w = [delta_f_x; delta_f_z];
 
 %% Euler-Lagrange ODE
-% Dynamics (Mmat*ddq + G = B*u + Jc'*w)~ ignoring coriolis for now
+% Dynamics (D*ddq + G = B*u + Jc'*w)~ ignoring coriolis for now
 D = Mass_Inertia_Matrix(xbar,zbar,rotY,q1R,q2R,q1L,q2L); % 7x7
 G = -GravityVector(xbar,zbar,rotY,q1R,q2R,q1L,q2L); %7x1  %FROST gravity vector is -G
 C = zeros(n_q,n_q);
@@ -107,6 +107,9 @@ Wu = jacobian(lambda,u);
 f_Wx = Function('f_Wx',{x,u},{Wx});
 f_Wu = Function('f_Wu',{x,u},{Wu});
 
+% contact constraint: Jc*ddq + Jc_dot*dq = 0
+contact_constraint = Jc*ddq + Jc_dot*dq;
+f_contact = Function('f_contact',{q,dq,u,w},{contact_constraint});
 
 %% External Force @ Hip Functions
 w_ext = SX.sym('w_ext',n_w,1);
@@ -204,6 +207,7 @@ dyn_info.func.Jc = f_Jc ;
 dyn_info.func.Jc_dot = f_Jc_dot ;
 dyn_info.func.wrench = f_lambda;
 dyn_info.func.f_ddq = f_ddq;
+dyn_info.func.f_contact = f_contact;
 
 % kinematics outputs
 dyn_info.func.f_pos_hip = f_pos_hip;

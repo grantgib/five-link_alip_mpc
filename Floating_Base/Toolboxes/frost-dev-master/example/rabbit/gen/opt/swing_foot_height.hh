@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Mon 6 Apr 2020 23:58:11 GMT-04:00
+ * Wed 26 Aug 2020 15:04:19 GMT-04:00
  */
 
 #ifndef SWING_FOOT_HEIGHT_HH

@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:52:55 GMT-04:00
+ * Wed 26 Aug 2020 21:08:44 GMT-04:00
  */
 
 #ifndef J_FRIGHTTOE_VEC_RIGHTSTANCE_HH

@@ -72,9 +72,9 @@ nlp.update;
 
 % Steps
 for i = 1:(nlp.Phase(1).NumNode-1)
-    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-Inf, 0.11);
+    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-0.11, Inf);
 end
-nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(-0.05, -0.05);
+nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(0.10, 0.10);
 nlp.update;
 
 % save expressions after you run the optimization. It will save all required
@@ -139,12 +139,12 @@ conGUI.anim = anim;
 
 %%
 SAVE_SOLUTION = 1;
-name_save = "Descend_Ht(0.05)_Vel(0.75)";
+name_save = "Ascend_Ht(0.10)_Vel(0.75)";
 if SAVE_SOLUTION
     %     data_name = string(datetime('now','TimeZone','local','Format','d-MMM-y-HH-mm-ssZ'));  %'local/longer_double_support_wider_step_dummy';
     %     name_save = [CHARACTER_NAME, '_', data_name];
     
-    save_dir = fullfile(cur,'../../../../../Floating_Base/reference_trajectories/ascend_gaits');
+    save_dir = fullfile(cur,'../../../../../Floating_Base/reference_trajectories/ascend_gaits/new_virts');
     file_name = name_save + ".mat";
     fprintf('Saving gait %s\n', file_name);
     save(fullfile(save_dir, file_name), 'gait', 'sol', 'info', 'bounds');

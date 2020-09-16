@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Mon 6 Apr 2020 23:58:04 GMT-04:00
+ * Wed 26 Aug 2020 15:04:12 GMT-04:00
  */
 
 #ifndef JS_OUTPUT_BOUNDARY_RIGHTSTANCE_HH

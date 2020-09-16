@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:54:16 GMT-04:00
+ * Wed 26 Aug 2020 19:07:01 GMT-04:00
  */
 
 #ifndef JS_AVERAGE_VELOCITY_HH

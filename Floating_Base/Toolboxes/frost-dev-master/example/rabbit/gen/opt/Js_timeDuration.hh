@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Mon 6 Apr 2020 23:56:15 GMT-04:00
+ * Wed 26 Aug 2020 15:02:21 GMT-04:00
  */
 
 #ifndef JS_TIMEDURATION_HH

@@ -87,7 +87,7 @@ delta_q_header = {'$\delta \bar{x}$','$\delta \bar{z}$','$\delta \psi$','$\delta
 delta_dq_header = {'$\delta \dot{x}$','$\delta \dot{z}$','$\delta \dot{\psi}_Y$','$\delta \dot{q}_{1R}$','$\delta \dot{q}_{2R}$','$\delta \dot{q}_{1L}$','$\delta \dot{q}_{2L}$'}';
 delta_u_header = {'$\delta u_{q_{1R}}$','$\delta u_{q_{2R}}$','$\delta u_{q_{1L}}$','$\delta u_{q_{2L}}$'};
 
-q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$h_1=q_{1R}$','$h_2=q_{2R}$','$h_3=q_{1L}$','$h_4=q_{2L}$'}';
+q_header = {'$\bar{x}$','$\bar{z}$','$h_1=\psi$','$q_{1R}$','$h_2=q_{2R}$','$h_3=q_{1L}$','$h_4=q_{2L}$'}';
 dq_header = {'$\dot{x}$','$\dot{z}$','$\dot{\psi}_Y$','$\dot{q}_{1R}$','$\dot{q}_{2R}$','$\dot{q}_{1L}$','$\dot{q}_{2L}$'}';
 u_header = {'$u_{q_{1R}}$','$u_{q_{2R}}$','$u_{q_{1L}}$','$u_{q_{2L}}$'};
 w_header = {'$f_x$','$f_z$'};

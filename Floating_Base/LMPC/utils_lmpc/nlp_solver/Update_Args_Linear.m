@@ -26,8 +26,8 @@ U_REF_vect = reshape(U_REF,n_u*size(U_REF,2),1);
 W_REF_vect = reshape(W_REF,n_w*size(W_REF,2),1);
 args.p = [delta_x_init;
     X_REF_vect(1:n_x*(N+1),1);
-    U_REF_vect(1:n_u*(N+1),1);
-    W_REF_vect(1:n_w*(N+1),1)];
+    U_REF_vect(1:n_u*(N),1);
+    W_REF_vect(1:n_w*(N),1)];
 
 %% Equality Constraints
 % Modify bound if impact is present
@@ -38,14 +38,12 @@ args.p = [delta_x_init;
 g_equality = zeros(n_x,1); % initial condition equality constraint
 
 % euler/impact dynamics
-for k = 1:N+1
-    if k < N+1
+for k = 1:N
         g_equality = [g_equality; zeros(n_x,1)];
-    end
 end
 
 % wrench
-for k = 1:N+1
+for k = 1:N
     g_equality = [g_equality; zeros(n_w,1)];
 end
 
@@ -56,11 +54,11 @@ args.ubg = g_equality;
 delta_x_lb = repmat(x_lb,1,N+1) - X_REF(:,1:N+1);
 delta_x_ub = repmat(x_ub,1,N+1) - X_REF(:,1:N+1);
 
-delta_u_lb = repmat(u_lb,1,N+1) - U_REF(:,1:N+1);
-delta_u_ub = repmat(u_ub,1,N+1) - U_REF(:,1:N+1);
+delta_u_lb = repmat(u_lb,1,N) - U_REF(:,1:N);
+delta_u_ub = repmat(u_ub,1,N) - U_REF(:,1:N);
 
-delta_w_lb = repmat(w_lb,1,N+1) - W_REF(:,1:N+1);
-delta_w_ub = repmat(w_ub,1,N+1) - W_REF(:,1:N+1);
+delta_w_lb = repmat(w_lb,1,N) - W_REF(:,1:N);
+delta_w_ub = repmat(w_ub,1,N) - W_REF(:,1:N);
 
 args.delta_x_lb = delta_x_lb;
 args.delta_x_ub = delta_x_ub;
@@ -70,12 +68,12 @@ args.delta_w_lb = delta_w_lb;
 args.delta_w_ub = delta_w_ub;
 
 args.lbx = [reshape(delta_x_lb,n_x*(N+1),1);
-    reshape(delta_u_lb,n_u*(N+1),1);
-    reshape(delta_w_lb,n_w*(N+1),1)];
+    reshape(delta_u_lb,n_u*(N),1);
+    reshape(delta_w_lb,n_w*(N),1)];
 
 args.ubx = [reshape(delta_x_ub,n_x*(N+1),1);
-    reshape(delta_u_ub,n_u*(N+1),1);
-    reshape(delta_w_ub,n_w*(N+1),1)];
+    reshape(delta_u_ub,n_u*(N),1);
+    reshape(delta_w_ub,n_w*(N),1)];
 
 %% Add additional Inequality constraints to g
 if constr_info.obstacle.isObstacle
@@ -103,7 +101,7 @@ end
 
 %% Friction Cone Inequality
 if constr_info.grf.active
-    for k = 1:N+1
+    for k = 1:N
         mu = constr_info.grf.mu;
         lbg_fric = -mu;
         ubg_fric = mu;
@@ -116,7 +114,7 @@ end
 if constr_info.torque.sat
     u_max = constr_info.torque.sat*ones(n_u,1);
     u_min = -u_max;
-    for k = 1:N+1
+    for k = 1:N
         args.lbg = [args.lbg; u_min];
         args.ubg = [args.ubg; u_max];
     end

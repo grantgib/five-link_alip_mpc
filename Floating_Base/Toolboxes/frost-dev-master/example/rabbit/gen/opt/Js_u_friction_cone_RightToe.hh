@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Mon 6 Apr 2020 23:57:30 GMT-04:00
+ * Wed 26 Aug 2020 15:03:37 GMT-04:00
  */
 
 #ifndef JS_U_FRICTION_CONE_RIGHTTOE_HH

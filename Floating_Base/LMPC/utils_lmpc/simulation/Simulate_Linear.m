@@ -10,6 +10,7 @@ n_u = dyn_info.dim.n_u;
 n_w = dyn_info.dim.n_w;
 f_pos_swingfoot = dyn_info.func.f_pos_swing;
 f_pos_stancefoot = dyn_info.func.f_pos_stance;
+f_contact = dyn_info.func.f_contact;
 
 % ctrl_info
 DT = ctrl_info.DT;
@@ -17,7 +18,7 @@ DT = ctrl_info.DT;
 % mpc_info
 lmpc_info = ctrl_info.lmpc_info;
 N = lmpc_info.N;
-solvers_linear = lmpc_info.solvers_linear; 
+% solvers_linear = lmpc_info.solvers_linear;
 
 % ref_info
 delta_x_init = ref_info.delta_x_init;
@@ -53,8 +54,8 @@ W_REF_FULL = W_REF;
 
 % Initialize optimization variables
 delta_X_guess = repmat(delta_x_init,1,N+1);
-delta_U_guess = zeros(n_u,N+1);
-delta_W_guess = zeros(n_w,N+1);
+delta_U_guess = zeros(n_u,N);
+delta_W_guess = zeros(n_w,N);
 
 % Initial conditions
 x_init = X_REF(:,1) + delta_x_init;
@@ -76,37 +77,37 @@ delta_x_traj = [];
 delta_u_traj = [];
 delta_w_traj = [];
 delta_x_traj_all = zeros(n_x,N+1,traj_size);    % stores entire solution from IPOPT at each timestep
-delta_u_traj_all = zeros(n_u,N+1,traj_size);
-delta_w_traj_all = zeros(n_w,N+1,traj_size);
+delta_u_traj_all = zeros(n_u,N,traj_size);
+delta_w_traj_all = zeros(n_w,N,traj_size);
 
 x_traj = [];
 u_traj = [];
 w_traj = [];
 x_traj_all = zeros(n_x,N+1,traj_size);    % stores entire solution from IPOPT at each timestep
-u_traj_all = zeros(n_u,N+1,traj_size);
-w_traj_all = zeros(n_w,N+1,traj_size);
+u_traj_all = zeros(n_u,N,traj_size);
+w_traj_all = zeros(n_w,N,traj_size);
 
 % bounds traj (the delta bounds are varying because of the linearization)
 delta_x_lb_traj_all = zeros(n_x,N+1,traj_size);
 delta_x_ub_traj_all = zeros(n_x,N+1,traj_size);
-delta_u_lb_traj_all = zeros(n_u,N+1,traj_size);
-delta_u_ub_traj_all = zeros(n_u,N+1,traj_size);
-delta_w_lb_traj_all = zeros(n_w,N+1,traj_size);
-delta_w_ub_traj_all = zeros(n_w,N+1,traj_size);
+delta_u_lb_traj_all = zeros(n_u,N,traj_size);
+delta_u_ub_traj_all = zeros(n_u,N,traj_size);
+delta_w_lb_traj_all = zeros(n_w,N,traj_size);
+delta_w_ub_traj_all = zeros(n_w,N,traj_size);
 
 x_lb_traj_all = zeros(n_x,N+1,traj_size);
 x_ub_traj_all = zeros(n_x,N+1,traj_size);
-u_lb_traj_all = zeros(n_u,N+1,traj_size);
-u_ub_traj_all = zeros(n_u,N+1,traj_size);
-w_lb_traj_all = zeros(n_w,N+1,traj_size);
-w_ub_traj_all = zeros(n_w,N+1,traj_size);
+u_lb_traj_all = zeros(n_u,N,traj_size);
+u_ub_traj_all = zeros(n_u,N,traj_size);
+w_lb_traj_all = zeros(n_w,N,traj_size);
+w_ub_traj_all = zeros(n_w,N,traj_size);
 
 x_lb_traj_actual = zeros(n_x,N+1,traj_size);
 x_ub_traj_actual = zeros(n_x,N+1,traj_size);
-u_lb_traj_actual = zeros(n_u,N+1,traj_size);
-u_ub_traj_actual = zeros(n_u,N+1,traj_size);
-w_lb_traj_actual = zeros(n_w,N+1,traj_size);
-w_ub_traj_actual = zeros(n_w,N+1,traj_size);
+u_lb_traj_actual = zeros(n_u,N,traj_size);
+u_ub_traj_actual = zeros(n_u,N,traj_size);
+w_lb_traj_actual = zeros(n_w,N,traj_size);
+w_ub_traj_actual = zeros(n_w,N,traj_size);
 
 % phase storage
 s_traj = full(s_func(x_init(1:n_q)));
@@ -120,70 +121,140 @@ y_sw_traj = y_sw_init;
 y_st_traj = full(f_pos_stancefoot(x_init(1:7)))';
 y_sw_normal = [0;0];
 
+% impact flag
+impact_occurred = 0;
+
 %% Main Loop
 while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF_Original,2))
-    %% Solve for NMPC control law
-    % Set Parameter vector and Decision Variables
-    args = Update_Args_Linear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,delta_x_init,X_REF,U_REF,W_REF,X_REF_FULL);    
-    args.x0  = [reshape(delta_X_guess(:,1:N+1),n_x*(N+1),1);
-        reshape(delta_U_guess(:,1:N+1),n_u*(N+1),1);
-        reshape(delta_W_guess(:,1:N+1),n_w*(N+1),1)];
-    
-    % Choose solver based on if impact occurs during prediction horizon
     index_impact = traj_info.idx_preimpact(1) + 1;     % index of X_REF where new ref begins and impact has just occurred
-        for k = 1:N
-            if k+(traj_info.iter_impact) == index_impact
-                solver = solvers_linear{k+1};
-                disp("Prediction Horizon has Impact at position " + k);
-                break;
-            elseif k == 1 && traj_info.iter_impact >= index_impact
-                solver = solvers_linear{k+1};
-                disp("Prediction Horizon has Impact at position " + k);
-                break;
-            else
-                solver = solvers_linear{1};
-            end
-            solver = solvers_linear{1};
-        end    
     
-    % Solve MPC NLP (uses IPOPT)
-    solver_comp_time = tic;    % Start solver computation timer
-    sol = solver('x0',  args.x0,...
-        'lbx', args.lbx,...
-        'ubx', args.ubx,...
-        'lbg', args.lbg,...
-        'ubg', args.ubg,...
-        'p',   args.p);
-    time_calc = [time_calc, toc(solver_comp_time)];           % Store solver time
+    % Set Parameter vector and Decision Variables
+%     args = Update_Args_Linear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,delta_x_init,X_REF,U_REF,W_REF,X_REF_FULL);
+%     args.x0  = [reshape(delta_X_guess(:,1:N+1),n_x*(N+1),1);
+%         reshape(delta_U_guess(:,1:N+1),n_u*(N+1),1);
+%         reshape(delta_W_guess(:,1:N+1),n_w*(N+1),1)];
     
-    % Extract solutions and outputs
-    delta_x_sol_mpc = reshape(full(sol.x(1:n_x*(N+1))),n_x,N+1);
-    delta_u_sol_mpc = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1);
-    delta_w_sol_mpc = reshape(full(sol.x((n_x+n_u)*(N+1)+1:end))',n_w,N+1);
-    u_sol_mpc = U_REF(:,1:N+1) + delta_u_sol_mpc;
-    w_sol_mpc = W_REF(:,1:N+1) + delta_w_sol_mpc;
-    
-    sol_info = struct('t_init',             t_init,...
-                      'delta_x_init',       delta_x_init,...
-                      'delta_x_sol_mpc',    delta_x_sol_mpc,...
-                      'delta_u_sol_mpc',    delta_u_sol_mpc,...
-                      'delta_w_sol_mpc',    delta_w_sol_mpc,...
-                      'x_init',             x_init,...
-                      'u_sol_mpc',          u_sol_mpc,...
-                      'w_sol_mpc',          w_sol_mpc,...
-                      'X_REF',              X_REF,...
-                      'U_REF',              U_REF,...
-                      'W_REF',              W_REF);
+%     % Choose solver based on if impact occurs during prediction horizon
+%     for k = 1:N
+%         if k+(traj_info.iter_impact) == index_impact
+%             solver = solvers_linear{k+1};
+%             disp("Prediction Horizon has Impact at position " + k);
+%             break;
+%         elseif k == 1 && traj_info.iter_impact >= index_impact
+%             solver = solvers_linear{k+1};
+%             disp("Prediction Horizon has Impact at position " + k);
+%             break;
+%         else
+%             solver = solvers_linear{1};
+%         end
+%         solver = solvers_linear{1};
+%     end
+%     
+%     
+%     
+%     % Solve MPC NLP (uses IPOPT)
+%     solver_comp_time = tic;    % Start solver computation timer
+%     sol = solver('x0',  args.x0,...
+%         'lbx', args.lbx,...
+%         'ubx', args.ubx,...
+%         'lbg', args.lbg,...
+%         'ubg', args.ubg,...
+%         'p',   args.p);
+%     time_calc = [time_calc, toc(solver_comp_time)];           % Store solver time
+%     
+%     % Extract solutions and outputs
+%     delta_x_sol_mpc = reshape(full(sol.x(1:n_x*(N+1))),n_x,N+1);
+%     delta_u_sol_mpc = reshape(full(sol.x(n_x*(N+1)+1:n_x*(N+1)+n_u*(N+1)))',n_u,N+1);
+%     delta_w_sol_mpc = reshape(full(sol.x((n_x+n_u)*(N+1)+1:end))',n_w,N+1);
+%     u_sol_mpc = U_REF(:,1:N+1) + delta_u_sol_mpc;
+%     w_sol_mpc = W_REF(:,1:N+1) + delta_w_sol_mpc;
+%     
+%     sol_info = struct('t_init',             t_init,...
+%         'delta_x_init',       delta_x_init,...
+%         'delta_x_sol_mpc',    delta_x_sol_mpc,...
+%         'delta_u_sol_mpc',    delta_u_sol_mpc,...
+%         'delta_w_sol_mpc',    delta_w_sol_mpc,...
+%         'x_init',             x_init,...
+%         'u_sol_mpc',          u_sol_mpc,...
+%         'w_sol_mpc',          w_sol_mpc,...
+%         'X_REF',              X_REF,...
+%         'U_REF',              U_REF,...
+%         'W_REF',              W_REF);
     
     % Check bounds on optimization variables
-%     if ctrl_info.iter == 0.5*num_steps*size(X_REF_Original,2)
-%         Plot_Bounds(dyn_info,ctrl_info,sol_info,args);
+    %     if ctrl_info.iter == 0.5*num_steps*size(X_REF_Original,2)
+    %         Plot_Bounds(dyn_info,ctrl_info,sol_info,args);
+    %     end
+    
+    %% qpSWIFT solver
+%     [P,c,alpha,beta,G,H] = Build_QP_Matrices(dyn_info,ctrl_info,ref_info,delta_x_init,X_REF,U_REF,W_REF);
+% 
+%     p = size(alpha,1);
+%     m = size(G,1);
+%     Phi = [P alpha' G'; alpha zeros(p ,m + p);G zeros(m,p) -eye(m,m)];
+%     Permut = amd(Phi);
+%     opts.MAXITER = 200;
+%     opts.ABSTOL = 1e-6;
+%     opts.RELTOL = 1e-6;
+%     opts.PERMUT = Permut;
+%     [sol,basic_info,adv_info] = qpSWIFT(sparse(P),c,sparse(alpha),beta,sparse(G),H,opts)
+    
+    
+    %% Quadprog solver
+    args = Update_Args_Linear(dyn_info,ctrl_info,ref_info,constr_info,traj_info,delta_x_init,X_REF,U_REF,W_REF,X_REF_FULL);
+
+    [P,c,Aeq,beq,A,B] = Build_QP_Matrices(dyn_info,ctrl_info,ref_info,delta_x_init,X_REF,U_REF,W_REF,impact_occurred);
+    
+    solver_comp_time = tic;    % Start solver computation timer
+    options = optimset('display','off');
+    [sol,FVAL,EXITFLAG,output] = quadprog(2*P,c,A,B,Aeq,beq,[],[],[],options);
+    time_calc = [time_calc, toc(solver_comp_time)];           % Store solver time
+    if ~(EXITFLAG == 1)
+        disp("No feasible solution!!!!!!!!!!!!!!!!");
+        return
+    end
+        
+    %% Extract solution
+    delta_x_sol_mpc = reshape(sol(1:(N+1)*n_x,1),n_x,N+1);
+    delta_u_sol_mpc = reshape(sol((N+1)*n_x+1:(N+1)*n_x+N*n_u,1),n_u,N);
+    delta_w_sol_mpc = reshape(sol((N+1)*n_x+N*n_u+1:end,1),n_w,N);
+    x_sol_mpc = X_REF(:,1:N+1) + delta_x_sol_mpc;
+    u_sol_mpc = U_REF(:,1:N) + delta_u_sol_mpc;
+    w_sol_mpc = W_REF(:,1:N) + delta_w_sol_mpc;
+    
+    sol_info = struct('t_init', t_init,...
+        'delta_x_init',         delta_x_init,...
+        'delta_x_sol_mpc',      delta_x_sol_mpc,...
+        'delta_u_sol_mpc',      delta_u_sol_mpc,...
+        'delta_w_sol_mpc',      delta_w_sol_mpc,...
+        'x_init',               x_init,...
+        'x_sol_mpc',            x_sol_mpc,...
+        'u_sol_mpc',            u_sol_mpc,...
+        'w_sol_mpc',            w_sol_mpc,...
+        'X_REF',                X_REF,...
+        'U_REF',                U_REF,...
+        'W_REF',                W_REF);
+
+%     figure
+%     for i = 1:n_q
+%        subplot(3,3,i);
+%        plot(X_REF(i,1:N+1)); hold on;
+%        scatter(1:N+1,delta_x_sol_mpc(i,:)+X_REF(i,1:N+1));
 %     end
+%     legend('ref','sol');
+    
+    %% Check contact constraint
+    for i = 1:N
+        contact_value = full(f_contact(x_sol_mpc(1:n_q,i),x_sol_mpc(n_q+1:end,i),u_sol_mpc(:,i),w_sol_mpc(:,i)));
+        disp("k = " + i + ": Jc*ddq + Jc_dot*dq = " + contact_value);
+    end
+    
+    
     
     %% Apply control & Update state (includes check/update for impacts)
     params = struct('y_sw_traj', y_sw_traj);
     [t_next,x_next,impact_occurred] = Update_State(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
-%     [t_next,x_next,impact_occurred] = Update_State_Linear(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
+    %     [t_next,x_next,impact_occurred] = Update_State_Linear(dyn_info,ctrl_info,ref_info,constr_info,sol_info,traj_info,params);
     delta_x_next = x_next - X_REF(:,2);
     u_sol = U_REF(:,1) + delta_u_sol_mpc(:,1);
     w_sol = W_REF(:,1) + delta_w_sol_mpc(:,1);
@@ -210,13 +281,13 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     delta_x_traj_all(:,:,ctrl_info.iter) = delta_x_sol_mpc;
     delta_u_traj_all(:,:,ctrl_info.iter) = delta_u_sol_mpc;
     delta_w_traj_all(:,:,ctrl_info.iter) = delta_w_sol_mpc;
-
+    
     x_traj = [x_traj, x_init];
     u_traj = [u_traj, u_sol];
     w_traj = [w_traj, w_sol];
     x_traj_all(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_traj_all(:,:,ctrl_info.iter);
-    u_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_traj_all(:,:,ctrl_info.iter);
-    w_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_traj_all(:,:,ctrl_info.iter);
+    u_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N) + delta_u_traj_all(:,:,ctrl_info.iter);
+    w_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N) + delta_w_traj_all(:,:,ctrl_info.iter);
     
     % bound traj
     delta_x_lb_traj_all(:,:,ctrl_info.iter) = args.delta_x_lb;
@@ -228,20 +299,20 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     
     x_lb_traj_all(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_lb_traj_all(:,:,ctrl_info.iter);
     x_ub_traj_all(:,:,ctrl_info.iter) = X_REF(:,1:N+1) + delta_x_ub_traj_all(:,:,ctrl_info.iter);
-    u_lb_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_lb_traj_all(:,:,ctrl_info.iter);
-    u_ub_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N+1) + delta_u_ub_traj_all(:,:,ctrl_info.iter);
-    w_lb_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_lb_traj_all(:,:,ctrl_info.iter);
-    w_ub_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N+1) + delta_w_ub_traj_all(:,:,ctrl_info.iter);
+    u_lb_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N) + delta_u_lb_traj_all(:,:,ctrl_info.iter);
+    u_ub_traj_all(:,:,ctrl_info.iter) = U_REF(:,1:N) + delta_u_ub_traj_all(:,:,ctrl_info.iter);
+    w_lb_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N) + delta_w_lb_traj_all(:,:,ctrl_info.iter);
+    w_ub_traj_all(:,:,ctrl_info.iter) = W_REF(:,1:N) + delta_w_ub_traj_all(:,:,ctrl_info.iter);
     
     x_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.x_lb,1,N+1);
     x_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.x_ub,1,N+1);
-    u_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.u_lb,1,N+1);
-    u_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.u_ub,1,N+1);
-    w_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_lb,1,N+1);
-    w_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_ub,1,N+1);
+    u_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.u_lb,1,N);
+    u_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.u_ub,1,N);
+    w_lb_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_lb,1,N);
+    w_ub_traj_actual(:,:,ctrl_info.iter) = repmat(ref_info.w_ub,1,N);
     
-%     disp(x_lb_traj_actual(:,:,ctrl_info.iter) - x_lb_traj_all(:,:,ctrl_info.iter))
-
+    %     disp(x_lb_traj_actual(:,:,ctrl_info.iter) - x_lb_traj_all(:,:,ctrl_info.iter))
+    
     % Time traj
     time_traj(ctrl_info.iter) = t_init;
     
@@ -251,10 +322,18 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     % store foot positions
     y_sw_traj = [y_sw_traj, y_sw_next];
     y_st_traj = [y_st_traj, y_st_next];
-        
+    
     % store phasing variable  (WRONG)
     s_traj = [s_traj, 0];
     
+%     figure
+%     for i = 1:n_q
+%         subplot(3,3,i);
+%         plot(delta_x_sol_mpc(i,:)); hold on;
+%         plot(delta_x_lb_traj_all(i,:,ctrl_info.iter)); hold on;
+%         plot(delta_x_ub_traj_all(i,:,ctrl_info.iter)); hold on;
+%     end
+        
     %% Update state and time, warm start, shift reference
     t_init = t_next;
     delta_x_init = delta_x_next;
@@ -270,12 +349,12 @@ while(traj_info.num_impacts < num_steps && ctrl_info.iter < num_steps*size(X_REF
     
     % Change reference if impact occurred
     if impact_occurred
-%         X_REF_FULL = X_REF_FULL + ...
-%             [(X_REF(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
-%             zeros(12,size(X_REF_FULL,2))];
         X_REF_FULL = X_REF_FULL + ...
-            [(x_next(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+            [(X_REF(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
             zeros(12,size(X_REF_FULL,2))];
+        %         X_REF_FULL = X_REF_FULL + ...
+        %             [(x_next(1:2,1) - X_REF_FULL(1:2,1)).*ones(2,size(X_REF_FULL,2));
+        %             zeros(12,size(X_REF_FULL,2))];
         X_REF = X_REF_FULL;
         U_REF = U_REF_FULL;
         W_REF = W_REF_FULL;

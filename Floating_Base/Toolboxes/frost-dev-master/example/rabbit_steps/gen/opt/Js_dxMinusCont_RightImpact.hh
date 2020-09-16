@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:54:57 GMT-04:00
+ * Wed 26 Aug 2020 19:07:53 GMT-04:00
  */
 
 #ifndef JS_DXMINUSCONT_RIGHTIMPACT_HH

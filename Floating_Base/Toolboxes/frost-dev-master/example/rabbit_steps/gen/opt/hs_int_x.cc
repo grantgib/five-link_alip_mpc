@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:52:17 GMT-04:00
+ * Wed 26 Aug 2020 21:08:02 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,42 +48,42 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1,const double *var2,const double *var3,const double *var4,const double *var5,const double *var6,const double *var7,const double *var8)
 {
-  double t1698;
-  double t1773;
-  double t1921;
-  double t2114;
-  double t2154;
-  double t2401;
-  double t2544;
-  double t2666;
-  double t2725;
-  double t2847;
-  double t2989;
-  t1698 = -1. + var8[0];
-  t1773 = 1/t1698;
-  t1921 = -1.*var1[0];
-  t2114 = t1921 + var1[1];
-  t2154 = -1.*var2[0];
-  t2401 = -1.*var2[1];
-  t2544 = -1.*var2[2];
-  t2666 = -1.*var2[3];
-  t2725 = -1.*var2[4];
-  t2847 = -1.*var2[5];
-  t2989 = -1.*var2[6];
-  p_output1[0]=t2154 + var6[0] - 0.333333333333333*t1773*t2114*(var3[0] + 4.*var5[0] + var7[0]);
-  p_output1[1]=t2401 + var6[1] - 0.333333333333333*t1773*t2114*(var3[1] + 4.*var5[1] + var7[1]);
-  p_output1[2]=t2544 + var6[2] - 0.333333333333333*t1773*t2114*(var3[2] + 4.*var5[2] + var7[2]);
-  p_output1[3]=t2666 + var6[3] - 0.333333333333333*t1773*t2114*(var3[3] + 4.*var5[3] + var7[3]);
-  p_output1[4]=t2725 + var6[4] - 0.333333333333333*t1773*t2114*(var3[4] + 4.*var5[4] + var7[4]);
-  p_output1[5]=t2847 + var6[5] - 0.333333333333333*t1773*t2114*(var3[5] + 4.*var5[5] + var7[5]);
-  p_output1[6]=t2989 + var6[6] - 0.333333333333333*t1773*t2114*(var3[6] + 4.*var5[6] + var7[6]);
-  p_output1[7]=var4[0] + 0.5*(t2154 - 1.*var6[0]) - 0.25*t1773*t2114*(var3[0] - 1.*var7[0]);
-  p_output1[8]=var4[1] + 0.5*(t2401 - 1.*var6[1]) - 0.25*t1773*t2114*(var3[1] - 1.*var7[1]);
-  p_output1[9]=var4[2] + 0.5*(t2544 - 1.*var6[2]) - 0.25*t1773*t2114*(var3[2] - 1.*var7[2]);
-  p_output1[10]=var4[3] + 0.5*(t2666 - 1.*var6[3]) - 0.25*t1773*t2114*(var3[3] - 1.*var7[3]);
-  p_output1[11]=var4[4] + 0.5*(t2725 - 1.*var6[4]) - 0.25*t1773*t2114*(var3[4] - 1.*var7[4]);
-  p_output1[12]=var4[5] + 0.5*(t2847 - 1.*var6[5]) - 0.25*t1773*t2114*(var3[5] - 1.*var7[5]);
-  p_output1[13]=var4[6] + 0.5*(t2989 - 1.*var6[6]) - 0.25*t1773*t2114*(var3[6] - 1.*var7[6]);
+  double t1808;
+  double t1828;
+  double t1835;
+  double t1838;
+  double t1851;
+  double t1899;
+  double t1920;
+  double t1938;
+  double t1953;
+  double t1967;
+  double t1984;
+  t1808 = -1. + var8[0];
+  t1828 = 1/t1808;
+  t1835 = -1.*var1[0];
+  t1838 = t1835 + var1[1];
+  t1851 = -1.*var2[0];
+  t1899 = -1.*var2[1];
+  t1920 = -1.*var2[2];
+  t1938 = -1.*var2[3];
+  t1953 = -1.*var2[4];
+  t1967 = -1.*var2[5];
+  t1984 = -1.*var2[6];
+  p_output1[0]=t1851 + var6[0] - 0.333333333333333*t1828*t1838*(var3[0] + 4.*var5[0] + var7[0]);
+  p_output1[1]=t1899 + var6[1] - 0.333333333333333*t1828*t1838*(var3[1] + 4.*var5[1] + var7[1]);
+  p_output1[2]=t1920 + var6[2] - 0.333333333333333*t1828*t1838*(var3[2] + 4.*var5[2] + var7[2]);
+  p_output1[3]=t1938 + var6[3] - 0.333333333333333*t1828*t1838*(var3[3] + 4.*var5[3] + var7[3]);
+  p_output1[4]=t1953 + var6[4] - 0.333333333333333*t1828*t1838*(var3[4] + 4.*var5[4] + var7[4]);
+  p_output1[5]=t1967 + var6[5] - 0.333333333333333*t1828*t1838*(var3[5] + 4.*var5[5] + var7[5]);
+  p_output1[6]=t1984 + var6[6] - 0.333333333333333*t1828*t1838*(var3[6] + 4.*var5[6] + var7[6]);
+  p_output1[7]=var4[0] + 0.5*(t1851 - 1.*var6[0]) - 0.25*t1828*t1838*(var3[0] - 1.*var7[0]);
+  p_output1[8]=var4[1] + 0.5*(t1899 - 1.*var6[1]) - 0.25*t1828*t1838*(var3[1] - 1.*var7[1]);
+  p_output1[9]=var4[2] + 0.5*(t1920 - 1.*var6[2]) - 0.25*t1828*t1838*(var3[2] - 1.*var7[2]);
+  p_output1[10]=var4[3] + 0.5*(t1938 - 1.*var6[3]) - 0.25*t1828*t1838*(var3[3] - 1.*var7[3]);
+  p_output1[11]=var4[4] + 0.5*(t1953 - 1.*var6[4]) - 0.25*t1828*t1838*(var3[4] - 1.*var7[4]);
+  p_output1[12]=var4[5] + 0.5*(t1967 - 1.*var6[5]) - 0.25*t1828*t1838*(var3[5] - 1.*var7[5]);
+  p_output1[13]=var4[6] + 0.5*(t1984 - 1.*var6[6]) - 0.25*t1828*t1838*(var3[6] - 1.*var7[6]);
 }
 
 

@@ -38,7 +38,7 @@ function domain = RightStance(model, load_path)
     tau = (t-p(2))/(p(1)-p(2));
     
     % relative degree two outputs:
-    y_q1R = x('q1_right');
+    y_q1R = x('BaseRotY');
     y_q2R = x('q2_right');
     y_q1L = x('q1_left');
     y_q2L = x('q2_left');

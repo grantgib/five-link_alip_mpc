@@ -10,7 +10,7 @@ for i=1:2:length(gait)
     tf = t(end);
     t_par = (t-t0)/(tf-t0);
     
-    M = 5;
+    M = 15;
     free = [0 0 ones(1,M-3) 0 0]; % constrain position/derivative at
     % beginning and end of trajectory
     alpha_u = bezfit(t_par,gait(i).inputs.u,free);

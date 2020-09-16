@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:55:25 GMT-04:00
+ * Wed 26 Aug 2020 19:08:29 GMT-04:00
  */
 
 #ifndef J_TORQUE_RIGHTSTANCE_INTEGRAL_HH

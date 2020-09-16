@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Sun 19 Apr 2020 19:53:14 GMT-04:00
+ * Wed 26 Aug 2020 19:05:34 GMT-04:00
  */
 
 #ifndef DDH_RIGHTTOE_RIGHTSTANCE_HH
