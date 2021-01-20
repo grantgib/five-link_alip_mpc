@@ -16,9 +16,9 @@ f_w = dyn_info.func.wrench;
 
 %% Interpolate for Appropriate sized trajectory
 if isequal(dir,"Ascend")
-    full_ref = load(fullfile(pwd,'\..\reference_trajectories\ascend_gaits\',traj_name));
+    full_ref = load(fullfile(pwd,'\..\reference_trajectories\ascend_gaits\old_virts',traj_name));
 else
-    full_ref = load(fullfile(pwd,'\..\reference_trajectories\descend_gaits\',traj_name));
+    full_ref = load(fullfile(pwd,'\..\reference_trajectories\descend_gaits\old_virts',traj_name));
 end
 trajRef = Interpolate_Bezier_Trajectory(full_ref.gait,ctrl_info.DT);
 Q_REF = trajRef{1}.q;
