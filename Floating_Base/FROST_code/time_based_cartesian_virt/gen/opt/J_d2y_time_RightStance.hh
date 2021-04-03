@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Thu 28 Jan 2021 16:08:06 GMT-05:00
+ * Mon 8 Feb 2021 04:15:53 GMT-05:00
  */
 
 #ifndef J_D2Y_TIME_RIGHTSTANCE_HH
@@ -35,7 +35,7 @@ namespace RightStance
 
 	
     // - Outputs
-    assert_size_matrix(p_output1, 70, 1);
+    assert_size_matrix(p_output1, 82, 1);
 
 
     // set zero the matrix

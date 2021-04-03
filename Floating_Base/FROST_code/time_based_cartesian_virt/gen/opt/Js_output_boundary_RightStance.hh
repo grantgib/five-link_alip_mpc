@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Thu 28 Jan 2021 16:08:20 GMT-05:00
+ * Mon 8 Feb 2021 04:16:05 GMT-05:00
  */
 
 #ifndef JS_OUTPUT_BOUNDARY_RIGHTSTANCE_HH
@@ -27,7 +27,7 @@ namespace RightStance
 
 	
     // - Outputs
-    assert_size_matrix(p_output1, 10, 2);
+    assert_size_matrix(p_output1, 14, 2);
 
 
     // set zero the matrix

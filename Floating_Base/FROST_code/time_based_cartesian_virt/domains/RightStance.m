@@ -29,10 +29,8 @@ function domain = RightStance(model, load_path)
     % height of non-stance foot (left toe)
     p_swing = getCartesianPosition(domain, domain.ContactPoints.LeftToe);
     z_swing = UnilateralConstraint(domain,p_swing(3),'leftFootHeight','x');
-    x_swing = UnilateralConstraint(domain,p_swing(1),'leftFootX','x');
     % often very simple, no need to load expression. Compute them directly
     domain = addEvent(domain,z_swing);
-    domain = addEvent(domain,x_swing);
     
     % phase variable: time
     t = SymVariable('t');
@@ -40,10 +38,11 @@ function domain = RightStance(model, load_path)
     tau = (t - p(2))/(p(1) - p(2));
     
     % relative degree two outputs:  
+    p_stance = getCartesianPosition(domain, domain.ContactPoints.RightToe);
     ya_2 = [x('BaseRotY');
-            x('BasePosZ');
-            p_swing(1);
-            p_swing(3)];
+            x('BasePosZ') - p_stance(3);
+            p_swing(1) - p_stance(1);
+            p_swing(3) - p_stance(3)];
     
     y2_label = {'torso_angle',...
                 'hip_height',...

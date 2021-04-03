@@ -24,10 +24,33 @@ export_path = fullfile(cur, 'gen/sim/');
 
 %% loading the trajectory
 cur = pwd;
-trajName = 'Ascend_Ht(0.14)_Lgth(0.3)_Vel(0.50).mat';
-param = load(fullfile(cur,'..\..\reference_trajectories\time_based_cartesian_virts',trajName));
+ht = 0.07;
+avgvel = 0.50;
+
+swingxmid = 0.2;
+swingxvel = 0.1; % -0.1, -0.2, -0.3
+swingzvel = -0.3; %free
+
+comxvel = 0.55;
+comzvel = -0.1; %free, -0.3, -0.35, -0.4
+
+length = 0.28;
+trajName = "Ascend_Ht(" + ht + ...
+    ")_Vel(" + avgvel + ...
+    ")_comxvel(" + comxvel + ...
+    ")_comzvel(" + comzvel + ...
+    ")_swingxmid(" + swingxmid + ...
+    ")_swingxvel(" + swingxvel + ...
+    ")_swingzvel(" + swingzvel + ...
+    ")_stepLength(" + length + ").mat";
+load_dir = fullfile(cur,'../../reference_trajectories/time_based_cartesian_virts/');
+param = load(fullfile(load_dir,trajName));
+% param = load(trajName);
 gait = param.gait;
 
+% alphas = reshape(gait(1).params.atime,4,6);
+% alphas(3,end) = alphas(3,end) - 0.0005;
+% gait(1).params.atime = reshape(alphas,24,1);
 %%
 % Define domains
 r_stance = RightStance_sim(rabbit, load_path);
@@ -44,9 +67,9 @@ params.ptime = gait(1).params.ptime;
 params.pRightToe = gait(1).params.pRightToe;
 % params.ktime = [100,20];
 damp = 1;
-Ts=0.1;
+Ts=0.05;
 wn = 4/(damp*Ts);
-params.ktime=[wn^2,2*wn*damp]
+params.ktime=[wn^2,2*wn*damp];
 
 r_stance.PreProcess = @sim.resetTau;
 
@@ -64,20 +87,23 @@ rabbit_1step = setEdgeProperties(rabbit_1step, srcs, tars, ...
 if COMPILE
     rabbit_1step.compile(export_path);
     rabbit.ExportKinematics([export_path,'kinematics/']);
-    rightToepos=getCartesianPosition(r_stance, r_stance.ContactPoints.RightToe);
-    export(rightToepos, 'Vars',r_stance.States.x, 'File', [export_path,'stanceFootPos']);
+%     rightToepos=getCartesianPosition(r_stance, r_stance.ContactPoints.RightToe);
+%     export(rightToepos, 'Vars',r_stance.States.x, 'File', [export_path,'stanceFootPos']);
 end
 %% running the simulation
 x_start = [gait(1).states.x(:,1);gait(1).states.dx(:,1)];
 % x_start(2) = x_start(2) + 3;
-logger=rabbit_1step.simulate(0,x_start,3, [],'NumCycle',5);
+numcycle = 6;
+logger = rabbit_1step.simulate(0,x_start,3, [],'NumCycle',numcycle);
 
 %% traj MPC
 % MPC=load('../mpc_code/Results/IOComparisons/0.45TorqueSaturation_MPCTrajectory.mat');
 
 %% stats
-%close all;
-for i = 1:2
+close all;
+set(0,'DefaultFigureWindowStyle','docked')
+% set(0,'DefaultFigureWindowStyle','normal')
+for i = 1:5
     xsim_traj = logger(i).flow.states.x;
     dxsim_traj = logger(i).flow.states.dx;
     ya_traj = logger(i).flow.ya_time;
@@ -88,31 +114,51 @@ for i = 1:2
     dye_traj = dya_traj - dyd_traj;
     t_traj = logger(i).flow.t;
     
-    figure(2*i-1)
-    clf;
-    for k = 1:size(ya_traj,1)
-        subplot(2,2,k);
-        plot(t_traj,ye_traj(k,:)); hold on
-        legend('error');
-    end
-    sgtitle("y error (Step # " + i + ")");
-    
-    figure(2*i)
-    clf;
-    for k = 1:size(dya_traj,1)
-        subplot(2,2,k);
-        plot(t_traj,dye_traj(k,:));
-        legend('error');
-    end
-    sgtitle("dy error (Step # " + i + ")");
-    
+    % states
 %     figure
 %     for k = 1:size(xsim_traj,1)
 %         subplot(3,3,k);
 %         plot(t_traj,xsim_traj(k,:));
-%         legend('error'); title("x_" + k);
+%         grid on;
+%         title("q_" + k);
 %     end
-%     sgtitle("States at step # " + i);
+%     sgtitle("q (Step # " + i + ")");
+%     figure
+%     for k = 1:size(dxsim_traj,1)
+%         subplot(3,3,k);
+%         plot(t_traj,dxsim_traj(k,:));
+%         grid on;
+%         title("q_{dot}_" + k);
+%     end
+%     sgtitle("q_{dot} (Step # " + i + ")");
+    
+    % y - output
+    figure
+    for k = 1:size(ya_traj,1)
+        subplot(2,2,k);
+        plot(t_traj,ya_traj(k,:));
+        hold on; plot(t_traj,yd_traj(k,:));
+        grid on;
+        title("h_" + k);
+    end
+    sgtitle("h (Step # " + i + ")");
+    
+    figure
+    for k = 1:size(ya_traj,1)
+        subplot(2,2,k);
+        plot(t_traj,ye_traj(k,:));
+        grid on;
+    end
+    sgtitle("y error (Step # " + i + ")");
+    
+    % y_dot
+%     figure()
+%     for k = 1:size(dya_traj,1)
+%         subplot(2,2,k);
+%         plot(t_traj,dye_traj(k,:));
+%         grid on;
+%     end
+%     sgtitle("y_{dot} error (Step # " + i + ")");
 end
 
 %% graphs
@@ -145,11 +191,11 @@ end
 % Plot_MPC_Traj(Time,x_traj,X_REF_Original,u_cl,plot_q,plot_dq,plot_u,traj,args,save,save_dir,file_title,error)
 
 %% animate
-
+set(0,'DefaultFigureWindowStyle','normal')
 if true
     q_log=[];
     t_log=[];
-    for i=1:length(logger)
+    for i=1:numcycle
     q_log=[q_log,logger(i).flow.states.x];
     t_log=[t_log,logger(i).flow.t];
     end

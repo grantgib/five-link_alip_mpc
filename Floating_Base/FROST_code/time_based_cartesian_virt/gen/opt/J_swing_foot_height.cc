@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Thu 28 Jan 2021 16:08:22 GMT-05:00
+ * Mon 8 Feb 2021 04:16:11 GMT-05:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,58 +48,58 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1)
 {
-  double t1452;
-  double t1359;
-  double t1441;
-  double t1489;
-  double t819;
-  double t1448;
-  double t1490;
-  double t1496;
-  double t1509;
-  double t1514;
-  double t1528;
-  double t1533;
-  double t907;
-  double t1293;
-  double t1497;
-  double t1537;
-  double t1577;
-  double t1580;
-  double t1582;
-  double t1585;
-  double t1615;
-  double t1639;
-  double t1644;
-  double t1646;
-  t1452 = Cos(var1[2]);
-  t1359 = Cos(var1[5]);
-  t1441 = Sin(var1[2]);
-  t1489 = Sin(var1[5]);
-  t819 = Cos(var1[6]);
-  t1448 = -1.*t1359*t1441;
-  t1490 = -1.*t1452*t1489;
-  t1496 = t1448 + t1490;
-  t1509 = -1.*t1452*t1359;
-  t1514 = t1441*t1489;
-  t1528 = t1509 + t1514;
-  t1533 = Sin(var1[6]);
-  t907 = -1.*t819;
-  t1293 = 1. + t907;
-  t1497 = 0.4*t1293*t1496;
-  t1537 = -0.4*t1528*t1533;
-  t1577 = t819*t1496;
-  t1580 = t1528*t1533;
-  t1582 = t1577 + t1580;
-  t1585 = 0.8*t1582;
-  t1615 = t1497 + t1537 + t1585;
-  t1639 = t1452*t1359;
-  t1644 = -1.*t1441*t1489;
-  t1646 = t1639 + t1644;
+  double t1868;
+  double t1802;
+  double t1835;
+  double t1891;
+  double t349;
+  double t1866;
+  double t1906;
+  double t1918;
+  double t1971;
+  double t1989;
+  double t2005;
+  double t2008;
+  double t394;
+  double t1649;
+  double t1919;
+  double t2018;
+  double t2030;
+  double t2033;
+  double t2045;
+  double t2090;
+  double t2091;
+  double t2266;
+  double t2268;
+  double t2277;
+  t1868 = Cos(var1[2]);
+  t1802 = Cos(var1[5]);
+  t1835 = Sin(var1[2]);
+  t1891 = Sin(var1[5]);
+  t349 = Cos(var1[6]);
+  t1866 = -1.*t1802*t1835;
+  t1906 = -1.*t1868*t1891;
+  t1918 = t1866 + t1906;
+  t1971 = -1.*t1868*t1802;
+  t1989 = t1835*t1891;
+  t2005 = t1971 + t1989;
+  t2008 = Sin(var1[6]);
+  t394 = -1.*t349;
+  t1649 = 1. + t394;
+  t1919 = 0.4*t1649*t1918;
+  t2018 = -0.4*t2005*t2008;
+  t2030 = t349*t1918;
+  t2033 = t2005*t2008;
+  t2045 = t2030 + t2033;
+  t2090 = 0.8*t2045;
+  t2091 = t1919 + t2018 + t2090;
+  t2266 = t1868*t1802;
+  t2268 = -1.*t1835*t1891;
+  t2277 = t2266 + t2268;
   p_output1[0]=1.;
-  p_output1[1]=t1615;
-  p_output1[2]=t1615;
-  p_output1[3]=0.4*t1533*t1646 + 0.8*(t1577 - 1.*t1533*t1646) - 0.4*t1496*t819;
+  p_output1[1]=t2091;
+  p_output1[2]=t2091;
+  p_output1[3]=0.4*t2008*t2277 + 0.8*(t2030 - 1.*t2008*t2277) - 0.4*t1918*t349;
 }
 
 

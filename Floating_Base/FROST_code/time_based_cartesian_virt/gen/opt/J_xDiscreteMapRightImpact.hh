@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Thu 28 Jan 2021 16:08:43 GMT-05:00
+ * Mon 8 Feb 2021 04:16:55 GMT-05:00
  */
 
 #ifndef J_XDISCRETEMAPRIGHTIMPACT_HH
@@ -28,7 +28,7 @@ namespace RightImpact
 
 	
     // - Outputs
-    assert_size_matrix(p_output1, 14, 1);
+    assert_size_matrix(p_output1, 10, 1);
 
 
     // set zero the matrix

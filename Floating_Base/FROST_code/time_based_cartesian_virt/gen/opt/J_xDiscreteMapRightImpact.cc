@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Thu 28 Jan 2021 16:08:43 GMT-05:00
+ * Mon 8 Feb 2021 04:16:55 GMT-05:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -60,10 +60,6 @@ static void output1(double *p_output1,const double *var1,const double *var2)
   p_output1[7]=-1;
   p_output1[8]=1;
   p_output1[9]=-1;
-  p_output1[10]=1;
-  p_output1[11]=-1;
-  p_output1[12]=1;
-  p_output1[13]=-1;
 }
 
 
@@ -118,7 +114,7 @@ void mexFunction( int nlhs, mxArray *plhs[],
 
    
   /*  Create matrices for return arguments.  */
-  plhs[0] = mxCreateDoubleMatrix((mwSize) 14, (mwSize) 1, mxREAL);
+  plhs[0] = mxCreateDoubleMatrix((mwSize) 10, (mwSize) 1, mxREAL);
   p_output1 = mxGetPr(plhs[0]);
 
 

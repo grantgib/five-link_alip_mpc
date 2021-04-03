@@ -14,7 +14,7 @@ export_path = fullfile(cur, 'gen/');
 % be loaded  from the MX binary files from the given directory.
 load_path = [];%fullfile(cur, 'gen/sym');
 delay_set = false;
-COMPILE = false;
+COMPILE = true;
 
 % Load model
 rabbit = RABBIT('urdf/five_link_walker.urdf');
@@ -68,50 +68,20 @@ else
     nlp.configure(bounds);
 end
 
-% Add costs
+%% Add costs
 addRunningCost(nlp.Phase(getPhaseIndex(nlp,'RightStance')),u2r_fun,'u');
 
-% Changing Periodicity
-% the configuration only depends on the relabeling matrix
-removeConstraint(nlp.Phase(2), 'xPlusCont');
-removeConstraint(nlp.Phase(2), 'dxPlusCont');
 
-R = eye(7);
-R([4, 5, 6, 7], :) = R([6, 7, 4, 5], :);
-x = nlp.Phase(2).Plant.States.x;
-xn = nlp.Phase(2).Plant.States.xn;
-x_diff = R*x-xn;
-
-symFunc = SymFunction(['xPlusCont', nlp.Phase(2).Name], x_diff(3:end), {x, xn});
-nlpFunc = NlpFunction('Name',           symFunc.Name, ...
-                      'Dimension',      5, ...
-                      'lb',             0,...
-                      'ub',             0,...
-                      'Type',           'Nonlinear', ...
-                      'SymFun',         symFunc, ...
-                      'DepVariables',   [nlp.Phase(2).OptVarTable.xn(1); nlp.Phase(1).OptVarTable.x(1)]);
-addConstraint(nlp.Phase(2), nlpFunc(1).Name, 'first', nlpFunc);
-
-symFunc = SymFunction(['dxPlusCont', nlp.Phase(2).Name], x_diff(3:end), {x, xn});
-nlpFunc = NlpFunction('Name',           symFunc.Name, ...
-                      'Dimension',      5, ...
-                      'lb',             0,...
-                      'ub',             0,...
-                      'Type',           'Nonlinear', ...
-                      'SymFun',         symFunc, ...
-                      'DepVariables',   [nlp.Phase(2).OptVarTable.dxn(1); nlp.Phase(1).OptVarTable.dx(1)]);
-addConstraint(nlp.Phase(2), nlpFunc(1).Name, 'first', nlpFunc);
-
-% Update
-nlp.update;
-
+%% Step Height
+optparams = LoadParams();
+step_height = optparams.ht;
 for i = 1:(nlp.Phase(1).NumNode-1)
-    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-0.14, Inf);
+    nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(i).setBoundary(-step_height, Inf);
 end
-nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(0.14, 0.14);
+nlp.Phase(1).ConstrTable.u_leftFootHeight_RightStance(end).setBoundary(step_height, step_height);
 nlp.update;
 
-% save expressions after you run the optimization. It will save all required
+%% save expressions after you run the optimization. It will save all required
 % expressions
 % do not need to save expressions if the model configuration is not
 % changed. Adding custom constraints does not require saving any
@@ -124,7 +94,7 @@ if COMPILE
     if ~exist([export_path, 'opt/'])
         mkdir([export_path, 'opt/'])
     end
-    rabbit.ExportKinematics([export_path,'kinematics/']);
+%     rabbit.ExportKinematics([export_path,'kinematics/']);
     compileConstraint(nlp,[],[],[export_path, 'opt/']);
     compileObjective(nlp,[],[],[export_path, 'opt/']);
 end
@@ -156,6 +126,7 @@ end
 %%
 % Example constraint removal
 % removeConstraint(nlp.Phase(1),'u_friction_cone_RightToe');
+%     compileConstraint(nlp,[],'ddh_RightToe_RightStance',[export_path, 'opt/']);
 
 %% Use IPOPT Solver
 addpath(genpath(export_path));
@@ -165,8 +136,7 @@ solver.Options.ipopt.max_iter = 500;
 % Run Optimization
 tic
 % old = load('x0');
-% [sol, info] = optimize(solver, old.sol);
-
+% [sol, info] = optimize(solver, sol);
 [sol, info] = optimize(solver);
 toc
 [tspan, states, inputs, params] = exportSolution(nlp, sol);
@@ -177,8 +147,15 @@ gait = struct(...
     'params',params);
 
 %% SAVE
-SAVE_SOLUTION = 0;
-name_save = "Ascend_Ht(0.14)_Lgth(0.3)_Vel(0.50)";
+SAVE_SOLUTION = 1;
+name_save = "Ascend_Ht(" + optparams.ht + ...
+    ")_Vel(" + optparams.avgvel + ...
+    ")_comxvel(" + optparams.comxvel + ...
+    ")_comzvel(" + optparams.comzvel + ...
+    ")_swingxmid(" + optparams.swingxmid + ...
+    ")_swingxvel(" + optparams.swingxvel + ...
+    ")_swingzvel(" + optparams.swingzvel + ...
+    ")_stepLength(" + optparams.length + ")";
 if SAVE_SOLUTION
     %     data_name = string(datetime('now','TimeZone','local','Format','d-MMM-y-HH-mm-ssZ'));  %'local/longer_double_support_wider_step_dummy';
     %     name_save = [CHARACTER_NAME, '_', data_name];
@@ -199,55 +176,6 @@ end
 % checkVariables(nlp, sol, 1e-1, 'variableCheck.txt');
 % open('constraintCheck.txt')
 % open('variableCheck.txt')
-
-%% Animation
-q_log_R = gait(1).states.x; % Right stance
-q_log_L = q_log_R([1:3,6:7,4:5],:); % symmetric Left stance
-q_log_L(1:3,:) = q_log_L(1:3,:) + repmat((q_log_R(1:3,end)-q_log_R(1:3,1)),1,length(q_log_R));
-
-t_log_R = tspan{1};
-t_log_L = t_log_R + t_log_R(end);
-
-q_log = [q_log_R, q_log_L];
-t_log = [t_log_R, t_log_L];
-
-%
-anim = Animator.FiveLinkAnimator(t_log, q_log);
-anim.pov = Animator.AnimatorPointOfView.West;
-anim.Animate(true);
-anim.isLooping = false;
-anim.updateWorldPosition = true;
-% anim.endTime = 20;
-conGUI = Animator.AnimatorControls();
-conGUI.anim = anim;
-
-%% Compute Jacobian of swing foot
-% rabbit_1step.Gamma.Nodes(1,:).Domain{1}.HolonomicConstraints.RightToe
-RightFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.RightToe);
-J_rightfoot = jacobian(RightFootPos,rabbit.States.x);
-J_rightfoot = J_rightfoot([1,3],:);
-
-LeftFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
-J_leftfoot = jacobian(LeftFootPos,rabbit.States.x);
-J_leftfoot = J_leftfoot([1,3],:);
-
-p_hip = getCartesianPosition(rabbit,rabbit.OtherPoints.Torso);
-% J_hip = ;
-% 
-% p_st_knee = ;
-% J_st_knee = ;
-% 
-% p_torso = ;
-% J_torso = ;
-% 
-% p_sw_knee = 
-% J_sw_knee = 
-
-
-%exporting to mex
-% if true
-%     export(J_leftfoot,'Vars',rabbit.States.x,'File','J_leftFoot')
-% end
 
 %% Plot virtual constraints
 t_init = params{1}.ptime(2);
@@ -271,3 +199,76 @@ for j = 1:4
     xlabel('time');
     grid on;
 end
+
+
+%% Animation
+q_log_R = gait(1).states.x; % Right stance
+q_log_L = q_log_R([1:3,6:7,4:5],:); % symmetric Left stance
+q_log_L(1:3,:) = q_log_L(1:3,:) + repmat((q_log_R(1:3,end)-q_log_R(1:3,1)),1,length(q_log_R));
+
+t_log_R = tspan{1};
+t_log_L = t_log_R + t_log_R(end);
+
+q_log = [q_log_R, q_log_L];
+t_log = [t_log_R, t_log_L];
+
+%
+anim = Animator.FiveLinkAnimator(t_log, q_log);
+anim.pov = Animator.AnimatorPointOfView.West;
+anim.Animate(true);
+anim.isLooping = false;
+anim.updateWorldPosition = true;
+% anim.endTime = 20;
+conGUI = Animator.AnimatorControls();
+conGUI.anim = anim;
+
+
+%% Compute Jacobian of swing foot
+% rabbit_1step.Gamma.Nodes(1,:).Domain{1}.HolonomicConstraints.RightToe
+% RightFootPos = getCartesianPosition(rabbit,rabbit.ContactPoints.RightToe);
+% J_rightfoot = jacobian(RightFootPos,rabbit.States.x);
+% J_rightfoot = J_rightfoot([1,3],:);
+% 
+swingPos = getCartesianPosition(rabbit,rabbit.ContactPoints.LeftToe);
+J_swing = jacobian(swingPos,rabbit.States.x);
+J_swing = J_swing([1,3],:);
+SwingVelocity = J_swing*rabbit.States.dx;
+swingvel_traj = [];
+
+disp("Swing Foot Position @ EOs");
+swingpos_end = subs(swingPos,rabbit.States.x,SymExpression(gait(1).states.x(:,end)))
+for i = 1:21
+    swingvel_traj = [swingvel_traj; subs(SwingVelocity,[rabbit.States.x,rabbit.States.dx],[SymExpression(gait(1).states.x(:,i)),SymExpression(gait(1).states.dx(:,i))])];
+end
+disp("Swing Foot Velocity @ EOS");
+swingvel_traj(end-1:end)
+
+pos_com = rabbit.getComPosition;
+J_com = jacobian(pos_com,rabbit.States.x);
+J_com = J_com([1,3],:);
+vel_com = J_com*rabbit.States.dx;
+velcom_traj = [];
+for i = 1:21
+    velcom_traj = [velcom_traj; subs(vel_com,[rabbit.States.x,rabbit.States.dx],[SymExpression(gait(1).states.x(:,i)),SymExpression(gait(1).states.dx(:,i))])];
+end
+disp("COM Velocity @ EOS");
+velcom_traj(end-1:end)
+
+% p_hip = getCartesianPosition(rabbit,rabbit.OtherPoints.Torso);
+% J_hip = ;
+% 
+% p_st_knee = ;
+% J_st_knee = ;
+% 
+% p_torso = ;
+% J_torso = ;
+% 
+% p_sw_knee = 
+% J_sw_knee = 
+
+
+%exporting to mex
+% if true
+%     export(J_leftfoot,'Vars',rabbit.States.x,'File','J_leftFoot')
+% end
+
