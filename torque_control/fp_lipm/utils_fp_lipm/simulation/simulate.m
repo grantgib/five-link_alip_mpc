@@ -182,9 +182,9 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     w_sol_io = full(f_w(x_init,u_sol_io));
     
     %% Center of Mass / Angular Momentum Info
-    p_com = f_p_com(x_init);
-    v_com = f_v_com(x_init);
-    Lst = f_Lst(x_init);    
+    p_com = full(f_p_com(x_init))';
+    v_com = full(f_v_com(x_init));
+    Lst = full(f_Lst(x_init));    
     
     %% Ideal LIP Info
 %     xlip = f_xlip(x_init,p_st_com_des);    

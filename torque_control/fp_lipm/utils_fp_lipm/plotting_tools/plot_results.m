@@ -134,7 +134,7 @@ if plot_info.fp
         hold on;
         scatter(time_traj,ufp_traj(i,:));
         scatter(time_traj,p_st_traj(i,:),'filled');
-        plot(time_traj,p_sw_traj(i,:));
+        plot(time_traj,p_sw_traj(i,:),'LineWidth',4);
         legend('desired fp','stance','swing');
         title_string = "Foot placement " + fp_headers(i);
         title(title_string);
@@ -144,8 +144,27 @@ end
 
 %% Centroidal Dynamics
 if plot_info.com_dyn
+    com_headers = {'x','z'};
+    for i = 1:2
+        figure
+        hold on; grid on;
+        plot(time_traj,p_com_traj(i,:));
+        title_str = "COM position " + com_headers{i};
+        title(title_str);
+    end
     
+    for i = 1:2
+        figure
+        hold on; grid on;
+        plot(time_traj,v_com_traj(i,:));
+        title_str = "COM velocity " + com_headers{i};
+        title(title_str);
+    end
     
+    figure 
+    hold on; grid on;
+    plot(time_traj,Lst_traj)
+    title('Angular Momentum about stance foot');   
 end
 
 %% Virtuals
@@ -183,11 +202,6 @@ if plot_info.vc
         grid on; set(gca,'FontSize',sz);
     end
     sgtitle('Outputs');
-end
-
-%% Foot Trajectories
-if plot_info.feet
-    
 end
 
 %% Phase Variable

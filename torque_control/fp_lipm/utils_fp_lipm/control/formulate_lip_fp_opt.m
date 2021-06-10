@@ -110,14 +110,15 @@ for k = 1:N_k-1
         if n > 0 % initial condition fixed
             x_eos = [x_eos, {X_k}];
             
+            % average vel cost
             avgxvel_k = Ufp_traj(1,n+1)/t_step_period;
             avgyvel_k = Ufp_traj(2,n+1)/t_step_period;
-            
             avgvel_error = [...
                 avgxvel_k-p_xcdot_des;
                 avgyvel_k-p_ycdot_des];
             opt_cost_avgvel = [opt_cost_avgvel, {avgvel_error'*Q(n)*avgvel_error}];
             
+            % vel cost
             vel_error = [...
                 xcdot_k-p_xcdot_des;
                 ycdot_k-p_ycdot_des];
@@ -185,7 +186,7 @@ end
 % Combine cost, vars, constraints, parameters
 try
 final_angmom_error = x_eos{end}(3:end) - x_eos{end-1}(3:end);
-opt_cost_stab = final_angmom_error' * 100*Q(n) * final_angmom_error;
+opt_cost_stab = final_angmom_error' * 10*Q(n) * final_angmom_error;
 catch
     opt_cost_stab = 0;
 end
@@ -194,8 +195,8 @@ opt_cost_avgvel_total = sum(vertcat(opt_cost_avgvel{:}));
 
 
 % opti.minimize(opt_cost_avgvel_total);
-opti.minimize(opt_cost_vel_total + opt_cost_stab);
-% opti.minimize(opt_cost_avgvel_total + opt_cost_stab);
+% opti.minimize(opt_cost_vel_total + opt_cost_stab);
+opti.minimize(opt_cost_avgvel_total + opt_cost_stab);
 
 %% Create an OPT solver
 if sol_type == "qrqp"
