@@ -1,3 +1,0 @@
----
-title: Rigid Joint Frame
----

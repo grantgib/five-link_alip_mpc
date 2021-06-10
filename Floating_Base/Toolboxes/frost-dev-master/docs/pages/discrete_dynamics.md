@@ -1,3 +1,0 @@
----
-title: Discrete Dynamical System
----

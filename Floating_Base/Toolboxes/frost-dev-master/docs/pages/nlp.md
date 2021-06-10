@@ -1,3 +1,0 @@
----
-title: Nonlinear Programming Problem
----

@@ -1,3 +1,0 @@
----
-title: Coordinate Frame
----

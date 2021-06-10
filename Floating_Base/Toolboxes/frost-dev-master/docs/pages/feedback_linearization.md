@@ -1,3 +1,0 @@
----
-title: Feedback Linearization Control
----
