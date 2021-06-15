@@ -20,7 +20,6 @@ if animate_info.traj
     hold on; rectangle('Position',[0.25 0 5 0.05]); hold on;
 
     conGUI2.anim = anim2;
-    %         title('real trajectory');
     set(gcf,'color','w');
         hold on; rectangle('Position',[0.25 0 5 0.05]); hold on;
 

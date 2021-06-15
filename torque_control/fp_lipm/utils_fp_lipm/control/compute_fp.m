@@ -53,6 +53,4 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     ufp_sol = reshape(ufp_sol_temp,n_ufp,length(ufp_sol_temp)/n_ufp);
     cost_sol = sol.value(opti.f);
     
-    
-    
 end
