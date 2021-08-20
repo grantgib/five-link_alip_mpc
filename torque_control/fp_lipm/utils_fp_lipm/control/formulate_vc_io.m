@@ -14,10 +14,10 @@ D = sym_info.sym.D;
 C = sym_info.sym.C;
 G = sym_info.sym.G;
 B = sym_info.sym.B;
-Jst = sym_info.sym.Jst;
-Jstdot = sym_info.sym.Jstdot;
+J_stance = sym_info.sym.J_stance;
+Jdot_stance = sym_info.sym.Jdot_stance;
 
-f_pos_com = sym_info.func.f_pos_COM;
+f_pos_com_world = sym_info.func.f_pos_com_world;
 f_pos_st = sym_info.func.f_pos_stance;
 f_pos_sw = sym_info.func.f_pos_swing;
 
@@ -32,8 +32,8 @@ s_func = (t_now - t_start) / t_period;
 sdot_func = 1/t_period;
 
 %% Intermediate Functions
-pos_st_com = f_pos_com(x) - f_pos_st(x);
-pos_sw_com = f_pos_com(x) - f_pos_sw(x);
+pos_st_com = f_pos_com_world(x) - f_pos_st(x);
+pos_sw_com = f_pos_com_world(x) - f_pos_sw(x);
 
 %% Actual output
 % h_act = [
@@ -82,7 +82,7 @@ hd_ddot = J_hd_dot*sdot; % J_hd*sddot = 0 (sddot = 0)
 %% IO Controller
 % gains
 damp = 1;
-Ts = 0.1;
+Ts = 0.05;
 wn = 4/(damp*Ts);
 Kp = wn^2;
 Kd = 2*damp*wn;
@@ -90,9 +90,9 @@ Kd = 2*damp*wn;
 % Kd = 20;
 
 % control calculation
-JcD = (Jst/D)*Jst';
-Hu = (eye(n_q) - Jst'*(JcD\(Jst/D)))*B;
-Hw = Jst'*(JcD\((Jst/D)*(C*qdot+G)-Jstdot*qdot));
+JcD = (J_stance/D)*J_stance';
+Hu = (eye(n_q) - J_stance'*(JcD\(J_stance/D)))*B;
+Hw = J_stance'*(JcD\((J_stance/D)*(C*qdot+G)-Jdot_stance*qdot));
 
 y = ha - hd;
 ydot = ha_dot - hd_dot;

@@ -24,14 +24,17 @@ u_io_traj = traj_info.u_io_traj;
 w_io_traj = traj_info.w_io_traj;
 
 % foot placement
-ufp_traj = traj_info.ufp_traj;
+ufp_abs_traj = traj_info.ufp_abs_traj;
+ufp_rel_traj = traj_info.ufp_rel_traj;
 ufp_sol_traj = traj_info.ufp_sol_traj;
 xlip_sol_traj = traj_info.xlip_sol_traj;
 
 % centroidal dynamics
-p_com_traj = traj_info.p_com_traj;
-v_com_traj = traj_info.v_com_traj;
-Lst_traj = traj_info.Lst_traj;
+p_com_world_traj = traj_info.p_com_world_traj;
+v_com_world_traj = traj_info.v_com_world_traj;
+p_com_stance_traj = traj_info.p_com_stance_traj;
+v_com_stance_traj = traj_info.v_com_stance_traj;
+L_stance_traj = traj_info.L_stance_traj;
 
 % virtual constraints
 ha_traj = traj_info.ha_traj;
@@ -45,14 +48,25 @@ y_dot_traj = traj_info.y_dot_traj;
 y_ddot_traj = traj_info.y_ddot_traj;
 
 % foot trajectories
-p_sw_traj = traj_info.pos_sw_traj;
-p_st_traj = traj_info.pos_st_traj;
+p_sw_abs_traj = traj_info.pos_sw_abs_traj;
+p_st_abs_traj = traj_info.pos_st_abs_traj;
+p_sw_rel_traj = traj_info.pos_sw_rel_traj;
+p_st_rel_traj = traj_info.pos_st_rel_traj;
+
+% limit traj
+ufp_stance_max_traj = traj_info.ufp_stance_max_traj;
+ufp_stance_min_traj = traj_info.ufp_stance_min_traj;
+xc_slip_limit_traj = traj_info.xc_slip_limit_traj;
 
 % ideal lip
 % xlip_ideal_traj = traj_info.xlip_ideal_traj;
 
 % impact
 impact_traj = traj_info.impact_traj;
+
+% Foot placement solutions
+p_sw_com_grant = traj_info.p_sw_com_grant_traj;
+p_sw_com_yukai = traj_info.p_sw_com_yukai_traj;
 
 %% Initialize variables
 q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
@@ -132,15 +146,37 @@ if plot_info.fp
     for i = 1:2
         figure
         hold on;
-        scatter(time_traj,ufp_traj(i,:));
-        scatter(time_traj,p_st_traj(i,:),'filled');
-        plot(time_traj,p_sw_traj(i,:),'LineWidth',4);
+        scatter(time_traj,ufp_abs_traj(i,:));
+        scatter(time_traj,p_st_abs_traj(i,:),'filled');
+        plot(time_traj,p_sw_abs_traj(i,:),'LineWidth',4);
         legend('desired fp','stance','swing');
-        title_string = "Foot placement " + fp_headers(i);
+        title_string = "Absolute Foot placement " + fp_headers(i);
         title(title_string);
-        
     end
+    for i = 1:2
+        figure
+        hold on;
+        scatter(time_traj,ufp_rel_traj(i,:));
+        scatter(time_traj,p_st_rel_traj(i,:),'filled');
+        plot(time_traj,p_sw_rel_traj(i,:),'LineWidth',4);
+        plot(time_traj,ufp_stance_max_traj,'--r');
+        plot(time_traj,ufp_stance_min_traj,'--r');
+        legend('desired fp','stance','swing');
+        title_string = "Relative Foot placement " + fp_headers(i);
+        title(title_string);
+    end
+    
+    figure
+    hold on;
+    
+    plot(time_traj,p_sw_com_grant,'Linewidth',4);
+    plot(time_traj,p_sw_com_yukai,'Linewidth',4,'LineStyle','--');
+    legend('grant','yukai')
+    title("Foot placement computation");
 end
+
+
+
 
 %% Centroidal Dynamics
 if plot_info.com_dyn
@@ -148,22 +184,40 @@ if plot_info.com_dyn
     for i = 1:2
         figure
         hold on; grid on;
-        plot(time_traj,p_com_traj(i,:));
-        title_str = "COM position " + com_headers{i};
+        plot(time_traj,p_com_world_traj(i,:));
+        title_str = "com world position " + com_headers{i};
         title(title_str);
     end
     
     for i = 1:2
         figure
         hold on; grid on;
-        plot(time_traj,v_com_traj(i,:));
-        title_str = "COM velocity " + com_headers{i};
+        plot(time_traj,v_com_world_traj(i,:));
+        title_str = "com world velocity " + com_headers{i};
         title(title_str);
     end
     
-    figure 
+    for i = 1:2
+        figure
+        hold on; grid on;
+        plot(time_traj,p_com_stance_traj(i,:));
+        plot(time_traj,xc_slip_limit_traj,'--r');
+        title_str = "com stance position " + com_headers{i};
+        title(title_str);
+    end
+    
+    for i = 1:2
+        figure
+        hold on; grid on;
+        plot(time_traj,v_com_stance_traj(i,:));
+        title_str = "com stance velocity " + com_headers{i};
+        title(title_str);
+    end
+    
+    
+    figure
     hold on; grid on;
-    plot(time_traj,Lst_traj)
+    plot(time_traj,L_stance_traj)
     title('Angular Momentum about stance foot');   
 end
 

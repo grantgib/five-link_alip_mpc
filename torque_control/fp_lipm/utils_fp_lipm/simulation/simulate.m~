@@ -32,8 +32,6 @@ n_w = sym_info.dim.n_w;
 opti = sym_info.fp_opt.opti;
 ufp_stance_max = sym_info.fp_opt.ufp_stance_max;
 ufp_stance_min = sym_info.fp_opt.ufp_stance_min;
-N_fp = sym_info.fp_opt.N_fp;
-N_k = sym_info.fp_opt.N_k;
 N_steps_ahead = sym_info.fp_opt.N_steps_ahead;
 p_x_init = sym_info.fp_opt.p_x_init;
 p_Lx_des = sym_info.fp_opt.p_Lx_des;
@@ -73,10 +71,6 @@ f_w = sym_info.func.f_w;
 f_s = sym_info.func.f_s;
 f_sdot = sym_info.func.f_sdot;
 f_uIO = sym_info.func.f_uIO;
-
-f_xc_slip_limit = sym_info.func.f_xc_slip_limit;
-f_yc_slip_limit = sym_info.func.f_yc_slip_limit;
-
 
 %% Initialize Variables
 % Initialize variables
@@ -147,21 +141,10 @@ y_ddot_traj = [];
 p_sw_com_grant_traj = [];
 p_sw_com_yukai_traj = [];
 
-ufp_stance_max_traj = [];
-ufp_stance_min_traj = [];
-xc_slip_limit_traj = [];
-
 %% Main Loop
-
-% max_iter = 60;
+% max_iter = 2;
+% args = Update_Args_Nonlinear(sym_info,ctrl_info,ref_info,constr_info,traj_info,x_init);
 while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
-    %% limits 
-    ufp_stance_max_traj = [ufp_stance_max_traj, ufp_stance_max];
-    ufp_stance_min_traj = [ufp_stance_min_traj, ufp_stance_min];
-    
-    xc_slip_limit = full(f_xc_slip_limit(p_st_com_des,mu,kx));
-    xc_slip_limit_traj = [xc_slip_limit_traj, xc_slip_limit];
-    
     %% phase variable
     s = full(f_s(t_current,t_start,t_step_period));
     sdot = full(f_sdot(t_step_period));
@@ -193,12 +176,10 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
             'Ly_des',               Ly_des,...
             'ufp_stance_max',       ufp_stance_max,...
             'ufp_stance_min',       ufp_stance_min,...
-            'k',                    [kx;0],...
+            'k',                    [0;0],...
             'mu',                   mu,...
             'ufp_init',             zeros(3,1),...
             'N_steps',              N_steps_ahead,...
-            'N_fp',                 N_fp,...
-            'N_k',                  N_k,...
             'n_xlip',               5,...
             'n_ufp',                3,...
             'opti',                 opti,...
@@ -213,7 +194,26 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
             'p_ufp_init',           p_ufp_init);
         [ufp_sol,xlip_sol] = compute_fp(fp_info);
         p_sw_com_des_grant = xlip_sol(1,k_pre_all(1)) - ufp_sol(1,1);
-       
+        
+        
+        %% Test
+        
+%         xtest = [...
+%             0.537667139546100
+%             1.833885014595086
+%             -2.258846861003648
+%             -1.307688296305273+pi
+%             -0.433592022305684
+%             0.862173320368121+pi
+%             0.318765239858981        
+%             0.342624466538650
+%             3.578396939725760
+%             2.769437029884877
+%             0.725404224946106
+%             -0.063054873189656
+%             -1.349886940156521
+%             3.034923466331855]
+%         Lytest = full(L_total_right_func_mex(xtest(1:7),xtest(8:end)))
         
         
         
@@ -239,8 +239,6 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
 %         disp("---> p_sw_com_des estimate");
 %         p_sw_com_des_yukai
 %         p_sw_com_des_grant
-
-
         p_sw_com_grant_traj = [p_sw_com_grant_traj, p_sw_com_des_grant];
         p_sw_com_yukai_traj = [p_sw_com_yukai_traj, p_sw_com_des_yukai];
         
@@ -269,7 +267,7 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     p_com_world = full(f_p_com_world(x_init))';
     v_com_world = full(f_v_com_world(x_init));
     p_com_stance = full(f_p_com_stance(x_init))';
-    v_com_stance = full(f_v_com_stance(x_init));
+    v_com_stance = full(f_v_com_stance(x_init))';
 %     L_stance = full(f_L_stance(x_init));
     L_stance = L_total_right_func_mex(x_init);
     
@@ -299,7 +297,7 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     ufp_sol_traj = [ufp_sol_traj, {ufp_sol}];
     xlip_sol_traj = [xlip_sol_traj, {xlip_sol}];
     ufp_rel_traj = [ufp_rel_traj, ufp_sol(:,1)];
-    ufp_abs_traj = [ufp_abs_traj, [ufp_sol(1,1)+p_st_abs_current(1); ufp_sol(3,1)+p_st_abs_current(2)]];
+    ufp_abs_traj = [ufp_abs_traj, ufp_sol(1,1)+p_st_abs_current(1); ufp_sol(3,1)+p_st_abs_current(2)
     
     p_sw_abs_traj = [p_sw_abs_traj, p_sw_abs_current];
     p_st_abs_traj = [p_st_abs_traj, p_st_abs_current];
@@ -416,12 +414,6 @@ traj_info.L_stance_traj = L_stance_traj;
 traj_info.ufp_sol_traj = ufp_sol_traj;
 traj_info.xlip_sol_traj = xlip_sol_traj;
 traj_info.ufp_rel_traj = ufp_rel_traj;
-traj_info.ufp_abs_traj = ufp_abs_traj;
-
-% limits
-traj_info.ufp_stance_max_traj = ufp_stance_max_traj;
-traj_info.ufp_stance_min_traj = ufp_stance_min_traj;
-traj_info.xc_slip_limit_traj = xc_slip_limit_traj;
 
 % virtual constraints and outputs
 traj_info.ha_traj = ha_traj;

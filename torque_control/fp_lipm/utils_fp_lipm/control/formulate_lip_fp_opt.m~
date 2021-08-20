@@ -60,7 +60,7 @@ f_lip_rk = Function('f_lip_rk4',{x,k_sym,z_H_sym},{x_next});
 % Intermediate optimization variables
 N_fp = N_steps_ahead;
 k_step = (t_step_period / dt_opt);
-N_k = round((N_steps_ahead * k_step)+1);
+N_k = uint8((N_steps_ahead * k_step)+1);
 
 % Opti Stack
 opti = casadi.Opti();
@@ -68,7 +68,6 @@ opti = casadi.Opti();
 % opt vars
 X_traj = opti.variable(n_x,N_k);
 Ufp_traj = opti.variable(n_ufp,N_fp);
-slack_slip = opti.variable(1,1);
 
 % parameters
 p_x_init = opti.parameter(n_x,1);
@@ -98,10 +97,10 @@ x_bos = {};
 k_pre_all = [];
 k_post_all = [];
 
-xc_slip_limit = (p_mu + p_kx)*p_z_H / (1 - p_mu*p_kx);
-yc_slip_limit = (p_mu + p_ky)*p_z_H / (1 - p_mu*p_ky);
-% xc_slip_limit = 0.25;
-% yc_slip_limit = xc_slip_limit;
+% xc_slip_limit = (p_mu + p_kx)*p_z_H / (1 - p_mu*p_kx);
+% yc_slip_limit = (p_mu + p_ky)*p_z_H / (1 - p_mu*p_ky);
+xc_slip_limit = 0.26;
+yc_slip_limit = xc_slip_limit;
 
 % Initial condition constraint
 opti.subject_to(X_traj(:,1) == p_x_init);
@@ -111,14 +110,12 @@ opti.subject_to(X_traj(:,1) == p_x_init);
 
 %% Dynamics
 for k = 1:N_k
-    k_pre = round(n*(k_step)+1); % iterate pre-impact
+    k_pre = uint8(n*(k_step)+1); % iterate pre-impact
     k_post = k_pre + 1;     % iterate post-impact
     
     % GRF constraint
-%     opti.subject_to(-xc_slip_limit <= X_k(1) <= xc_slip_limit);
-%     opti.subject_to(-yc_slip_limit <= X_k(2) <= yc_slip_limit);
-    opti.subject_to(-xc_slip_limit - slack_slip <= X_k(1) <= xc_slip_limit + slack_slip);
-    opti.subject_to(-yc_slip_limit - slack_slip <= X_k(2) <= yc_slip_limit + slack_slip);
+    opti.subject_to(-xc_slip_limit <= X_k(1) <= xc_slip_limit + slack_slip);
+    opti.subject_to(-yc_slip_limit <= X_k(2) <= yc_slip_limit);
     
     if (k == k_pre)
         x_eos = [x_eos, {X_k}];
@@ -131,9 +128,6 @@ for k = 1:N_k
                 X_k(3);
                 X_k(4);
                 X_k(5)];
-            opti.subject_to(-xc_slip_limit - slack_slip <= Xk_impact(1) <= xc_slip_limit + slack_slip);
-            opti.subject_to(-yc_slip_limit - slack_slip <= Xk_impact(2) <= yc_slip_limit + slack_slip);
-            
             Xk_end = f_lip_rk(Xk_impact,p_k,p_z_H);
             opti.subject_to(Ufp_traj(3,n+1) == 0)   % z height foot placement
         end
@@ -199,8 +193,7 @@ if ~yukai_method
     
     % cost function
 %     % opti.minimize(opt_cost_avgvel_total);
-%     opti.minimize(opt_cost_L_total);
-    opti.minimize(opt_cost_L_total + 1e10.*slack_slip.^2);
+    opti.minimize(opt_cost_L_total);
 %     opti.minimize(opt_cost_L_total + opt_cost_stab);
 %     opti.minimize(opt_cost_avgvel_total + opt_cost_stab);
     
@@ -244,8 +237,6 @@ elseif sol_type == "ipopt"
 end
 
 %% Return symbolics and solver
-sym_info.fp_opt.N_fp = N_fp;
-sym_info.fp_opt.N_k = N_k;
 sym_info.fp_opt.f_lip_rk = f_lip_rk;
 sym_info.fp_opt.opti = opti;
 sym_info.fp_opt.f_opti = f_opti;

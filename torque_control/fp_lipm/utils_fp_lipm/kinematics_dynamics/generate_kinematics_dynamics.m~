@@ -192,8 +192,7 @@ sym_info.func.f_Jdot_stance = f_J_stance_dot;
 sym_info.func.f_vel_com_world = f_vel_com_world;
 sym_info.func.f_vel_com_stance = f_vel_com_stance;
 
-sym_info.func.f_xc_slip_limit = f_xc_slip_limit;
-sym_info.func.f_yc_slip_limit = f_yc_slip_limit;
+sym_info.fu
 
 % Dynamics
 sym_info.func.f_NL = f_NL;

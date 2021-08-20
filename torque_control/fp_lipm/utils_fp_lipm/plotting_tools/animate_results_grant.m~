@@ -63,7 +63,7 @@ link_torso = line([p_hip(1,1) p_torso(1,1)],[p_hip(3,1) p_torso(3,1)]);
 link_sw_thigh = line([p_hip(1,1) p_sw_knee(1,1)],[p_hip(3,1) p_sw_knee(3,1)]);
 link_sw_shin = line([p_sw_knee(1,1) p_sw_foot(1,1)],[p_sw_knee(3,1) p_sw_foot(3,1)]);
 com = scatter(p_com_world_traj(1,1),p_com_world_traj(2,1),500);
-link_lip = line([p_st_foot(1,1) p_com_world_traj(1,1)],[p_st_foot(3,1) p_com_world_traj(2,1)]);
+link_lip = line([p_st_foot(1,1) 
 
 uistack(link_st_shin, 'bottom');
 uistack(link_st_thigh, 'bottom');
@@ -76,7 +76,6 @@ uistack(com,'top');
 color_stance = 'b';
 color_swing = 'r';
 color_torso = 'k';
-color_lip = 'm';
 
 % Draw initial pose
 axis([p_hip(1,1)-0.5,...
@@ -88,8 +87,7 @@ set(link_st_thigh,'Color',color_stance,"LineWidth",sz);
 set(link_torso,'Color',color_torso,"LineWidth",sz);
 set(link_sw_shin,'Color',color_swing,"LineWidth",sz);
 set(link_sw_thigh,'Color',color_swing,"LineWidth",sz);
-set(com,'MarkerFaceColor','g','MarkerFaceAlpha',1);
-set(link_lip,'Color',color_lip,"LineWidth",sz,'LineStyle',':');
+set(com,'MarkerFaceColor','g','MarkerFaceAlpha',0.5);
 
 % variable for axis shift
 % shift = ref_info.step_height_dbl / (length(traj_info.time_traj)/ref_info.num_steps);
@@ -133,25 +131,23 @@ for i = 1:size(x_traj,2)
         'String',"Time: " + string(time_traj(i)));
     set(link_st_shin,...
         'XData',[p_st_foot(1,i) p_st_knee(1,i)],...
-        'YData',[p_st_foot(3,i) p_st_knee(3,i)]);
+        'YData',[p_st_foot(3,i) p_st_knee(3,i)],"LineWidth",sz);
     set(link_st_thigh,...
         'XData',[p_st_knee(1,i) p_hip(1,i)],...
-        'YData',[p_st_knee(3,i) p_hip(3,i)]);
+        'YData',[p_st_knee(3,i) p_hip(3,i)],"LineWidth",sz);
     set(link_torso,...
         'XData',[p_hip(1,i) p_torso(1,i)],...
-        'YData',[p_hip(3,i) p_torso(3,i)]);
+        'YData',[p_hip(3,i) p_torso(3,i)],"LineWidth",sz);
     set(link_sw_thigh,...
         'XData',[p_hip(1,i) p_sw_knee(1,i)],...
-        'YData',[p_hip(3,i) p_sw_knee(3,i)]);
+        'YData',[p_hip(3,i) p_sw_knee(3,i)],"LineWidth",sz);
     set(link_sw_shin,...
         'XData',[p_sw_knee(1,i) p_sw_foot(1,i)],...
-        'YData',[p_sw_knee(3,i) p_sw_foot(3,i)]);
+        'YData',[p_sw_knee(3,i) p_sw_foot(3,i)],"LineWidth",sz);
     set(com,...
         'XData',p_com_world_traj(1,i),...
         'YData',p_com_world_traj(2,i));
-    set(link_lip,...
-        'XData',[p_st_foot(1,i) p_com_world_traj(1,i)],...
-        'YData',[p_st_foot(3,i) p_com_world_traj(2,i)])
+    
     % Draw swingfoot trajectory
 %     if impact_traj(i) == pred_plot
 %         set(traj_swing,'XData',y_sw_traj(1,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}),'YData',y_sw_traj(2,sw_begin{pred_plot+1}:sw_end{pred_plot+look_ahead}))

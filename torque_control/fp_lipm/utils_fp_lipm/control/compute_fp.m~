@@ -23,8 +23,6 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     % mpc
     n_xlip = p.n_xlip;
     n_ufp = p.n_ufp;
-    N_k = p.N_k;
-    N_fp = p.N_fp;
     N_steps_ahead = p.N_steps;
     opti = p.opti;
     p_x_init = p.p_x_init;
@@ -33,6 +31,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_z_H = p.p_z_H;
     p_ufp_stance_max = p.p_ufp_stance_max;
     p_ufp_stance_min = p.p_ufp_stance_min;
+
     p_k = p.p_k;
     p_mu = p.p_mu;
     p_ufp_init = p.p_ufp_init;
@@ -52,14 +51,23 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     % Solven_ufp
     sol = opti.solve();
     
-    % Extract Solution    
+    % Extract Solution
+    N_fp = N_steps_ahead;
+    k_step = (t_step_period / dt_opt);
+    N_k = uint8((N_steps_ahead * k_step)+1);
+    
     optvar = opti.x;
-    xlip_sol_temp = opti.value(optvar(1:n_xlip*N_k));
-    xlip_sol = reshape(xlip_sol_temp,n_xlip,N_k);
-    ufp_sol_temp = opti.value(optvar(n_xlip*N_k+1:n_xlip*N_k+n_ufp*N_fp));
-    ufp_sol = reshape(ufp_sol_temp,n_ufp,N_fp);
-    slack_slip_sol = opti.value(optvar(n_xlip*N_k+n_ufp*N_fp+1));
+    xlip_sol_temp = opti.value(optvar(1:n_x.*N_k));
+    xlip_sol = reshape(xlip_sol_temp,n_xlip,length(xlip_sol_temp)/n_xlip);
+    ufp_sol_temp = opti.value(optvar(end-(n_ufp*N_steps_ahead-1):end));
+    ufp_sol = reshape(ufp_sol_temp,n_ufp,length(ufp_sol_temp)/n_ufp);
     cost_sol = sol.value(opti.f);
     
+%     lg = 0.5;
+%     maxstep = [lg; lg; lg];
+%     minstep = -maxstep;
+%     for i = 1:N_steps_ahead
+%         ufp_sol(:,i) = max(min(ufp_sol(:,i),maxstep),minstep);
+%     end
 
 end
