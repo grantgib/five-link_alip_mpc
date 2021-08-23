@@ -57,6 +57,7 @@ p_st_rel_traj = traj_info.pos_st_rel_traj;
 ufp_stance_max_traj = traj_info.ufp_stance_max_traj;
 ufp_stance_min_traj = traj_info.ufp_stance_min_traj;
 xc_slip_limit_traj = traj_info.xc_slip_limit_traj;
+xc_mech_hip_limit_traj = traj_info.xc_mech_hip_limit_traj;
 
 % ideal lip
 % xlip_ideal_traj = traj_info.xlip_ideal_traj;
@@ -67,6 +68,9 @@ impact_traj = traj_info.impact_traj;
 % Foot placement solutions
 p_sw_com_grant = traj_info.p_sw_com_grant_traj;
 p_sw_com_yukai = traj_info.p_sw_com_yukai_traj;
+
+% Desired
+Ly_des_traj = traj_info.Ly_des_traj;
 
 %% Initialize variables
 q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
@@ -201,7 +205,10 @@ if plot_info.com_dyn
         figure
         hold on; grid on;
         plot(time_traj,p_com_stance_traj(i,:));
-        plot(time_traj,xc_slip_limit_traj,'--r');
+        if i == 1
+            plot(time_traj,xc_slip_limit_traj,'--r');
+            plot(time_traj,xc_mech_hip_limit_traj(1,:),'--m');
+        end
         title_str = "com stance position " + com_headers{i};
         title(title_str);
     end
@@ -218,6 +225,7 @@ if plot_info.com_dyn
     figure
     hold on; grid on;
     plot(time_traj,L_stance_traj)
+    plot(time_traj,Ly_des_traj,':g','Linewidth',4);
     title('Angular Momentum about stance foot');   
 end
 

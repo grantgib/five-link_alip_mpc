@@ -5,7 +5,7 @@ time_traj = traj_info.time_traj;
 x_traj = traj_info.x_traj;
 q_traj = x_traj(1:n_q,:);
 p_com_world_traj = traj_info.p_com_world_traj;
-
+kx = traj_info.params.kx;
 sim_restart = false;
 
 %% Compute Positions throughout animation
@@ -17,6 +17,8 @@ for i = 1:size(x_traj,2)
     p_torso(:,i) = p_Torso(q_i);
     p_sw_foot(:,i) = p_LeftToe(q_i);
     p_sw_knee(:,i) = p_q2_left(q_i);
+%     thigh = sqrt( (p_hip(1)-p_st_knee(1)).^2 + (p_hip(2)-p_st_knee(2)).^2 + (p_hip(3)-p_st_knee(3)).^2 )
+%     shin = sqrt( (p_st_foot(1)-p_st_knee(1)).^2 + (p_st_foot(2)-p_st_knee(2)).^2 + (p_st_foot(3)-p_st_knee(3)).^2 )
 end    
     
 %% Buttons
@@ -51,8 +53,8 @@ time_display = annotation(...
     'String',"Time: " + string(time_traj(1)));
 
 %% Ground
-ground = line([-10 10],[0 0],'Linewidth',4,'color','k');
-
+ground_right = line([0 50],[0 50*kx],'Linewidth',4,'color','k');
+ground_left = line([0 -50],[0 -50*kx],'Linewidth',4,'color','k');
 
 %% Animate Robot
 % Initialize robot pose

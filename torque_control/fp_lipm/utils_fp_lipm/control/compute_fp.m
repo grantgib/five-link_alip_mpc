@@ -16,9 +16,11 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     ufp_stance_min = p.ufp_stance_min;
     ufp_init = p.ufp_init;
     
+    
     % terrain
     k = p.k;
     mu = p.mu;
+    cos_alpha_x = p.cos_alpha_x;
     
     % mpc
     n_xlip = p.n_xlip;
@@ -36,6 +38,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_k = p.p_k;
     p_mu = p.p_mu;
     p_ufp_init = p.p_ufp_init;
+    p_cos_alpha_x = p.p_cos_alpha_x;
     
     %% Foot Placement
     % params
@@ -48,6 +51,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     opti.set_value(p_k,k);
     opti.set_value(p_mu,mu);
     opti.set_value(p_ufp_init,ufp_init);
+    opti.set_value(p_cos_alpha_x,cos_alpha_x);
     
     % Solven_ufp
     sol = opti.solve();

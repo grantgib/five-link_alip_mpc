@@ -32,6 +32,7 @@ J_hip = jacobian(pos_hip,q);
 
 % left foot 
 pos_left_foot = Left_Swing_Foot_Position(q);
+pos_left_foot_x = pos_left_foot(1);
 pos_left_foot_z = pos_left_foot(end);
 J_left_foot = jacobian(pos_left_foot,q);
 vel_left_foot = J_left_foot * qdot;
@@ -98,6 +99,7 @@ f_pos_hip = Function('f_pos_hip',{x},{pos_hip});
 f_pos_com_world = Function('f_pos_com_world',{x},{pos_com_world});
 f_pos_com_stance = Function('f_pos_com_stance',{x},{pos_com_right_foot});
 f_pos_swing = Function('f_pos_swing',{x},{pos_left_foot});
+f_pos_swing_x = Function('f_pos_swing_x',{x},{pos_left_foot_x});
 f_pos_swing_z = Function('f_pos_swing_z',{x},{pos_left_foot_z});
 f_vel_swing = Function('f_vel_swing',{x},{vel_left_foot});
 f_pos_stance = Function('f_pos_stance',{x},{pos_right_foot});
@@ -153,6 +155,10 @@ f_xc_slip_limit = Function('f_xc_slip_limit',{z_H,mu,kx},{xc_slip_limit});
 f_yc_slip_limit = Function('f_yc_slip_limit',{z_H,mu,ky},{yc_slip_limit});
 
 %% Outputs
+sym_info.params.length_thigh = 0.4;
+sym_info.params.length_shin = 0.4;
+sym_info.params.length_leg = sym_info.params.length_thigh + sym_info.params.length_shin;
+
 % Dimensions
 sym_info.dim.n_q = n_q;
 sym_info.dim.n_x = n_x;
@@ -176,6 +182,7 @@ sym_info.sym.Jdot_stance = Jdot_right_foot;
 % kinematics outputs
 sym_info.func.f_pos_hip = f_pos_hip;
 sym_info.func.f_pos_swing = f_pos_swing;
+sym_info.func.f_pos_swing_x = f_pos_swing_x;
 sym_info.func.f_pos_swing_z = f_pos_swing_z;
 sym_info.func.f_vel_swing = f_vel_swing;
 sym_info.func.f_pos_stance = f_pos_stance;

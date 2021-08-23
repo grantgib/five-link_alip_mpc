@@ -6,13 +6,16 @@ x_init = impact_info.x_init;
 u = impact_info.u;
 dt = impact_info.dt;
 f_rk4 = impact_info.f_rk4;
+f_p_sw_x = impact_info.f_p_sw_x;
 f_p_sw_z = impact_info.f_p_sw_z;
 f_impact = impact_info.f_impact;
 f_relabel = impact_info.f_relabel;
-step_height = impact_info.step_height;
+kx = impact_info.kx;
+ground_height_current = impact_info.ground_height_current;
 
 %% Root finding impact time
-swingheight_error = @(delta_time) full(f_p_sw_z(f_rk4(x_init,u,delta_time))) - step_height;
+% ground_height = kx*full(f_p_sw_x(f_rk4(x_init,u,delta_time))) + ground_current
+swingheight_error = @(delta_time) full(f_p_sw_z(f_rk4(x_init,u,delta_time))) - (kx*full(f_p_sw_x(f_rk4(x_init,u,delta_time))) + ground_height_current);
 dt_impact = fzero(swingheight_error, dt/2);     % Matlab root finding funcion
 if dt_impact > dt
     disp("wrong impact time");

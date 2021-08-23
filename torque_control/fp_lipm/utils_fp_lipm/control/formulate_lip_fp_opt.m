@@ -8,6 +8,7 @@ m = sym_info.params.m;
 n_x = 5;
 n_ufp = 3;
 
+
 % gait_info
 t_step_period = gait_info.t_step_period;     % step period
 
@@ -69,6 +70,7 @@ opti = casadi.Opti();
 X_traj = opti.variable(n_x,N_k);
 Ufp_traj = opti.variable(n_ufp,N_fp);
 slack_slip = opti.variable(1,1);
+slack_mech = opti.variable(1,1);
 
 % parameters
 p_x_init = opti.parameter(n_x,1);
@@ -82,6 +84,8 @@ p_mu = opti.parameter(1,1); % friction coefficient
 p_kx = p_k(1);
 p_ky = p_k(2);
 p_ufp_init = opti.parameter(n_ufp,1);
+p_cos_alpha_x = opti.parameter(1,1);
+
 xcdot_des = p_Ly_des ./ (m*p_z_H);
 ycdot_des = -p_Lx_des ./ (m*p_z_H);
 % cost
@@ -100,8 +104,9 @@ k_post_all = [];
 
 xc_slip_limit = (p_mu + p_kx)*p_z_H / (1 - p_mu*p_kx);
 yc_slip_limit = (p_mu + p_ky)*p_z_H / (1 - p_mu*p_ky);
-% xc_slip_limit = 0.25;
-% yc_slip_limit = xc_slip_limit;
+
+pos_hip_to_com = [0;0];     % assume hip and com are same
+xc_mech_limit = 0.5 * (p_ufp_stance_max * p_cos_alpha_x) + pos_hip_to_com(1);
 
 % Initial condition constraint
 opti.subject_to(X_traj(:,1) == p_x_init);
@@ -115,10 +120,10 @@ for k = 1:N_k
     k_post = k_pre + 1;     % iterate post-impact
     
     % GRF constraint
-%     opti.subject_to(-xc_slip_limit <= X_k(1) <= xc_slip_limit);
-%     opti.subject_to(-yc_slip_limit <= X_k(2) <= yc_slip_limit);
-    opti.subject_to(-xc_slip_limit - slack_slip <= X_k(1) <= xc_slip_limit + slack_slip);
-    opti.subject_to(-yc_slip_limit - slack_slip <= X_k(2) <= yc_slip_limit + slack_slip);
+%     opti.subject_to(-xc_slip_limit - slack_slip <= X_k(1) <= xc_slip_limit + slack_slip);
+    
+    %Mechanical constraint
+    opti.subject_to(-xc_mech_limit - slack_mech <= X_k(1) <= xc_mech_limit + slack_mech);
     
     if (k == k_pre)
         x_eos = [x_eos, {X_k}];
@@ -131,12 +136,19 @@ for k = 1:N_k
                 X_k(3);
                 X_k(4);
                 X_k(5)];
-            opti.subject_to(-xc_slip_limit - slack_slip <= Xk_impact(1) <= xc_slip_limit + slack_slip);
-            opti.subject_to(-yc_slip_limit - slack_slip <= Xk_impact(2) <= yc_slip_limit + slack_slip);
+%             opti.subject_to(-xc_slip_limit - slack_slip <= Xk_impact(1) <= xc_slip_limit + slack_slip);
+            opti.subject_to(-xc_mech_limit - slack_mech <= Xk_impact(1) <= xc_mech_limit + slack_mech);
             
             Xk_end = f_lip_rk(Xk_impact,p_k,p_z_H);
             opti.subject_to(Ufp_traj(3,n+1) == 0)   % z height foot placement
         end
+        
+        % Foot placement Height from slope
+%         if n < N_fp
+%             xst_abs = xst_abs + Ufp_traj(1,n+1);
+%             yst_abs = yst_abs + Ufp_traj(2,n+1);
+%             opti.subject_to(Ufp_traj(3,n+1) == p_kx*xst_abs + p_ky*yst_abs)
+%         end
         
         % Cost
         if n > 0
@@ -200,7 +212,8 @@ if ~yukai_method
     % cost function
 %     % opti.minimize(opt_cost_avgvel_total);
 %     opti.minimize(opt_cost_L_total);
-    opti.minimize(opt_cost_L_total + 1e10.*slack_slip.^2);
+%     opti.minimize(opt_cost_L_total + 1e6.*slack_slip.^2 + 1e6.*slack_mech.^2);
+    opti.minimize(opt_cost_L_total + 1e5.*slack_mech.^2);
 %     opti.minimize(opt_cost_L_total + opt_cost_stab);
 %     opti.minimize(opt_cost_avgvel_total + opt_cost_stab);
     
@@ -258,6 +271,7 @@ sym_info.fp_opt.p_ufp_min = p_ufp_stance_min;
 sym_info.fp_opt.p_k = p_k;
 sym_info.fp_opt.p_mu = p_mu;
 sym_info.fp_opt.p_ufp_init = p_ufp_init;
+sym_info.fp_opt.p_cos_alpha_x = p_cos_alpha_x;
 
 sym_info.fp_opt.k_pre_all = k_pre_all;
 sym_info.fp_opt.k_post_all = k_post_all;

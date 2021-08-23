@@ -3,6 +3,7 @@ function [xlip_eos,xlip_eos_est] = predict_lip_eos_state(p)
 dt_opt = p.dt_opt;
 g = p.g;
 m = p.m;
+kx = p.kx;
 z_H = p.z_H;
 x_init = p.x_init;
 f_p_com_stance = p.f_p_com_stance;
@@ -33,7 +34,7 @@ if int_cycles == 0
     xsol{1} = xlip_init;
 else
     for j = 1:int_cycles
-        xsol{j} = full(fd(xlip_init,[0;0],z_H));
+        xsol{j} = full(fd(xlip_init,[kx;0],z_H));
         xlip_init = xsol{end};
     end
 end
