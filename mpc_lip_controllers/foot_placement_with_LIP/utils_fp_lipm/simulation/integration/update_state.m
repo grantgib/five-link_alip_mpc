@@ -1,0 +1,23 @@
+function [t_next, x_next] = update_state(update_info)
+import casadi.*
+%% Extract inputs
+int_type = update_info.int_type;
+f_eul = update_info.f_eul;
+f_rk4 = update_info.f_rk4;
+dt_sim = update_info.dt_sim;
+t_init = update_info.t_init;
+x_init = update_info.x_init;
+u_sol = update_info.u(:,1);
+
+%% forward integrate
+int_info = struct(...
+    'int_type', int_type,...
+    'f_eul',    f_eul,...
+    'f_rk4',    f_rk4,...
+    'dt_sim',   dt_sim,...
+    't_init',   t_init,...
+    'x_init',   x_init,...
+    'u',        u_sol);
+[x_next,t_next] = forward_integrate(int_info);
+
+end
