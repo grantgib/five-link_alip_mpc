@@ -3,7 +3,7 @@
 ## Installation
 To clone use the commit
 ```
-git clone --recurse-submodules https://github.com/chaconinc/MainProject
+git clone --recurse-submodules git@github.com:grantgib/five_link_mpc_lip.git
 ```
 If you've already cloned you need to grab the FROST submodule with 
 ```
