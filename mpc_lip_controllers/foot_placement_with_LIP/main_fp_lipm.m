@@ -7,7 +7,7 @@ addpath(genpath([cur '/../../external_packages/frost-dev/example/rabbit/']));
 if isunix
     addpath([cur '/../../external_packages/casadi-linux-matlabR2014b-v3.5.5/']);
 else
-    addpath([cur '/../../external_packages/casadi-windows-matlabR2014b-3.5.1/']);
+    addpath([cur '/../../external_packages/casadi-windows-matlabR2016a-v3.5.5/']);
 end
 %% Generate Dynamics Functions
 disp("Calculating Kinematics and Dynamics Functions...");
