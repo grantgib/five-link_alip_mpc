@@ -1,0 +1,3 @@
+[submodule "external_packages/frost-dev"]
+	path = external_packages/frost-dev
+	url = git@github.com:ayonga/frost-dev.git
