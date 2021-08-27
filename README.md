@@ -1,5 +1,4 @@
-# five_link_mpc
-**In Progress:** MPC controller for Rabbit 5-Link Biped Walker
+# LIP-Based Model Predictive Foot Placement Controller for Five Link Robot (RABBIT)
 
 ## Installation
 To clone use the commit
