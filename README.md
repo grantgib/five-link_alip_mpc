@@ -1,6 +1,10 @@
 # LIP-Based Model Predictive Foot Placement Controller for Five Link Robot (RABBIT)
 
+### Prerequisites
+* Mathematica 11.0
+
 ## Installation
+
 To clone use the commit
 ```
 git clone --recurse-submodules git@github.com:grantgib/five_link_mpc_lip.git
