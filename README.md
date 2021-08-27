@@ -2,6 +2,8 @@
 
 ### Prerequisites
 * Mathematica 11.0
+* Matlab 2019b or newer
+* Ubuntu 18.04 or Windows 10
 
 ## Installation
 
@@ -22,3 +24,7 @@ and run `rabbit_kinematics_codegen.m`. Depending on your OS you should see files
 
 ## Running Default Simulation
 To run the default example navigate to `five_link_mpc_lip/mpc_lip_footplacement_controller` and run the script `main_mpc_lip_controller.m`
+
+## Troubleshooting
+* If opti.solve returns 'Invalid_status', error may be due to linear solver option in ipopt. Try setting the sym_info.fp_opt.qpsolver variable to "ipopt" instead of "ipopt_ma57" in the main script
+* The `set(line,...)` function did not work for plotting in Matlab 2017b, worked in 2019b
