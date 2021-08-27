@@ -139,7 +139,7 @@ p_com_world_traj = [];
 v_com_world_traj = [];
 p_com_stance_traj = [];
 v_com_stance_traj = [];
-L_stance_traj = [];
+Ly_stance_traj = [];
 
 Ly_des_traj = [];
 
@@ -194,6 +194,7 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
             'z_H',              p_st_com_des,...
             'dt_opt',           dt_opt,...
             'x_init',           x_init,...
+            'f_p_st',           f_p_st,...
             'f_p_com_stance',   f_p_com_stance,...
             'f_v_com_stance',   f_v_com_stance,...
             's',                s,...
@@ -244,15 +245,18 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
         T = t_step_period;
         p_com_stance_est = full(f_p_com_stance(x_init));
         xc_est = p_com_stance_est(1);
-        Ly_est = L_total_right_func_mex(x_init);
+        
+        p_st_world = full(f_p_st(x_init));
+        L_est = L_world_reference_point_mex(x_init(1:n_q),x_init(n_q+1:end),[p_st_world(1);0;p_st_world(2)]);
+        Ly_est = L_est(2);
         Ly_eos_est = m*H*l*sinh(l*t_remain)*xc_est + cosh(l*t_remain)*Ly_est;
         p_sw_com_des_yukai = (1 / (m * H * l * sinh(l*T))) * (Ly_des - cosh(l*T) * Ly_eos_est);
         p_sw_com_yukai_traj = [p_sw_com_yukai_traj, p_sw_com_des_yukai];
 %     end
     %% Choose method
-    if isequal(sim_info.method,'grant')
+    if isequal(sim_info.fp_method,'grant')
         p_sw_com_des = p_sw_com_des_grant;
-    elseif isequal(sim_info.method,'yukai')
+    elseif isequal(sim_info.fp_method,'yukai')
         p_sw_com_des = p_sw_com_des_yukai;
     end
     %% IO controller
@@ -278,7 +282,10 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     p_com_stance = full(f_p_com_stance(x_init))';
     v_com_stance = full(f_v_com_stance(x_init));
     %     L_stance = full(f_L_stance(x_init));
-    L_stance = L_total_right_func_mex(x_init);
+    
+    p_st_world = full(f_p_st(x_init));
+    L_stance = L_world_reference_point_mex(x_init(1:n_q),x_init(n_q+1:end),[p_st_world(1);0;p_st_world(2)]);
+    Ly_stance = L_stance(2);
     
     %% Store trajectory and time
     time_traj(iter) = t_current;
@@ -291,7 +298,7 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     v_com_world_traj = [v_com_world_traj, v_com_world];
     p_com_stance_traj = [p_com_stance_traj, p_com_stance];
     v_com_stance_traj = [v_com_stance_traj, v_com_stance];
-    L_stance_traj = [L_stance_traj, L_stance];
+    Ly_stance_traj = [Ly_stance_traj, Ly_stance];
     
     ha_traj = [ha_traj, ha_current];
     ha_dot_traj = [ha_dot_traj, ha_dot_current];
@@ -421,7 +428,7 @@ traj_info.p_com_world_traj = p_com_world_traj;
 traj_info.v_com_world_traj = v_com_world_traj;
 traj_info.p_com_stance_traj = p_com_stance_traj;
 traj_info.v_com_stance_traj = v_com_stance_traj;
-traj_info.L_stance_traj = L_stance_traj;
+traj_info.Ly_stance_traj = Ly_stance_traj;
 
 % lip sol
 % traj_info.xlip_ideal_traj = xlip_ideal_traj;

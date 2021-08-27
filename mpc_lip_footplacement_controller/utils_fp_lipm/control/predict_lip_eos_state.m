@@ -6,6 +6,7 @@ m = p.m;
 kx = p.kx;
 z_H = p.z_H;
 x_init = p.x_init;
+f_p_st = p.f_p_st;
 f_p_com_stance = p.f_p_com_stance;
 f_v_com_stance = p.f_v_com_stance;
 % f_L_stance = p.f_L_stance;
@@ -15,16 +16,18 @@ fd = p.f_lip_rk4;
 
 %%
 % Simplified state
+p_st = full(f_p_st(x_init));
+p_st_3d = [p_st(1); 0; p_st(2)];
 pcom = full(f_p_com_stance(x_init));
 vcom = full(f_v_com_stance(x_init));
 % L_stance = full(f_L_stance(x_init));
-L_stance = L_total_right_func_mex(x_init);
+L_stance = L_world_reference_point_mex(x_init(1:7), x_init(8:end),p_st_3d);
 
 
 xc = pcom(1);
 % xcdot = vcom(1);
 % Ly = m * z_H * xcdot
-Ly = L_stance;
+Ly = L_stance(2);
 xlip_init = [xc; 0; 0; Ly; 0];
 
 t_remain = t_step_period * (1 - s);

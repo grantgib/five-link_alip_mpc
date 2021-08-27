@@ -34,7 +34,7 @@ p_com_world_traj = traj_info.p_com_world_traj;
 v_com_world_traj = traj_info.v_com_world_traj;
 p_com_stance_traj = traj_info.p_com_stance_traj;
 v_com_stance_traj = traj_info.v_com_stance_traj;
-L_stance_traj = traj_info.L_stance_traj;
+Ly_stance_traj = traj_info.Ly_stance_traj;
 
 % virtual constraints
 ha_traj = traj_info.ha_traj;
@@ -224,7 +224,7 @@ if plot_info.com_dyn
     
     figure
     hold on; grid on;
-    plot(time_traj,L_stance_traj)
+    plot(time_traj,Ly_stance_traj)
     plot(time_traj,Ly_des_traj,':g','Linewidth',4);
     title('Angular Momentum about stance foot');   
 end
