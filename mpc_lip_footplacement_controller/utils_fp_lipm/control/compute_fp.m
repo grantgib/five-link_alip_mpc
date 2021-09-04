@@ -16,6 +16,8 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     ufp_stance_min = p.ufp_stance_min;
     ufp_init = p.ufp_init;
     
+    % Lz estimate
+    Lz_est = p.Lz_est;
     
     % terrain
     k = p.k;
@@ -37,33 +39,41 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_ufp_stance_min = p.p_ufp_stance_min;
     p_k = p.p_k;
     p_mu = p.p_mu;
+    p_Lz_est = p.p_Lz_est;
     p_ufp_init = p.p_ufp_init;
     p_cos_alpha_x = p.p_cos_alpha_x;
     
     %% Foot Placement
-    % params
-    opti.set_value(p_x_init,x_init);
-    opti.set_value(p_Lx_des,Lx_des);
-    opti.set_value(p_Ly_des,Ly_des);
-    opti.set_value(p_z_H,z_H);
-    opti.set_value(p_ufp_stance_max,ufp_stance_max);
-    opti.set_value(p_ufp_stance_min,ufp_stance_min);
-    opti.set_value(p_k,k);
-    opti.set_value(p_mu,mu);
-    opti.set_value(p_ufp_init,ufp_init);
-    opti.set_value(p_cos_alpha_x,cos_alpha_x);
-    
-    % Solven_ufp
-    sol = opti.solve();
-    
-    % Extract Solution    
-    optvar = opti.x;
-    xlip_sol_temp = opti.value(optvar(1:n_xlip*N_k));
-    xlip_sol = reshape(xlip_sol_temp,n_xlip,N_k);
-    ufp_sol_temp = opti.value(optvar(n_xlip*N_k+1:n_xlip*N_k+n_ufp*N_fp));
-    ufp_sol = reshape(ufp_sol_temp,n_ufp,N_fp);
-    slack_slip_sol = opti.value(optvar(n_xlip*N_k+n_ufp*N_fp+1));
-    cost_sol = sol.value(opti.f);
-    
+    if p.use_codegen
+        sol = sqp_qrqp_solver(x_init,Lx_des,Ly_des,z_H,ufp_stance_max,ufp_stance_min,k,mu);
+        xlip_sol = reshape(sol(1:n_xlip*N_k),n_xlip,N_k);
+        ufp_sol = reshape(sol(n_xlip*N_k+1:n_xlip*N_k+n_ufp*N_fp),n_ufp,N_fp);
+        
+    else
+        % params
+        opti.set_value(p_x_init,x_init);
+        opti.set_value(p_Lx_des,Lx_des);
+        opti.set_value(p_Ly_des,Ly_des);
+        opti.set_value(p_z_H,z_H);
+%         opti.set_value(p_ufp_stance_max,ufp_stance_max);
+%         opti.set_value(p_ufp_stance_min,ufp_stance_min);
+        opti.set_value(p_k,k);
+        opti.set_value(p_mu,mu);
+        opti.set_value(p_Lz_est,Lz_est);
+%         opti.set_value(p_ufp_init,ufp_init);
+%         opti.set_value(p_cos_alpha_x,cos_alpha_x);
+
+        % Solven_ufp
+        sol = opti.solve_limited();
+
+        % Extract Solution    
+        optvar = opti.x;
+        xlip_sol_temp = opti.value(optvar(1:n_xlip*N_k));
+        xlip_sol = reshape(xlip_sol_temp,n_xlip,N_k);
+        ufp_sol_temp = opti.value(optvar(n_xlip*N_k+1:n_xlip*N_k+n_ufp*N_fp));
+        ufp_sol = reshape(ufp_sol_temp,n_ufp,N_fp);
+%         slack_slip_sol = opti.value(optvar(n_xlip*N_k+n_ufp*N_fp+1));
+        cost_sol = sol.value(opti.f);
+    end
 
 end

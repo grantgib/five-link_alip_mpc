@@ -2,7 +2,6 @@
 clear; clc; close all;
 restoredefaultpath;
 cur = pwd;
-addpath(genpath([cur '/utils_fp_lipm/']));
 
 if isunix
     addpath([cur '/../external_packages/casadi-linux-matlabR2014b-v3.5.5/']);
@@ -10,6 +9,11 @@ else
     addpath([cur '/../external_packages/casadi-windows-matlabR2016a-v3.5.5/']);
 end
 
+if ~exist('gen/opt_solvers','dir')
+    mkdir('gen/opt_solvers')
+end
+addpath(genpath([cur '/gen/']));
+addpath(genpath([cur '/utils_fp_lipm/']));
 %% Generate Dynamics Functions
 disp("Calculating Kinematics and Dynamics Functions...");
 tic
@@ -29,13 +33,13 @@ disp("Virtual Constraint Symbolics Loaded! (" + toc + " sec)");
 % Gait
 % Each leg link is 0.4 m (hip to knee)
 gait_info = struct(...
-    't_step_period',    0.3,... 
+    't_step_period',    0.4,... 
     'p_st_com_des',     0.6,...    % z_H
     'z_mid',            0.10,...
     'torso_pitch_des',  0,...
     'angle_x',          deg2rad(0),...       % radians
     'mu',               1);
-xcdot_des = 0.5;
+xcdot_des = 0;
 ycdot_des = 0;
 gait_info.Lx_des = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
@@ -44,13 +48,14 @@ gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
 % x_init = [...
 %     -0.1843, 0.6903, 0.3566, 2.0572, 0.9338, 2.6929, 0.5409,...
 %     0.5875, 0.4288, 0.2230, 1.4558, -1.4592, 0.3176, 0.6527]';
-% x_init = [-0.1843, 0.6903, 0.3566, 2.0572, 0.9338, 2.0572, 0.5409, zeros(1,7)]';
+x_init = [-0.1843, 0.6903, 0.3566, 2.0572, 0.9338, 2.0572, 0.5409, zeros(1,7)]';
 % x_init = [0; 0.7; 0; -pi/6+pi; pi/3; -pi/6+pi; pi/4; zeros(7,1)];
-x_init = [0; 0.658; 0; -0.6828+pi; 1.168; -0.6489+pi; 1.281; 0; 0; 0; 0; 0; 0; 0];
+% x_init = [0; 0.658; 0; -0.6828+pi; 1.168; -0.6489+pi; 1.281; 0; 0; 0; 0; 0; 0; 0];
 
 sim_info = struct(...
-    'fp_method',            'yukai',... % grant, yukai
+    'fp_method',            'grant',... % grant, yukai
     'int_type',             "RK4",...  % Euler, RK4
+    'use_codegen',          false,...
     'num_steps',            5,...
     'num_steps_fast',       50,...
     'num_steps_stop',       50,...
@@ -59,7 +64,7 @@ sim_info = struct(...
     'dt_sim',               0.005);
 
 % Foot placement optimization 
-N_steps_ahead = 3;
+N_steps_ahead = 1;
 q = 10;
 for i = 1:N_steps_ahead
     if i > N_steps_ahead-1
@@ -69,10 +74,12 @@ for i = 1:N_steps_ahead
     end
 end
 % Q_avgvel = 10*ones(1,N_steps_ahead);
-ufp_max_hip = 2 * sqrt(sym_info.params.length_leg.^2 - gait_info.p_st_com_des.^2);        % mechanical configuration max step related to hip. Opt still needs to relate to COM
+% ufp_max_hip = 2 * sqrt(sym_info.params.length_leg.^2 - gait_info.p_st_com_des.^2);        % mechanical configuration max step related to hip. Opt still needs to relate to COM
+ufp_max_hip = inf;
 sym_info.fp_opt = struct(...
-    'qpsolver',         "ipopt",...     % ipopt, ipopt_ma57, qrqp
-    'dt_opt',           0.01,...
+    'qpsolver',         "osqp",...     % ipopt, ipopt_ma57, qrqp
+    'dt_opt',           0.001,...
+    'intg_opt',         "eul",...       % rk4, eul
     'N_steps_ahead',    N_steps_ahead,...
     'ufp_stance_max',   [ufp_max_hip; 0; 0],...
     'ufp_stance_min',   [-ufp_max_hip; 0; 0],...
@@ -80,7 +87,8 @@ sym_info.fp_opt = struct(...
 
 %% Formulate LIP foot placement Optimization
 tic
-[sym_info] = formulate_lip_fp_opt(sym_info,gait_info);
+compile = true;
+[sym_info] = formulate_lip_fp_opt(sym_info,gait_info,compile);
 disp("Formulated LIP-based FP Optimization (" + toc + " sec)");
 
 %% ************************** Run Simulation ******************************

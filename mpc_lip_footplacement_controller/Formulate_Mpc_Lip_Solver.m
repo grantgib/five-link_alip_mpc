@@ -1,21 +1,39 @@
-function [sym_info] = formulate_lip_fp_opt(sym_info,gait_info,compile)
+% External Formulate Opt
+% addpath('casadi');
+clear; clc;
 import casadi.*
 
-%% Extract Inputs
+if ~exist('gen/opt_solvers','dir')
+    mkdir('gen/opt_solvers')
+end
+
+%% Initialize variables
+compile = true;
+
 % sym_info
-g = sym_info.params.g;
-m = sym_info.params.m;
+g = 9.81;
+m = 32;
 n_x = 4;
 n_ufp = 3;
 
 % gait_info
-t_step_period = gait_info.t_step_period;     % step period
+t_step_period = 0.4;     % step period
 
-% ctrl_info
+% fp_opt info
+ufp_stance_max = 0.5;
+sym_info.fp_opt = struct(...
+    'qpsolver',         "osqp",...     % ipopt, ipopt_ma57, qrqp
+    'dt_opt',           0.001,...
+    'intg_opt',         "eul",...       % rk4, eul
+    'N_steps_ahead',    1,...
+    'ufp_stance_max',   [ufp_stance_max; 0; 0],...
+    'ufp_stance_min',   [-ufp_stance_max; 0; 0],...
+    'Q',                eye(1));
+
 dt_opt = sym_info.fp_opt.dt_opt;         % time interval
 intg_opt = sym_info.fp_opt.intg_opt;
 N_steps_ahead = sym_info.fp_opt.N_steps_ahead;
-Q = sym_info.fp_opt.Q_avgvel;
+Q = sym_info.fp_opt.Q;
 sol_type = sym_info.fp_opt.qpsolver;
 
 %% Dynamics
@@ -359,4 +377,3 @@ sym_info.fp_opt.p_Lz_est = p_Lz_est;
 
 sym_info.fp_opt.k_pre_all = k_pre_all;
 sym_info.fp_opt.k_post_all = k_post_all;
-

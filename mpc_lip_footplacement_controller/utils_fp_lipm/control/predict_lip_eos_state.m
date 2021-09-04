@@ -1,10 +1,12 @@
 function [xlip_eos,xlip_eos_est] = predict_lip_eos_state(p)
 %% Extract
 dt_opt = p.dt_opt;
+intg_opt = p.intg_opt;
 g = p.g;
 m = p.m;
 kx = p.kx;
 z_H = p.z_H;
+Lz_est = p.Lz_est;
 x_init = p.x_init;
 f_p_st = p.f_p_st;
 f_p_com_stance = p.f_p_com_stance;
@@ -12,7 +14,7 @@ f_v_com_stance = p.f_v_com_stance;
 % f_L_stance = p.f_L_stance;
 t_step_period = p.t_step_period;
 s = p.s;
-fd = p.f_lip_rk4;
+fd_lip = p.fd_lip;
 
 %%
 % Simplified state
@@ -28,26 +30,31 @@ xc = pcom(1);
 % xcdot = vcom(1);
 % Ly = m * z_H * xcdot
 Ly = L_stance(2);
-xlip_init = [xc; 0; 0; Ly; 0];
+xlip_init = [xc; 0; 0; Ly];
 
 t_remain = t_step_period * (1 - s);
 int_cycles = uint8(t_remain / dt_opt);
 
+xsol = cell(int_cycles,1);
 if int_cycles == 0
     xsol{1} = xlip_init;
 else
-    for j = 1:int_cycles
-        xsol{j} = full(fd(xlip_init,[kx;0],z_H));
-        xlip_init = xsol{end};
+    xsol{1} = xlip_init;
+    for j = 1:int_cycles-1
+        xsol{j+1} = full(fd_lip(xsol{j},[kx;0],z_H,Lz_est));
     end
 end
-xlip_eos = xsol{end};
+xlip_eos = xsol{end,1};
 
 if t_remain > 0
-    A = [0, 1/(m*z_H); m*g, 0];
-    xlip_eos_est = full(expm(A*t_remain) * [xc; Ly]);
+    A = [...
+        0,      0,      0,          1/(m*z_H);
+        0,      0,      -1/(m*z_H), 0;
+        0,      -m*g,   0,          0;
+        m*g,    0,      0,          0];
+    xlip_eos_est = full(expm(A*t_remain) * xlip_init);
 else
-    xlip_eos_est = [xc; Ly];
+    xlip_eos_est = xlip_init;
 end
 % xlip_eos(1) = xlip_eos_est(1);
 % xlip_eos(4) = xlip_eos_est(2);
