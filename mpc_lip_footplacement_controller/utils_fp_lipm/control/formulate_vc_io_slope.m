@@ -95,10 +95,19 @@ hd_ddot = J_hd_dot*sdot; % J_hd*sddot = 0 (sddot = 0)
 %% IO Controller
 % gains
 damp = 1;
-Ts = 0.05;
+Ts = 0.1;
 wn = 4/(damp*Ts);
 Kp = wn^2;
 Kd = 2*damp*wn;
+
+damp = 1;
+Ts = 0.05;
+wn = 4/(damp*Ts);
+Kpstrong = wn^2;
+Kdstrong = 2*damp*wn;
+
+Kp_mat = [Kp, Kp, Kpstrong, Kp]';
+Kd_mat = [Kd, Kd, Kdstrong, Kd]';
 % Kp = 100;
 % Kd = 20;
 
@@ -109,7 +118,7 @@ Hw = J_stance'*(JcD\((J_stance/D)*(C*qdot+G)-Jdot_stance*qdot));
 
 y = ha - hd;
 ydot = ha_dot - hd_dot;
-v = -Kp*y - Kd*ydot;
+v = -Kp_mat.*y - Kd_mat.*ydot;
 uIO = ((J_ha/D)*Hu) \ (-(J_ha/D)*(-C*qdot-G+Hw) - J_ha_dot*qdot + hd_ddot + v);
 
 %% Generate Functions

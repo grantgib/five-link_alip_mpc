@@ -181,13 +181,13 @@ if ~yukai_method
 %     X_error_end = [zeros(2,1); X_traj(3,end) - p_Lx_des; X_traj(4,end) - p_Ly_des];
 %     opt_cost_terminal = X_error_end' * Pf * X_error_end;
     X_error_end = [X_traj(3,end) - p_Lx_des; X_traj(4,end) - p_Ly_des];
-    slack_terminal = opti.variable(1,1);
+    opti.variable = 
     opti.subject_to(-slack_terminal <= X_error_end <= slack_terminal)
-    opt_cost_terminal = 1e6*slack_terminal.^2;
+    opt_cost_terminal = 1e4*slack_terminal.^2;
     
     % cost function
-%     opti.minimize(opt_cost_L_total + opt_cost_terminal);
-    opti.minimize(opt_cost_terminal);
+    opti.minimize(opt_cost_L_total + opt_cost_terminal);
+    
     % archive costs
 %     opti.minimize(opt_cost_L_total + 1e6.*slack_slip.^2 + 1e6.*slack_mech.^2);
 %     opti.minimize(opt_cost_L_total + 1e5.*slack_mech.^2);
