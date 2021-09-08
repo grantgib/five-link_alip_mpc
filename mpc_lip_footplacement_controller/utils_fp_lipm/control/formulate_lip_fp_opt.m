@@ -104,7 +104,7 @@ p_xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
 %     yc_des = compute_yc_des(p_Lx_des);
 %     xc_des = 0;
 p_yc_des = 0;
-p_x_des = [xc_des; yc_des; Lx_des; Ly_des];
+p_x_des = [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
 
 % cost
 opt_cost_L = {};
@@ -253,22 +253,23 @@ elseif sol_type == "osqp"
         'print_time',       false);    % osqp, qrqp (not as robust joris says on google groups)
     %     opts.qpsol_options.max_iter= 100;
     opti.solver('sqpmethod',opts);
-    
+   
     if compile
         % code generation
-        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti = opti.to_function('sqp_osqp_solver',{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est},{optvars});
-        
         if yukai_method
-            method = "y";
+            method = "Y";
         else
-            method = "g";
+            method = "G";
         end
-        name_cg = char("fp_" + method + ...
-            "_" + string(1000*t_step_period) + "ms" + ...
-            "_" + sol_type +...
-            "_" + intg_opt +...
-            "_" + "dt" + extractAfter(string(dt_opt),"."));
+        name_cg = char("osqpest" + method);
+%         name_cg = char("fp_" + method + ...
+%             "_" + string(1000*t_step_period) + "ms" + ...
+%             "_" + sol_type +...
+%             "_" + intg_opt +...
+%             "_" + "dt" + extractAfter(string(dt_opt),"."));
+        
+        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
+        f_opti = opti.to_function(name_cg,{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est},{optvars});
         cg_options = struct();
         cg = CodeGenerator(name_cg,cg_options);
         cg.add(f_opti);
@@ -277,15 +278,9 @@ elseif sol_type == "osqp"
         cg.generate()
         movefile([name_cg '.c'],['gen/opt_solvers/' name_cg '.c'])
         disp("Generation time = " + toc);
-        
-%         disp("Compiling mex ...");
-%         lib_path = GlobalOptions.getCasadiPath();
-%         inc_path = GlobalOptions.getCasadiIncludePath();
-%         tic
-%         mex('-v',['-I' inc_path],['-L' lib_path],'-lcasadi', 'sqp_osqp_solver.c')
-%         disp("Compilation time = " + toc);
-%         movefile('sqp_osqp_solver.mexw64','gen/opt_solvers/sqp_osqp_solver.mexw64')
+              
     end
+    
 elseif sol_type == "ipopt"
     %% IPOPT (default)
     p_opts = struct(...
@@ -295,7 +290,6 @@ elseif sol_type == "ipopt"
         'print_timing_statistics',  'no',...
         'print_info_string',        'no');
     opti.solver('ipopt',p_opts,s_opts);
-%     f_opti = opti.to_function('F_sqp',{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu},{Ufp_traj});
 elseif sol_type == "ipopt_ma57"
     %% IPOPT with ma57 linear solver
     p_opts = struct(...
@@ -306,7 +300,6 @@ elseif sol_type == "ipopt_ma57"
         'print_timing_statistics',  'no',...
         'print_info_string',        'no');
     opti.solver('ipopt',p_opts,s_opts);
-%     f_opti = opti.to_function('F_sqp',{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu},{Ufp_traj});
 end
 
 %% Return symbolics and solver

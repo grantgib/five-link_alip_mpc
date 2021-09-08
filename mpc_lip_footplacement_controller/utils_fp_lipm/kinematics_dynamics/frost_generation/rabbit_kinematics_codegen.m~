@@ -103,9 +103,7 @@ export(exprs{:}, 'File', [path,name,'_mex'], 'Vars', vars, 'ForceExport', true);
 cd(path);
 if isunix
     !mkdir mex
-    movefile([name '_mex.mexa64'],['mex/' name '_mex.mexa64'])
-    delete *.cc
-    delete *.hh
+    movefile(name+"_mex",path+"mex/"+name+"_mex")
 else  
     movefile *mex* mex
     delete *.cc

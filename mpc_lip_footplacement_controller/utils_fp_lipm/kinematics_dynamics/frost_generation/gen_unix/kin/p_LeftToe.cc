@@ -1,6 +1,6 @@
 /*
  * Automatically Generated from Mathematica.
- * Fri 27 Aug 2021 01:58:44 GMT-04:00
+ * Wed 8 Sep 2021 02:56:30 GMT-04:00
  */
 
 #ifdef MATLAB_MEX_FILE
@@ -48,51 +48,51 @@ inline double Csc(double x) { return 1/sin(x); }
  */
 static void output1(double *p_output1,const double *var1)
 {
-  double t117;
-  double t113;
-  double t114;
-  double t118;
-  double t101;
-  double t116;
-  double t121;
-  double t122;
-  double t124;
-  double t125;
-  double t126;
-  double t127;
-  double t102;
-  double t106;
-  double t111;
-  double t112;
-  double t128;
-  double t131;
-  double t139;
-  double t140;
-  double t141;
-  t117 = Cos(var1[2]);
-  t113 = Cos(var1[5]);
-  t114 = Sin(var1[2]);
-  t118 = Sin(var1[5]);
-  t101 = Cos(var1[6]);
-  t116 = t113*t114;
-  t121 = t117*t118;
-  t122 = t116 + t121;
-  t124 = t117*t113;
-  t125 = -1.*t114*t118;
-  t126 = t124 + t125;
-  t127 = Sin(var1[6]);
-  t102 = -1.*t101;
-  t106 = 1. + t102;
-  t111 = 0.4*t106;
-  t112 = 0. + t111;
-  t128 = -0.4*t127;
-  t131 = 0. + t128;
-  t139 = -1.*t113*t114;
-  t140 = -1.*t117*t118;
-  t141 = t139 + t140;
-  p_output1[0]=0. + t112*t122 + 0.8*(t101*t122 + t126*t127) + t126*t131 + var1[0];
+  double t1564;
+  double t1556;
+  double t1561;
+  double t1567;
+  double t1540;
+  double t1563;
+  double t1574;
+  double t1579;
+  double t1583;
+  double t1584;
+  double t1585;
+  double t1588;
+  double t1541;
+  double t1547;
+  double t1554;
+  double t1555;
+  double t1589;
+  double t1595;
+  double t1604;
+  double t1605;
+  double t1609;
+  t1564 = Cos(var1[2]);
+  t1556 = Cos(var1[5]);
+  t1561 = Sin(var1[2]);
+  t1567 = Sin(var1[5]);
+  t1540 = Cos(var1[6]);
+  t1563 = t1556*t1561;
+  t1574 = t1564*t1567;
+  t1579 = t1563 + t1574;
+  t1583 = t1564*t1556;
+  t1584 = -1.*t1561*t1567;
+  t1585 = t1583 + t1584;
+  t1588 = Sin(var1[6]);
+  t1541 = -1.*t1540;
+  t1547 = 1. + t1541;
+  t1554 = 0.4*t1547;
+  t1555 = 0. + t1554;
+  t1589 = -0.4*t1588;
+  t1595 = 0. + t1589;
+  t1604 = -1.*t1556*t1561;
+  t1605 = -1.*t1564*t1567;
+  t1609 = t1604 + t1605;
+  p_output1[0]=0. + t1555*t1579 + 0.8*(t1540*t1579 + t1585*t1588) + t1585*t1595 + var1[0];
   p_output1[1]=0.;
-  p_output1[2]=0. + t112*t126 + t131*t141 + 0.8*(t101*t126 + t127*t141) + var1[1];
+  p_output1[2]=0. + t1555*t1585 + t1595*t1609 + 0.8*(t1540*t1585 + t1588*t1609) + var1[1];
 }
 
 
