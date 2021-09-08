@@ -18,6 +18,7 @@ intg_opt = sym_info.fp_opt.intg_opt;
 N_steps_ahead = sym_info.fp_opt.N_steps_ahead;
 Q = sym_info.fp_opt.Q;
 sol_type = sym_info.fp_opt.qpsolver;
+ufp_stance_max = sym_info.fp_opt.ufp_stance_max;
 
 %% Dynamics
 % Declare System Variables: constraint zc = kx*xc + ky*yc + z_H
@@ -117,6 +118,10 @@ x_bos = {};         % cell of states at beginning of each step
 k_pre_all = [];     % iteration indices for all states "pre" impact
 k_post_all = [];    % iteratoin indices for all states "post" impact
 
+% constraint parameters
+xc_slip_limit = (p_mu + p_k(1))*p_z_H / (1 - p_mu*p_k(1));
+xc_mech_limit = ufp_stance_max / 2;
+
 %% Inital Condition constraints
 % Initial condition constraint
 opti.subject_to(X_traj(:,1) == p_x_init);
@@ -139,8 +144,8 @@ for k = 1:N_k
             Xk_end = fd_lip(Xk_impact,p_k,p_z_H,p_Lz_est); % update
             
             % Apply constraints at impact
-%             opti.subject_to(-xc_slip_limit <= Xk_impact(1) <= xc_slip_limit);   % GRF
-%             opti.subject_to(-xc_mech_limit - slack_mech <= Xk_impact(1) <= xc_mech_limit + slack_mech); % mech
+            opti.subject_to(-xc_slip_limit <= Xk_impact(1) <= xc_slip_limit);   % GRF
+            opti.subject_to(-xc_mech_limit <= Xk_impact(1) <= xc_mech_limit); % mech
         end
         
         % Cost
@@ -157,7 +162,7 @@ for k = 1:N_k
         k_pre_all = [k_pre_all, k_pre];  % store index
         
     elseif (k == k_post)
-        x_bos = [x_bos, {X_k}];     % init state of n-th step        
+        x_bos = [x_bos, {X_k}];     % init state of n-th step 
         Xk_end = fd_lip(X_k,p_k,p_z_H,p_Lz_est); % forward integrate to end of step
         X_k = X_traj(:,k+1);        % update state
         n = n + 1;                  % increase step counter
@@ -172,11 +177,17 @@ for k = 1:N_k
 end
 
 %% COM Position Constraints
+for k = 1:N_k
+    if k > 1    % dont constrain initial condition
+        opti.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
+        opti.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
+    end
+end
 %% Foot Placement Constraints
-% for n = 1:N_fp
-%     % Foot placement constraint
-%     opti.subject_to(p_ufp_stance_min(1:2) <= Ufp_traj(1:2,n) <= p_ufp_stance_max(1:2))
-% end
+for n = 1:N_fp
+    % Foot placement constraint
+    opti.subject_to(p_ufp_stance_min(1:2) <= Ufp_traj(1:2,n) <= p_ufp_stance_max(1:2))
+end
 
 
 %% Cost
@@ -186,17 +197,13 @@ if ~yukai_method
     opt_cost_L_total = sum(vertcat(opt_cost_L{:}));
     
     % terminal cost
-
     X_error_terminal = X_traj(:,end) - [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
     opt_cost_terminal = X_error_terminal' * Pf * X_error_terminal;
     
     % cost function
+%     opti.minimize(opt_cost_L_total);  % Fails without terminal cost since
+%     the final value is omitted "makes sense duhh"
     opti.minimize(opt_cost_L_total + opt_cost_terminal);
-%     opti.minimize(opt_cost_terminal);
-
-    % archive costs
-%     opti.minimize(opt_cost_L_total + 1e6.*slack_slip.^2 + 1e6.*slack_mech.^2);
-%     opti.minimize(opt_cost_L_total + 1e5.*slack_mech.^2);
     
 else % Yukai Method
     opti.subject_to(X_traj(3,end) == p_Lx_des);
