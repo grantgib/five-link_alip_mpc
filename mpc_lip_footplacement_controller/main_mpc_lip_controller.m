@@ -36,10 +36,10 @@ gait_info = struct(...
     't_step_period',    0.3,... 
     'p_st_com_des',     0.6,...    % z_H
     'z_mid',            0.10,...
-    'torso_pitch_des',  0,...
-    'angle_x',          deg2rad(5),...       % radians
+    'torso_pitch_des',  -pi/6,...
+    'angle_x',          deg2rad(0),...       % radians
     'mu',               1);
-xcdot_des = 0;
+xcdot_des = 1;
 ycdot_des = 0;
 gait_info.Lx_des = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
@@ -58,7 +58,7 @@ x_init = [0; 0.658; 0; -0.6828+pi; 1.168; -0.6489+pi; 1.281; 0; 0; 0; 0; 0; 0; 0
 %     -0.4609    0.6494   -0.0000    2.6403    1.2292    2.3345    1.2111,...
 %     zeros(1,7)]';
 sim_info = struct(...
-    'fp_method',            'yukai',... % grant, yukai
+    'fp_method',            'grant',... % grant, yukai
     'int_type',             "RK4",...  % Euler, RK4
     'use_codegen',          false,...
     'num_steps',            10,...
@@ -91,7 +91,7 @@ sym_info.fp_opt = struct(...
 
 %% Formulate LIP foot placement Optimization
 tic
-compile = true;
+compile = false;
 [sym_info] = formulate_lip_fp_opt(sym_info,gait_info,compile);
 disp("Formulated LIP-based FP Optimization (" + toc + " sec)");
 
@@ -124,9 +124,9 @@ disp('Finished Plotting!');
 %% Animation
 animate_info = struct(...
     'speed',        1);
-sim_restart = true;
+sim_restart = false;
 while sim_restart
     sim_restart = animate_results_grant(sym_info,traj_info,animate_info);
 end
-% animate_results_FROST(traj_info,animate_info);
+animate_results_FROST(traj_info,animate_info);
 disp('Finished Animation!');

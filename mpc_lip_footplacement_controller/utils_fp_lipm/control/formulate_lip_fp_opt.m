@@ -5,6 +5,7 @@ import casadi.*
 % sym_info
 g = sym_info.params.g;
 m = sym_info.params.m;
+
 n_x = 4;
 n_ufp = 2;
 
@@ -67,7 +68,7 @@ term_cost_info = struct(...
     'z_H',      0.6,...
     'Ts',       t_step_period);
 Pf = compute_terminal_costs(term_cost_info);
-Pf = 1e1 * Pf;
+Pf = 100 * Pf;
 
 %% Formulate Optimization Problem
 % Intermediate optimization variables
@@ -96,6 +97,14 @@ p_mu = opti.parameter(1,1); % friction coefficient
 p_Lz_est = opti.parameter(1,1);
 % p_ufp_init = opti.parameter(n_ufp,1);
 % p_cos_alpha_x = opti.parameter(1,1);
+
+% Intermediate parameters
+l = sqrt(g/p_z_H);
+p_xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
+%     yc_des = compute_yc_des(p_Lx_des);
+%     xc_des = 0;
+p_yc_des = 0;
+p_x_des = [xc_des; yc_des; Lx_des; Ly_des];
 
 % cost
 opt_cost_L = {};
@@ -137,7 +146,7 @@ for k = 1:N_k
         % Cost
         if n > 0 && n < N_fp
             % L cost
-            L_error = [X_k(3) - p_Lx_des; X_k(4) - p_Ly_des];
+            L_error = X_k - p_x_des;
             opt_cost_L = [opt_cost_L, {L_error'*Q(n)*L_error}];
         end
         
@@ -169,25 +178,20 @@ end
 
 
 %% Cost
-yukai_method = true;
+yukai_method = false;
 if ~yukai_method   
     % sum running costs
     opt_cost_L_total = sum(vertcat(opt_cost_L{:}));
     
     % terminal cost
-%     for n = 1:N_fp
-%         opti.subject_to(Ufp_traj(2,n) == 0);
-%     end
-%     X_error_end = [zeros(2,1); X_traj(3,end) - p_Lx_des; X_traj(4,end) - p_Ly_des];
-%     opt_cost_terminal = X_error_end' * Pf * X_error_end;
-    X_error_end = [X_traj(3,end) - p_Lx_des; X_traj(4,end) - p_Ly_des];
-    slack_terminal = opti.variable(1,1);
-    opti.subject_to(-slack_terminal <= X_error_end <= slack_terminal)
-    opt_cost_terminal = 1e6*slack_terminal.^2;
+
+    X_error_terminal = X_traj(:,end) - [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
+    opt_cost_terminal = X_error_terminal' * Pf * X_error_terminal;
     
     % cost function
-%     opti.minimize(opt_cost_L_total + opt_cost_terminal);
-    opti.minimize(opt_cost_terminal);
+    opti.minimize(opt_cost_L_total + opt_cost_terminal);
+%     opti.minimize(opt_cost_terminal);
+
     % archive costs
 %     opti.minimize(opt_cost_L_total + 1e6.*slack_slip.^2 + 1e6.*slack_mech.^2);
 %     opti.minimize(opt_cost_L_total + 1e5.*slack_mech.^2);
@@ -237,17 +241,7 @@ if sol_type == "qrqp"
         cg.generate()
         movefile([name_cg '.c'],['gen/opt_solvers/' name_cg '.c'])
         disp("Generation time = " + toc);
-        
-%         disp("Compiling mex ...");
-%         lib_path = GlobalOptions.getCasadiPath();
-%         inc_path = GlobalOptions.getCasadiIncludePath();
-%         tic
-%         mex('-v',['-I' inc_path],['-L' lib_path],'-lcasadi', 'sqp_qrqp_solver.c')
-%         disp("Compilation time = " + toc);
-%         movefile('sqp_qrqp_solver.mexw64','gen/opt_solvers/sqp_qrqp_solver.mexw64')
-
-        % clean up
-        
+              
     end
     
 elseif sol_type == "osqp"

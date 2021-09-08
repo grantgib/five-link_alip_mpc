@@ -19,12 +19,10 @@ Ad = expm(A*Ts);
 Bd = expm(A*Ts)*B;
 
 % Costs
-Q = diag([0 0 10 10]);
+Q = diag([1 1 1 1]);
 R = diag([0 0]);
 
-[~,Pf,~] = dlqr(Ad,Bd,Q,R);
-
-Pf = Pf;
+[K,Pf,CLP] = dlqr(Ad,Bd,Q,R);
 
 end
 

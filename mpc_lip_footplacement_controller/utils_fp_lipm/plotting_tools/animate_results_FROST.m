@@ -1,6 +1,5 @@
 function [] = animate_results_FROST(traj_info,animate_info)
 %% Actual Trajectory
-if animate_info.traj
     % traj_info
     t_all = traj_info.time_traj;
     x_traj = traj_info.x_traj;
@@ -22,7 +21,5 @@ if animate_info.traj
     conGUI2.anim = anim2;
     set(gcf,'color','w');
         hold on; rectangle('Position',[0.25 0 5 0.05]); hold on;
-
-end
 
 end
