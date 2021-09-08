@@ -33,13 +33,13 @@ disp("Virtual Constraint Symbolics Loaded! (" + toc + " sec)");
 % Gait
 % Each leg link is 0.4 m (hip to knee)
 gait_info = struct(...
-    't_step_period',    0.3,... 
+    't_step_period',    0.1,... 
     'p_st_com_des',     0.6,...    % z_H
     'z_mid',            0.10,...
     'torso_pitch_des',  0,...
-    'angle_x',          deg2rad(5),...       % radians
-    'mu',               0.5);
-xcdot_des = 4;
+    'angle_x',          deg2rad(0),...       % radians
+    'mu',               1);
+xcdot_des = 2;
 ycdot_des = 0;
 gait_info.Lx_des = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
@@ -69,7 +69,7 @@ sim_info = struct(...
     'dt_sim',               0.005);
 
 % Foot placement optimization 
-N_steps_ahead = 5;
+N_steps_ahead = 10;
 q = 1;
 for i = 1:N_steps_ahead
     if i > N_steps_ahead-1
@@ -78,14 +78,15 @@ for i = 1:N_steps_ahead
         Q(i) = q;
     end
 end
-ufp_max_hip = 2 * sqrt(sym_info.params.length_leg.^2 - gait_info.p_st_com_des.^2);        % mechanical configuration max step related to hip. Opt still needs to relate to COM
+xc_max_hip = sqrt(sym_info.params.length_leg.^2 - gait_info.p_st_com_des.^2); % mechanical configuration max step related to hip. Opt still needs to relate to COM
+ratio = 0.7;
 sym_info.fp_opt = struct(...
     'qpsolver',         "qrqp",...     % ipopt, ipopt_ma57, qrqp
     'dt_opt',           0.005,...
     'intg_opt',         "eul",...       % rk4, eul
     'N_steps_ahead',    N_steps_ahead,...
-    'ufp_stance_max',   [ufp_max_hip; ufp_max_hip],...
-    'ufp_stance_min',   [-ufp_max_hip; -ufp_max_hip],...
+    'ufp_stance_max',   ratio*2*[xc_max_hip; xc_max_hip],...
+    'ufp_stance_min',   ratio*2*[-xc_max_hip; -xc_max_hip],...
     'Q',                Q);
 
 %% Formulate LIP foot placement Optimization

@@ -171,7 +171,7 @@ xc_mech_hip_limit_traj = [];
 
 %% Main Loop
 
-% max_iter = 117;
+% max_iter = 5;
 while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     %% limits
     ufp_stance_max_traj = [ufp_stance_max_traj, ufp_stance_max];
