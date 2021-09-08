@@ -66,15 +66,15 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
 %         opti.set_value(p_cos_alpha_x,cos_alpha_x);
         
         % initial guess
-        if p.iter == 1
-            ufp_guess = repmat([0; 0],1,N_fp);
-            x_guess = compute_initial_guess(p,ufp_guess);
-            opti.set_initial(opt_Ufp_traj,ufp_guess);   % opti.debug.value(opt_Ufp_traj,opti.initial())
-            opti.set_initial(opt_X_traj,x_guess);       % opti.debug.value(opt_X_traj,opti.initial())
-        else
-            opti.set_initial(opt_Ufp_traj,p.ufp_guess_prev);   % opti.debug.value(opt_Ufp_traj,opti.initial())
-            opti.set_initial(opt_X_traj,p.x_guess_prev); 
-        end
+%         if p.iter == 1
+%             ufp_guess = repmat([0; 0],1,N_fp);
+%             x_guess = compute_initial_guess(p,ufp_guess);
+%             opti.set_initial(opt_Ufp_traj,ufp_guess);   % opti.debug.value(opt_Ufp_traj,opti.initial())
+%             opti.set_initial(opt_X_traj,x_guess);       % opti.debug.value(opt_X_traj,opti.initial())
+%         else
+%             opti.set_initial(opt_Ufp_traj,p.ufp_guess_prev);   % opti.debug.value(opt_Ufp_traj,opti.initial())
+%             opti.set_initial(opt_X_traj,p.x_guess_prev); 
+%         end
         % Solve
         sol = opti.solve_limited();
 
