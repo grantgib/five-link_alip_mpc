@@ -94,7 +94,7 @@ iter_impact = 1;
 t_current = 0;
 t_start = 0;
 ground_height_current = 0;
-kx = atan(gait_info.angle_x);
+kx = tan(gait_info.angle_x);
 cos_alpha_x = cos(gait_info.angle_x);
 
 n_xlip = 4;
