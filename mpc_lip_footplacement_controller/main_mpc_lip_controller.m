@@ -33,13 +33,13 @@ disp("Virtual Constraint Symbolics Loaded! (" + toc + " sec)");
 % Gait
 % Each leg link is 0.4 m (hip to knee)
 gait_info = struct(...
-    't_step_period',    0.4,... 
+    't_step_period',    0.5,... 
     'p_st_com_des',     0.6,...    % z_H
     'z_mid',            0.10,...
     'torso_pitch_des',  0,...
     'angle_x',          deg2rad(0),...       % radians
     'mu',               1);
-xcdot_des = 2;
+xcdot_des = 0;
 ycdot_des = 0;
 gait_info.Lx_des = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
@@ -69,7 +69,7 @@ sim_info = struct(...
     'dt_sim',               0.005);
 
 % Foot placement optimization 
-N_steps_ahead = 3;
+N_steps_ahead = 7;
 q = 1;
 for i = 1:N_steps_ahead
     if i > N_steps_ahead-1
@@ -95,8 +95,7 @@ compile = true;
 [sym_info] = formulate_lip_fp_opt(sym_info,gait_info,compile);
 disp("Formulated LIP-based FP Optimization (" + toc + " sec)");
 
-%% ************************** Run Simulation ******************************
-disp("Begin simulation...");
+%% ************************** Run Simulation ******************************3disp("Begin simulation...");
 [traj_info] = simulate(sym_info,gait_info,sim_info);
 disp("Finished simulation!");
 

@@ -104,7 +104,7 @@ l = sqrt(g/p_z_H);
 p_xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
 %     yc_des = compute_yc_des(p_Lx_des);
 %     xc_des = 0;
-p_yc_des = 0;
+p_yc_des = -(1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Lx_des;
 p_x_des = [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
 
 % cost
