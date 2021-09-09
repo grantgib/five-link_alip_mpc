@@ -88,7 +88,7 @@ Ufp_traj = opti.variable(n_ufp,N_fp);
 
 % parameters
 p_x_init = opti.parameter(n_x,1);
-p_Lx_des = opti.parameter(1,1);
+% p_Lx_des = opti.parameter(1,1);
 p_Ly_des = opti.parameter(1,1);
 p_z_H = opti.parameter(1,1);        % nominal z height of com
 p_ufp_stance_max = opti.parameter(n_ufp,1);
@@ -96,6 +96,9 @@ p_ufp_stance_min = opti.parameter(n_ufp,1);
 p_k = opti.parameter(2,1); % [kx; ky]
 p_mu = opti.parameter(1,1); % friction coefficient
 p_Lz_est = opti.parameter(1,1);
+p_stanceLeg = opti.parameter(1,1); % left_stance = -1
+p_leg_width = opti.parameter(1,1);
+
 % p_ufp_init = opti.parameter(n_ufp,1);
 % p_cos_alpha_x = opti.parameter(1,1);
 
@@ -104,8 +107,16 @@ l = sqrt(g/p_z_H);
 p_xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
 %     yc_des = compute_yc_des(p_Lx_des);
 %     xc_des = 0;
-p_yc_des = -(1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Lx_des;
-p_x_des = [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
+stance_sign = p_stanceLeg;
+for i = 1:N_fp
+    % start with the desired values at next step so if in left stance then the first des
+    % should correspond to those of right stance
+    % Left Stance: yc = -W/2, Lx = + 0.5*m*H*W*l*tanh(Ts*l/2)
+    % Right Stance: yc = W/2, Ly = - 0.5*m*H*W*l*tanh(Ts*l/2)
+    yc_des_traj{i} = stance_sign * -p_leg_width / 2;
+    Lx_des_traj{i} = stance_sign * 0.5*m*p_z_H*p_leg_width*l*tanh(0.5*t_step_period*l);
+    stance_sign = -stance_sign;
+end
 
 % cost
 opt_cost_L = {};
@@ -151,6 +162,10 @@ for k = 1:N_k
         % Cost
         if n > 0 && n < N_fp
             % L cost
+            p_yc_des = yc_des_traj{n};
+            p_Lx_des = yc_des_traj{n};
+            p_x_des = [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
+
             L_error = X_k - p_x_des;
             opt_cost_L = [opt_cost_L, {L_error'*Q(n)*L_error}];
         end
@@ -197,6 +212,8 @@ if ~yukai_method
     opt_cost_L_total = sum(vertcat(opt_cost_L{:}));
     
     % terminal cost
+    p_yc_des = yc_des_traj{n};
+    p_Lx_des = yc_des_traj{n};
     X_error_terminal = X_traj(:,end) - [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
     opt_cost_terminal = X_error_terminal' * Pf * X_error_terminal;
     
@@ -206,7 +223,7 @@ if ~yukai_method
     opti.minimize(opt_cost_L_total + opt_cost_terminal);
     
 else % Yukai Method
-    opti.subject_to(X_traj(3,end) == p_Lx_des);
+    opti.subject_to(X_traj(3,end) == Lx_des_traj{1});
     opti.subject_to(X_traj(4,end) == p_Ly_des);
     opti.minimize(1);
 end
@@ -241,7 +258,7 @@ if sol_type == "qrqp"
             "_" + "dt" + extractAfter(string(dt_opt),"."));
         
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti = opti.to_function(name_cg,{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est},{optvars});
+        f_opti = opti.to_function(name_cg,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
         cg_options = struct();
         cg = CodeGenerator(name_cg,cg_options);
         cg.add(f_opti);
@@ -320,7 +337,6 @@ sym_info.fp_opt.opt_X_traj = X_traj;
 sym_info.fp_opt.opt_Ufp_traj = Ufp_traj;
 % sym_info.fp_opt.f_opti = f_opti;
 sym_info.fp_opt.p_x_init = p_x_init;
-sym_info.fp_opt.p_Lx_des = p_Lx_des;
 sym_info.fp_opt.p_Ly_des = p_Ly_des;
 sym_info.fp_opt.p_z_H = p_z_H;
 sym_info.fp_opt.p_ufp_max = p_ufp_stance_max;
@@ -328,6 +344,8 @@ sym_info.fp_opt.p_ufp_min = p_ufp_stance_min;
 sym_info.fp_opt.p_k = p_k;
 sym_info.fp_opt.p_mu = p_mu;
 sym_info.fp_opt.p_Lz_est = p_Lz_est;
+sym_info.fp_opt.p_stanceLeg = p_stanceLeg;
+sym_info.fp_opt.p_leg_width = p_leg_width;
 % sym_info.fp_opt.p_ufp_init = p_ufp_init;
 % sym_info.fp_opt.p_cos_alpha_x = p_cos_alpha_x;
 

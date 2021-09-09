@@ -16,9 +16,12 @@ X_des = simplify(linsolve(A,B),'Steps',100)
 
 %% Y_c des derivation
 syms yT LxT y0 Lx0 real
-y0 = -yT;
-% LxT = -Lx0;
+Lx0 = - LxT;
 eq1 = yT == cosh(l*Ts)*y0 - (1/(m*H*l))*sinh(l*Ts)*Lx0;
 eq2 = LxT == - m*H*l*sinh(l*Ts)*y0 + cosh(l*Ts)*Lx0;
+
 [A,B] = equationsToMatrix([eq1,eq2],[yT,LxT]);
 Y_des = simplify(linsolve(A,B),'Steps',100)
+
+syms W
+simplify(sinh(l*Ts) / (1+cosh(l*Ts)),100)

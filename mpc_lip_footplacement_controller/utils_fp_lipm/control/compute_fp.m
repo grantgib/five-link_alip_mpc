@@ -8,7 +8,6 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     
     % state
     xlip_init = p.xlip_init;
-    Lx_des = p.Lx_des;
     Ly_des = p.Ly_des;
     
     % control
@@ -18,6 +17,10 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     
     % Lz estimate
     Lz_est = p.Lz_est;
+    
+    % gait
+    stanceLeg = p.stanceLeg;
+    leg_width = p.leg_width;
     
     % terrain
     k = p.k;
@@ -34,7 +37,6 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     opt_X_traj = p.opt_X_traj;
     opt_Ufp_traj = p.opt_Ufp_traj;
     p_x_init = p.p_x_init;
-    p_Lx_des = p.p_Lx_des;
     p_Ly_des = p.p_Ly_des;
     p_z_H = p.p_z_H;
     p_ufp_stance_max = p.p_ufp_stance_max;
@@ -42,6 +44,8 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_k = p.p_k;
     p_mu = p.p_mu;
     p_Lz_est = p.p_Lz_est;
+    p_stanceLeg = p.p_stanceLeg;
+    p_leg_width = p.p_leg_width;
     p_ufp_init = p.p_ufp_init;
     p_cos_alpha_x = p.p_cos_alpha_x;
     
@@ -54,7 +58,6 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     else
         % params
         opti.set_value(p_x_init,xlip_init);
-        opti.set_value(p_Lx_des,Lx_des);
         opti.set_value(p_Ly_des,Ly_des);
         opti.set_value(p_z_H,z_H);
         opti.set_value(p_ufp_stance_max,ufp_stance_max);
@@ -62,6 +65,8 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
         opti.set_value(p_k,k);
         opti.set_value(p_mu,mu);
         opti.set_value(p_Lz_est,Lz_est);
+        opti.set_value(p_stanceLeg,stanceLeg);
+        opti.set_value(p_leg_width,leg_width);
 %         opti.set_value(p_ufp_init,ufp_init);
 %         opti.set_value(p_cos_alpha_x,cos_alpha_x);
         
