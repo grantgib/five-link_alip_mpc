@@ -18,7 +18,8 @@ Ly_des = gait_info.Ly_des;
 torso_pitch_des = gait_info.torso_pitch_des;
 mu = gait_info.mu;
 p_st_com_des = gait_info.p_st_com_des;      % z_H
-z_mid = gait_info.z_mid;
+z_cl = gait_info.z_cl;
+s_cl = gait_info.s_cl;
 
 % sym_info
 g = sym_info.params.g;
@@ -29,7 +30,8 @@ n_x = sym_info.dim.n_x;
 n_u = sym_info.dim.n_u;
 n_w = sym_info.dim.n_w;
 
-opti = sym_info.fp_opt.opti;
+opti_LS = sym_info.fp_opt.opti_LS;
+opti_RS = sym_info.fp_opt.opti_RS;
 ufp_stance_max = sym_info.fp_opt.ufp_stance_max;
 ufp_stance_min = sym_info.fp_opt.ufp_stance_min;
 N_fp = sym_info.fp_opt.N_fp;
@@ -104,25 +106,29 @@ x_guess_prev = zeros(n_xlip,N_k);
 % ufp_init = zeros(3,1);
 
 p_sw_com_init = full(f_p_com_world(x_init) - f_p_sw(x_init));
-p_st_abs_current = full(f_p_st(x_init))';
-p_sw_abs_current = full(f_p_sw(x_init))';
-v_st_abs_current = full(f_v_st(x_init));
-v_sw_abs_current = full(f_v_sw(x_init));
+p_st_world_current = full(f_p_st(x_init))';
+p_sw_world_current = full(f_p_sw(x_init))';
+p_sw_world_init = p_sw_world_current;
+v_st_world_current = full(f_v_st(x_init));
+v_sw_world_current = full(f_v_sw(x_init));
+
 
 p_st_rel_current = zeros(2,1);
 p_sw_rel_current = full(f_p_sw(x_init) - f_p_st(x_init))';
 v_st_rel_current = zeros(2,1);
 v_sw_rel_current = full(f_v_sw(x_init) - f_v_st(x_init));
 
+p_st_sw_z_init = p_sw_rel_current(2);
+
 % Storage
 time_traj(1) = t_current;
 t_impact_traj = t_current;
 s_traj = [];
 
-p_sw_abs_traj = [];
-p_st_abs_traj = [];
-v_sw_abs_traj = [];
-v_st_abs_traj = [];
+p_sw_world_traj = [];
+p_st_world_traj = [];
+v_sw_world_traj = [];
+v_st_world_traj = [];
 p_sw_rel_traj = [];
 p_st_rel_traj = [];
 v_sw_rel_traj = [];
@@ -137,7 +143,7 @@ impact_traj = [];
 ufp_sol_traj = {};
 xlip_sol_traj = {};
 ufp_rel_traj = [];
-ufp_abs_traj = [];
+ufp_world_traj = [];
 time_calc = [];
 x_traj = [];
 u_sol_traj = [];
@@ -171,7 +177,7 @@ xc_mech_hip_limit_traj = [];
 
 %% Main Loop
 
-% max_iter = 5;
+% max_iter = 31;
 while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     %% limits
     ufp_stance_max_traj = [ufp_stance_max_traj, ufp_stance_max];
@@ -195,109 +201,111 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     sdot = full(f_sdot(t_step_period));
     
     %% Predict state at end of step
-        pred_info = struct(...
-            'kx',               kx,...
-            'g',                g,...
-            'm',                m,...
-            'z_H',              p_st_com_des,...
-            'Lz_est',           0,...
-            'dt_opt',           dt_opt,...
-            'intg_opt',         intg_opt,...
-            'x_init',           x_init,...
-            'f_p_st',           f_p_st,...
-            'f_p_com_stance',   f_p_com_stance,...
-            'f_v_com_stance',   f_v_com_stance,...
-            's',                s,...
-            't_step_period',    t_step_period,...
-            'fd_lip',           fd_lip);
-        [xlip_eos] = predict_lip_eos_state(pred_info);
-        
+    pred_info = struct(...
+        'kx',               kx,...
+        'g',                g,...
+        'm',                m,...
+        'z_H',              p_st_com_des,...
+        'Lz_est',           0,...
+        'dt_opt',           dt_opt,...
+        'intg_opt',         intg_opt,...
+        'x_init',           x_init,...
+        'f_p_st',           f_p_st,...
+        'f_p_com_stance',   f_p_com_stance,...
+        'f_v_com_stance',   f_v_com_stance,...
+        's',                s,...
+        't_step_period',    t_step_period,...
+        'fd_lip',           fd_lip);
+    [xlip_eos] = predict_lip_eos_state(pred_info);
+    
     %% Foot placement calc
-%     if isequal(sim_info.method,'grant')
-        % MPC method
-        fp_info = struct(...
-            'use_codegen',          sim_info.use_codegen,...
-            'g',                    g,...
-            'm',                    m,...
-            'z_H',                  p_st_com_des,...
-            'xlip_init',            xlip_eos,...
-            'Ly_des',               Ly_des,...
-            'ufp_stance_max',       ufp_stance_max,...
-            'ufp_stance_min',       ufp_stance_min,...
-            'k',                    [kx;0],...
-            'mu',                   mu,...
-            'Lz_est',               0,...
-            'stanceLeg',            -1,...
-            'leg_width',            gait_info.leg_width,...
-            'ufp_init',             zeros(3,1),...
-            'cos_alpha_x',          cos_alpha_x,...
-            'N_steps',              N_steps_ahead,...
-            'N_fp',                 N_fp,...
-            'N_k',                  N_k,...
-            'n_xlip',               4,...
-            'n_ufp',                2,...
-            'opti',                 opti,...
-            'opt_X_traj',           opt_X_traj,...
-            'opt_Ufp_traj',         opt_Ufp_traj,...
-            'p_x_init',             p_x_init,...
-            'p_Ly_des',             p_Ly_des,...
-            'p_z_H',                p_z_H,...
-            'p_ufp_stance_max',     p_ufp_stance_max,...
-            'p_ufp_stance_min',     p_ufp_stance_min,...
-            'p_k',                  p_k,...
-            'p_mu',                 p_mu,...
-            'p_Lz_est',             p_Lz_est,...
-            'p_stanceLeg',          p_stanceLeg,...
-            'p_leg_width',          p_leg_width,...
-            'p_ufp_init',           0,...
-            'p_cos_alpha_x',        0,...
-            'k_post_all',           k_post_all,...
-            'fd_lip',               fd_lip,...
-            'iter',                 iter,...
-            'ufp_guess_prev',       ufp_guess_prev,...
-            'x_guess_prev',         x_guess_prev);
-        [ufp_sol,xlip_sol] = compute_fp(fp_info);
-        ufp_guess_prev = ufp_sol;
-        x_guess_prev = xlip_sol;
-        p_sw_com_des_grant = xlip_sol(1,k_pre_all(1)) - ufp_sol(1,1);
-        p_sw_com_grant_traj = [p_sw_com_grant_traj, p_sw_com_des_grant];
-        
-%     elseif isequal(sim_info.method,'yukai')
-        %% Yukai method
-        t_remain = t_step_period * (1 - s);
-        H = p_st_com_des;
-        T = t_step_period;
-        p_com_stance_est = full(f_p_com_stance(x_init));
-        xc_est = p_com_stance_est(1);
-        
-        p_st_world = full(f_p_st(x_init));
-        L_est = L_world_reference_point_mex(x_init(1:n_q),x_init(n_q+1:end),[p_st_world(1);0;p_st_world(2)]);
-        Ly_est = L_est(2);
-        Ly_eos_est = m*H*l*sinh(l*t_remain)*xc_est + cosh(l*t_remain)*Ly_est;
-        p_sw_com_des_yukai = (1 / (m * H * l * sinh(l*T))) * (Ly_des - cosh(l*T) * Ly_eos_est);
-        p_sw_com_yukai_traj = [p_sw_com_yukai_traj, p_sw_com_des_yukai];
-%     end
+    %     if isequal(sim_info.method,'grant')
+    % MPC method
+    fp_info = struct(...
+        'use_codegen',          sim_info.use_codegen,...
+        'g',                    g,...
+        'm',                    m,...
+        'z_H',                  p_st_com_des,...
+        'xlip_init',            xlip_eos,...
+        'Ly_des',               Ly_des,...
+        'ufp_stance_max',       ufp_stance_max,...
+        'ufp_stance_min',       ufp_stance_min,...
+        'k',                    [kx;0],...
+        'mu',                   mu,...
+        'Lz_est',               0,...
+        'stanceLeg',            1,...
+        'leg_width',            gait_info.leg_width,...
+        'ufp_init',             zeros(3,1),...
+        'cos_alpha_x',          cos_alpha_x,...
+        'N_steps',              N_steps_ahead,...
+        'N_fp',                 N_fp,...
+        'N_k',                  N_k,...
+        'n_xlip',               4,...
+        'n_ufp',                2,...
+        'opti_LS',              opti_LS,...
+        'opti_RS',              opti_RS,...
+        'opt_X_traj',           opt_X_traj,...
+        'opt_Ufp_traj',         opt_Ufp_traj,...
+        'p_x_init',             p_x_init,...
+        'p_Ly_des',             p_Ly_des,...
+        'p_z_H',                p_z_H,...
+        'p_ufp_stance_max',     p_ufp_stance_max,...
+        'p_ufp_stance_min',     p_ufp_stance_min,...
+        'p_k',                  p_k,...
+        'p_mu',                 p_mu,...
+        'p_Lz_est',             p_Lz_est,...
+        'p_stanceLeg',          p_stanceLeg,...
+        'p_leg_width',          p_leg_width,...
+        'p_ufp_init',           0,...
+        'p_cos_alpha_x',        0,...
+        'k_post_all',           k_post_all,...
+        'fd_lip',               fd_lip,...
+        'iter',                 iter,...
+        'ufp_guess_prev',       ufp_guess_prev,...
+        'x_guess_prev',         x_guess_prev);
+    [ufp_sol,xlip_sol] = compute_fp(fp_info);
+    ufp_guess_prev = ufp_sol;
+    x_guess_prev = xlip_sol;
+    p_sw_com_des_grant = xlip_sol(1,k_pre_all(1)) - ufp_sol(1,1);
+    p_sw_com_grant_traj = [p_sw_com_grant_traj, p_sw_com_des_grant];
+    
+    %% Yukai method
+    t_remain = t_step_period * (1 - s);
+    H = p_st_com_des;
+    T = t_step_period;
+    p_com_stance_est = full(f_p_com_stance(x_init));
+    xc_est = p_com_stance_est(1);
+    
+    p_st_world = full(f_p_st(x_init));
+    L_est = L_world_reference_point_mex(x_init(1:n_q),x_init(n_q+1:end),[p_st_world(1);0;p_st_world(2)]);
+    Ly_est = L_est(2);
+    Ly_eos_est = m*H*l*sinh(l*t_remain)*xc_est + cosh(l*t_remain)*Ly_est;
+    p_sw_com_des_yukai = (1 / (m * H * l * sinh(l*T))) * (Ly_des - cosh(l*T) * Ly_eos_est);
+    p_sw_com_yukai_traj = [p_sw_com_yukai_traj, p_sw_com_des_yukai];
+
     %% Choose method
     if isequal(sim_info.fp_method,'grant')
         p_sw_com_des = p_sw_com_des_grant;
     elseif isequal(sim_info.fp_method,'yukai')
         p_sw_com_des = p_sw_com_des_yukai;
     end
+    
     %% IO controller
     % Actual virtual outputs
-    ha_current = full(f_ha(x_init,kx,ground_height_current));
-    ha_dot_current = full(f_ha_dot(x_init,kx,ground_height_current));
+    ha_current = full(f_ha(x_init,kx));
+    ha_dot_current = full(f_ha_dot(x_init,kx));
     
     % Desired virtual outputs
-    hd_current = full(f_hd(s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,z_mid));
-    hd_dot_current = full(f_hd_dot(s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,z_mid));
+    ufp_sol_x = ufp_sol(1);
+    hd_current = full(f_hd(s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,kx,s_cl,z_cl,p_st_sw_z_init,ufp_sol_x));
+    hd_dot_current = full(f_hd_dot(s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,kx,s_cl,z_cl,p_st_sw_z_init,ufp_sol_x));
     
     % Output
     y_current = ha_current - hd_current;
     y_dot_current = ha_dot_current - hd_dot_current;
     
     % input and wrench
-    u_sol_io = full(f_uIO(x_init,s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,z_mid,kx,ground_height_current)); %
+    u_sol_io = full(f_uIO(x_init,s,sdot,torso_pitch_des,p_st_com_des,p_sw_com_init,p_sw_com_des,kx,s_cl,z_cl,p_st_sw_z_init,ufp_sol_x)); %
     w_sol_io = full(f_w(x_init,u_sol_io));
     
     %% Center of Mass / Angular Momentum Info
@@ -337,12 +345,12 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     ufp_sol_traj = [ufp_sol_traj, {ufp_sol}];
     xlip_sol_traj = [xlip_sol_traj, {xlip_sol}];
     ufp_rel_traj = [ufp_rel_traj, ufp_sol(:,1)];
-    ufp_abs_traj = [ufp_abs_traj, [ufp_sol(1,1)+p_st_abs_current(1); p_st_abs_current(2)]];
+    ufp_world_traj = [ufp_world_traj, [ufp_sol(1,1)+p_st_world_current(1); p_st_world_current(2)]];
     
-    p_sw_abs_traj = [p_sw_abs_traj, p_sw_abs_current];
-    p_st_abs_traj = [p_st_abs_traj, p_st_abs_current];
-    v_sw_abs_traj = [v_sw_abs_traj, v_sw_abs_current];
-    v_st_abs_traj = [v_st_abs_traj, v_st_abs_current];
+    p_sw_world_traj = [p_sw_world_traj, p_sw_world_current];
+    p_st_world_traj = [p_st_world_traj, p_st_world_current];
+    v_sw_world_traj = [v_sw_world_traj, v_sw_world_current];
+    v_st_world_traj = [v_st_world_traj, v_st_world_current];
     p_sw_rel_traj = [p_sw_rel_traj, p_sw_rel_current];
     p_st_rel_traj = [p_st_rel_traj, p_st_rel_current];
     v_sw_rel_traj = [v_sw_rel_traj, v_sw_rel_current];
@@ -361,20 +369,20 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     [t_next,x_next] = update_state(update_info);
     
     %% Check for Impact and Update
-    p_sw_abs_current = full(f_p_sw(x_next))';
-    p_st_abs_current = full(f_p_st(x_next))';
-    v_sw_abs_current = full(f_v_sw(x_next));
-    v_st_abs_current = full(f_v_st(x_next));
+    p_sw_world_current = full(f_p_sw(x_next))';
+    p_st_world_current = full(f_p_st(x_next))';
+    v_sw_world_current = full(f_v_sw(x_next));
+    v_st_world_current = full(f_v_st(x_next));
     p_st_rel_current = zeros(2,1);
     p_sw_rel_current = full(f_p_sw(x_next) - f_p_st(x_next))';
     v_st_rel_current = zeros(2,1);
     v_sw_rel_current = full(f_v_sw(x_next) - f_v_st(x_next));
     
-    sw_above_ground = check_swingfoot_clearance(p_sw_abs_current, kx, ground_height_current);
+    sw_above_ground = check_swingfoot_clearance(p_sw_world_current, kx, ground_height_current);
     
-    %     if      p_sw_abs_current(2) < step_height &&...     % height at stairs
-    %             v_sw_abs_current(2) < -0.05                    % velocity is negative
-    if  ~sw_above_ground && v_sw_abs_current(2) < -0.05
+    %     if      p_sw_world_current(2) < step_height &&...     % height at stairs
+    %             v_sw_world_current(2) < -0.05                    % velocity is negative
+    if  ~sw_above_ground && v_sw_world_current(2) < -0.05
         
         disp("-> Impact occured, find when it happened!");
         
@@ -411,16 +419,18 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
         new_step = true;
         
         % Update stance foot position with previous swing foot impact pos
-        p_sw_abs_current = full(f_p_sw(x_next))';
-        p_st_abs_current = full(f_p_st(x_next))';
-        v_sw_abs_current = full(f_v_sw(x_next));
-        v_st_abs_current = full(f_v_st(x_next));
+        p_sw_world_current = full(f_p_sw(x_next))';
+        p_st_world_current = full(f_p_st(x_next))';
+        v_sw_world_current = full(f_v_sw(x_next));
+        v_st_world_current = full(f_v_st(x_next));
         p_st_rel_current = zeros(2,1);
         p_sw_rel_current = full(f_p_sw(x_next) - f_p_st(x_next))';
         v_st_rel_current = zeros(2,1);
         v_sw_rel_current = full(f_v_sw(x_next) - f_v_st(x_next));
         
-        %         ground_height_current = p_st_abs_current(end);
+        p_st_sw_z_init = p_sw_rel_current(2);
+
+        %         ground_height_current = p_st_world_current(end);
     end
     
     %% Update state and time, warm start, shift reference
@@ -461,7 +471,7 @@ traj_info.Ly_stance_traj = Ly_stance_traj;
 traj_info.ufp_sol_traj = ufp_sol_traj;
 traj_info.xlip_sol_traj = xlip_sol_traj;
 traj_info.ufp_rel_traj = ufp_rel_traj;
-traj_info.ufp_abs_traj = ufp_abs_traj;
+traj_info.ufp_world_traj = ufp_world_traj;
 
 % limits
 traj_info.ufp_stance_max_traj = ufp_stance_max_traj;
@@ -481,10 +491,10 @@ traj_info.y_dot_traj = y_dot_traj;
 traj_info.y_ddot_traj = y_ddot_traj;
 
 % Foot positions & velocities
-traj_info.pos_sw_abs_traj = p_sw_abs_traj;
-traj_info.pos_st_abs_traj = p_st_abs_traj;
-traj_info.vel_sw_abs_traj = v_sw_abs_traj;
-traj_info.vel_st_abs_traj = v_st_abs_traj;
+traj_info.pos_sw_world_traj = p_sw_world_traj;
+traj_info.pos_st_world_traj = p_st_world_traj;
+traj_info.vel_sw_world_traj = v_sw_world_traj;
+traj_info.vel_st_world_traj = v_st_world_traj;
 traj_info.pos_sw_rel_traj = p_sw_rel_traj;
 traj_info.pos_st_rel_traj = p_st_rel_traj;
 traj_info.vel_sw_rel_traj = v_sw_rel_traj;

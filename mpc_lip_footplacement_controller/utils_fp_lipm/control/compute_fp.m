@@ -33,7 +33,8 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     N_k = p.N_k;
     N_fp = p.N_fp;
     N_steps_ahead = p.N_steps;
-    opti = p.opti;
+    opti_LS = p.opti_LS;
+    opti_RS = p.opti_RS;
     opt_X_traj = p.opt_X_traj;
     opt_Ufp_traj = p.opt_Ufp_traj;
     p_x_init = p.p_x_init;
@@ -48,6 +49,13 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_leg_width = p.p_leg_width;
     p_ufp_init = p.p_ufp_init;
     p_cos_alpha_x = p.p_cos_alpha_x;
+    
+    %% Choose Opti
+    if stanceLeg == -1
+        opti = opti_LS; 
+    else
+        opti = opti_RS;
+    end
     
     %% Foot Placement
     if p.use_codegen
@@ -67,19 +75,17 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
         opti.set_value(p_Lz_est,Lz_est);
         opti.set_value(p_stanceLeg,stanceLeg);
         opti.set_value(p_leg_width,leg_width);
-%         opti.set_value(p_ufp_init,ufp_init);
-%         opti.set_value(p_cos_alpha_x,cos_alpha_x);
         
         % initial guess
-%         if p.iter == 1
-%             ufp_guess = repmat([0; 0],1,N_fp);
-%             x_guess = compute_initial_guess(p,ufp_guess);
-%             opti.set_initial(opt_Ufp_traj,ufp_guess);   % opti.debug.value(opt_Ufp_traj,opti.initial())
-%             opti.set_initial(opt_X_traj,x_guess);       % opti.debug.value(opt_X_traj,opti.initial())
-%         else
-%             opti.set_initial(opt_Ufp_traj,p.ufp_guess_prev);   % opti.debug.value(opt_Ufp_traj,opti.initial())
-%             opti.set_initial(opt_X_traj,p.x_guess_prev); 
-%         end
+        if p.iter == 1
+            ufp_guess = repmat([0; 0],1,N_fp);
+            x_guess = compute_initial_guess(p,ufp_guess);
+            opti.set_initial(opt_Ufp_traj,ufp_guess);   % opti.debug.value(opt_Ufp_traj,opti.initial())
+            opti.set_initial(opt_X_traj,x_guess);       % opti.debug.value(opt_X_traj,opti.initial())
+        else
+            opti.set_initial(opt_Ufp_traj,p.ufp_guess_prev);   % opti.debug.value(opt_Ufp_traj,opti.initial())
+            opti.set_initial(opt_X_traj,p.x_guess_prev); 
+        end
         % Solve
         sol = opti.solve_limited();
 
@@ -89,7 +95,6 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
         xlip_sol = reshape(xlip_sol_temp,n_xlip,N_k);
         ufp_sol_temp = opti.value(optvar(n_xlip*N_k+1:n_xlip*N_k+n_ufp*N_fp));
         ufp_sol = reshape(ufp_sol_temp,n_ufp,N_fp);
-%         slack_slip_sol = opti.value(optvar(n_xlip*N_k+n_ufp*N_fp+1));
         cost_sol = sol.value(opti.f);
     end
 

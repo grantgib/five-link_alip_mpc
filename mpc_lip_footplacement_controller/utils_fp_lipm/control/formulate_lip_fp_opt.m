@@ -18,9 +18,8 @@ intg_opt = sym_info.fp_opt.intg_opt;
 N_steps_ahead = sym_info.fp_opt.N_steps_ahead;
 Q = sym_info.fp_opt.Q;
 sol_type = sym_info.fp_opt.qpsolver;
-ufp_stance_max = sym_info.fp_opt.ufp_stance_max;
 
-%% Dynamics
+%% Discrete Dynamics Derivation
 % Declare System Variables: constraint zc = kx*xc + ky*yc + z_H
 xc = SX.sym('xc');  % relative position of center of mass w.r.t stance contact point
 yc = SX.sym('yc');
@@ -40,8 +39,8 @@ A = [...
     0,      0,      -1/(m*z_H_sym), 0;
     0,      -m*g,   0,          0;
     m*g,    0,      0,          0];
-Kaff = [(ky_sym*Lz_sym)/(m*z_H_sym); -(kx_sym*Lz_sym)/(m*z_H_sym); 0; 0];
-xdot = A * x + Kaff;
+K_affine = [(ky_sym*Lz_sym)/(m*z_H_sym); -(kx_sym*Lz_sym)/(m*z_H_sym); 0; 0];
+xdot = A * x + K_affine;
 
 % Discrete time dynamics
 if intg_opt == "eul"
@@ -71,42 +70,38 @@ term_cost_info = struct(...
 Pf = compute_terminal_costs(term_cost_info);
 Pf = 100 * Pf;
 
-%% Formulate Optimization Problem
+%% Formulate Optimization Problem for Left Stance
 % Intermediate optimization variables
 N_fp = N_steps_ahead;
 k_step = (t_step_period / dt_opt);
 N_k = round((N_steps_ahead * k_step)+1);
 
 % Opti Stack
-opti = casadi.Opti();
+opti_LS = casadi.Opti();
 
 % opt vars
-X_traj = opti.variable(n_x,N_k);
-Ufp_traj = opti.variable(n_ufp,N_fp);
-% slack_slip = opti.variable(1,1);
-% slack_mech = opti.variable(1,1);
+X_traj = opti_LS.variable(n_x,N_k);
+Ufp_traj = opti_LS.variable(n_ufp,N_fp);
 
 % parameters
-p_x_init = opti.parameter(n_x,1);
-% p_Lx_des = opti.parameter(1,1);
-p_Ly_des = opti.parameter(1,1);
-p_z_H = opti.parameter(1,1);        % nominal z height of com
-p_ufp_stance_max = opti.parameter(n_ufp,1);
-p_ufp_stance_min = opti.parameter(n_ufp,1);
-p_k = opti.parameter(2,1); % [kx; ky]
-p_mu = opti.parameter(1,1); % friction coefficient
-p_Lz_est = opti.parameter(1,1);
-p_stanceLeg = opti.parameter(1,1); % left_stance = -1
-p_leg_width = opti.parameter(1,1);
-
-% p_ufp_init = opti.parameter(n_ufp,1);
-% p_cos_alpha_x = opti.parameter(1,1);
+p_x_init = opti_LS.parameter(n_x,1);
+p_Ly_des = opti_LS.parameter(1,1);
+p_z_H = opti_LS.parameter(1,1);        % nominal z height of com
+p_ufp_stance_max = opti_LS.parameter(n_ufp,1);
+p_ufp_stance_min = opti_LS.parameter(n_ufp,1);
+p_k = opti_LS.parameter(2,1); % [kx; ky]
+p_mu = opti_LS.parameter(1,1); % friction coefficient
+p_Lz_est = opti_LS.parameter(1,1);
+p_stanceLeg = opti_LS.parameter(1,1); % left_stance = -1
+p_leg_width = opti_LS.parameter(1,1);
 
 % Intermediate parameters
 l = sqrt(g/p_z_H);
-p_xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
-%     yc_des = compute_yc_des(p_Lx_des);
-%     xc_des = 0;
+
+% Compute xc_des
+xc_des = (1/(m*p_z_H*l))*tanh(l*t_step_period/2)*p_Ly_des;
+
+% Build desired yc and Lx
 stance_sign = p_stanceLeg;
 for i = 1:N_fp
     % start with the desired values at next step so if in left stance then the first des
@@ -131,11 +126,11 @@ k_post_all = [];    % iteratoin indices for all states "post" impact
 
 % constraint parameters
 xc_slip_limit = (p_mu + p_k(1))*p_z_H / (1 - p_mu*p_k(1));
-xc_mech_limit = ufp_stance_max / 2;
+xc_mech_limit = p_ufp_stance_max(1) / 2;
 
 %% Inital Condition constraints
 % Initial condition constraint
-opti.subject_to(X_traj(:,1) == p_x_init);
+opti_LS.subject_to(X_traj(:,1) == p_x_init);
 
 %% Dynamics
 for k = 1:N_k
@@ -155,18 +150,16 @@ for k = 1:N_k
             Xk_end = fd_lip(Xk_impact,p_k,p_z_H,p_Lz_est); % update
             
             % Apply constraints at impact
-            opti.subject_to(-xc_slip_limit <= Xk_impact(1) <= xc_slip_limit);   % GRF
-            opti.subject_to(-xc_mech_limit <= Xk_impact(1) <= xc_mech_limit); % mech
+            opti_LS.subject_to(-xc_slip_limit <= Xk_impact(1) <= xc_slip_limit);   % GRF
+            opti_LS.subject_to(-xc_mech_limit <= Xk_impact(1) <= xc_mech_limit); % mech
         end
         
-        % Cost
+        % Running cost (do not include initial/final state)
         if n > 0 && n < N_fp
             % L cost
             p_yc_des = yc_des_traj{n};
-            p_Lx_des = yc_des_traj{n};
-            p_x_des = [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
-
-            L_error = X_k - p_x_des;
+            p_Lx_des = Lx_des_traj{n};
+            L_error = X_k - [xc_des; p_yc_des; p_Lx_des; p_Ly_des];
             opt_cost_L = [opt_cost_L, {L_error'*Q(n)*L_error}];
         end
         
@@ -187,45 +180,68 @@ for k = 1:N_k
         X_k = X_traj(:,k+1);
     end
     if k < N_k
-        opti.subject_to(X_k == Xk_end); % Dynamics equality constraint
+        opti_LS.subject_to(X_k == Xk_end); % Dynamics equality constraint
     end
 end
 
 %% COM Position Constraints
 for k = 1:N_k
     if k > 1    % dont constrain initial condition
-        opti.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
-        opti.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
+        opti_LS.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
+        opti_LS.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
     end
 end
-%% Foot Placement Constraints
-for n = 1:N_fp
-    % Foot placement constraint
-    opti.subject_to(p_ufp_stance_min(1:2) <= Ufp_traj(1:2,n) <= p_ufp_stance_max(1:2))
-end
-
 
 %% Cost
-yukai_method = false;
-if ~yukai_method   
+mpc_method = true;
+if mpc_method   
     % sum running costs
     opt_cost_L_total = sum(vertcat(opt_cost_L{:}));
     
     % terminal cost
     p_yc_des = yc_des_traj{n};
-    p_Lx_des = yc_des_traj{n};
-    X_error_terminal = X_traj(:,end) - [p_xc_des; p_yc_des; p_Lx_des; p_Ly_des];
+    p_Lx_des = Lx_des_traj{n};
+    X_error_terminal = X_traj(:,end) - [xc_des; p_yc_des; p_Lx_des; p_Ly_des];
     opt_cost_terminal = X_error_terminal' * Pf * X_error_terminal;
     
     % cost function
 %     opti.minimize(opt_cost_L_total);  % Fails without terminal cost since
 %     the final value is omitted "makes sense duhh"
-    opti.minimize(opt_cost_L_total + opt_cost_terminal);
+    opti_LS.minimize(opt_cost_L_total + opt_cost_terminal);
     
 else % Yukai Method
-    opti.subject_to(X_traj(3,end) == Lx_des_traj{1});
-    opti.subject_to(X_traj(4,end) == p_Ly_des);
-    opti.minimize(1);
+%     opti_LS.subject_to(X_traj(3,end) == Lx_des_traj{end});
+%     opti_LS.subject_to(X_traj(4,end) == p_Ly_des);
+%     opti_LS.minimize(1);
+end
+
+%% Copy Opti for both LS and RS. Different fp constraints next...
+opti_RS = opti_LS.copy();
+
+%% Foot Placement Constraints
+% Ufp x foot placement constraint
+for n = 1:N_fp
+    opti_LS.subject_to(p_ufp_stance_min(1) <= Ufp_traj(1,n) <= p_ufp_stance_max(1))
+    opti_RS.subject_to(p_ufp_stance_min(1) <= Ufp_traj(1,n) <= p_ufp_stance_max(1))
+end
+
+% Ufp y foot placement constraints
+% if in LS next fp constr is -ufpy_max <= ufpy <= -ufpy_min
+% if in RS next fp constr is ufpy_min <= ufpy <= ufpy_max
+ufp_y_max = p_ufp_stance_max(2);
+ufp_y_min = p_ufp_stance_min(2);
+
+% Left Stance
+for n = 1:2:N_fp
+    % y foot placement constraint (don't allow crossover)
+    opti_LS.subject_to(-ufp_y_max <= Ufp_traj(2,n) <= -ufp_y_min);
+    opti_LS.subject_to(ufp_y_min <= Ufp_traj(2,n+1) <= ufp_y_max);      
+end
+
+% Right Stance
+for n = 1:2:N_fp
+    opti_RS.subject_to(ufp_y_min <= Ufp_traj(2,n) <= ufp_y_max);
+    opti_RS.subject_to(-ufp_y_max <= Ufp_traj(2,n+1) <= -ufp_y_min);
 end
 
 %% Create an OPT solver
@@ -241,33 +257,43 @@ if sol_type == "qrqp"
         'print_iter',       false,...
         'print_header',     false,...
         'print_info',       false);
-    opti.solver('sqpmethod',opts);
+    opti_LS.solver('sqpmethod',opts);
+    opti_RS.solver('sqpmethod',opts);
     
     if compile
         % code generation
-        if yukai_method
-            method = "Y";
-        else
-            method = "G";
-        end
-%         name_cg = char("qrqptest" + method);
-        name_cg = char("fp_withlat_" + "N" + N_steps_ahead + ...
+        name_cg_LS = char("fp_LS_" + "N" + N_steps_ahead + ...
             "_" + string(1000*t_step_period) + "ms" + ...
             "_" + sol_type +...
             "_" + intg_opt +...
             "_" + "dt" + extractAfter(string(dt_opt),"."));
-        
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti = opti.to_function(name_cg,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
+        f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
         cg_options = struct();
-        cg = CodeGenerator(name_cg,cg_options);
-        cg.add(f_opti);
+        cg = CodeGenerator(name_cg_LS,cg_options);
+        cg.add(f_opti_LS);
         disp('Generating C code...');
         tic
         cg.generate()
-        movefile([name_cg '.c'],['gen/opt_solvers/' name_cg '.c'])
+        movefile([name_cg_LS '.c'],['gen/opt_solvers/' name_cg_LS '.c'])
         disp("Generation time = " + toc);
-              
+        
+        % Right stance solver
+        name_cg_RS = char("fp_RS_" + "N" + N_steps_ahead + ...
+            "_" + string(1000*t_step_period) + "ms" + ...
+            "_" + sol_type +...
+            "_" + intg_opt +...
+            "_" + "dt" + extractAfter(string(dt_opt),"."));
+        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
+        f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
+        cg_options = struct();
+        cg = CodeGenerator(name_cg_RS,cg_options);
+        cg.add(f_opti_RS);
+        disp('Generating C code...');
+        tic
+        cg.generate()
+        movefile([name_cg_RS '.c'],['gen/opt_solvers/' name_cg_RS '.c'])
+        disp("Generation time = " + toc);
     end
     
 elseif sol_type == "osqp"
@@ -277,35 +303,34 @@ elseif sol_type == "osqp"
         'print_iteration',  false,...
         'print_header',     false,...
         'print_time',       false);    % osqp, qrqp (not as robust joris says on google groups)
-    %     opts.qpsol_options.max_iter= 100;
-    opti.solver('sqpmethod',opts);
-   
-    if compile
-        % code generation
-        if yukai_method
-            method = "Y";
-        else
-            method = "G";
-        end
-        name_cg = char("osqptest" + method);
-%         name_cg = char("fp_" + method + ...
-%             "_" + string(1000*t_step_period) + "ms" + ...
-%             "_" + sol_type +...
-%             "_" + intg_opt +...
-%             "_" + "dt" + extractAfter(string(dt_opt),"."));
-        
-        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti = opti.to_function(name_cg,{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est},{optvars});
-        cg_options = struct();
-        cg = CodeGenerator(name_cg,cg_options);
-        cg.add(f_opti);
-        disp('Generating C code...');
-        tic
-        cg.generate()
-        movefile([name_cg '.c'],['gen/opt_solvers/' name_cg '.c'])
-        disp("Generation time = " + toc);
-              
-    end
+    opti_LS.solver('sqpmethod',opts);
+    opti_RS.solver('sqpmethod',opts);
+%     if compile
+%         % code generation
+%         if yukai_method
+%             method = "Y";
+%         else
+%             method = "G";
+%         end
+%         name_cg_LS = char("osqptest" + method);
+% %         name_cg = char("fp_" + method + ...
+% %             "_" + string(1000*t_step_period) + "ms" + ...
+% %             "_" + sol_type +...
+% %             "_" + intg_opt +...
+% %             "_" + "dt" + extractAfter(string(dt_opt),"."));
+%         
+%         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
+%         f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Lx_des,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est},{optvars});
+%         cg_options = struct();
+%         cg = CodeGenerator(name_cg_LS,cg_options);
+%         cg.add(f_opti_LS);
+%         disp('Generating C code...');
+%         tic
+%         cg.generate()
+%         movefile([name_cg_LS '.c'],['gen/opt_solvers/' name_cg_LS '.c'])
+%         disp("Generation time = " + toc);
+%               
+%     end
     
 elseif sol_type == "ipopt"
     %% IPOPT (default)
@@ -315,7 +340,8 @@ elseif sol_type == "ipopt"
         'print_level',              0,...
         'print_timing_statistics',  'no',...
         'print_info_string',        'no');
-    opti.solver('ipopt',p_opts,s_opts);
+    opti_LS.solver('ipopt',p_opts,s_opts);
+    opti_RS.solver('ipopt',p_opts,s_opts);
 elseif sol_type == "ipopt_ma57"
     %% IPOPT with ma57 linear solver
     p_opts = struct(...
@@ -325,17 +351,20 @@ elseif sol_type == "ipopt_ma57"
         'print_level',              0,...
         'print_timing_statistics',  'no',...
         'print_info_string',        'no');
-    opti.solver('ipopt',p_opts,s_opts);
+    opti_LS.solver('ipopt',p_opts,s_opts);
+    opti_RS.solver('ipopt',p_opts,s_opts);
 end
 
 %% Return symbolics and solver
 sym_info.fp_opt.N_fp = N_fp;
 sym_info.fp_opt.N_k = N_k;
 sym_info.fp_opt.fd_lip = fd_lip;
-sym_info.fp_opt.opti = opti;
+
+sym_info.fp_opt.opti_LS = opti_LS;
+sym_info.fp_opt.opti_RS = opti_RS;
 sym_info.fp_opt.opt_X_traj = X_traj;
 sym_info.fp_opt.opt_Ufp_traj = Ufp_traj;
-% sym_info.fp_opt.f_opti = f_opti;
+
 sym_info.fp_opt.p_x_init = p_x_init;
 sym_info.fp_opt.p_Ly_des = p_Ly_des;
 sym_info.fp_opt.p_z_H = p_z_H;
@@ -346,8 +375,6 @@ sym_info.fp_opt.p_mu = p_mu;
 sym_info.fp_opt.p_Lz_est = p_Lz_est;
 sym_info.fp_opt.p_stanceLeg = p_stanceLeg;
 sym_info.fp_opt.p_leg_width = p_leg_width;
-% sym_info.fp_opt.p_ufp_init = p_ufp_init;
-% sym_info.fp_opt.p_cos_alpha_x = p_cos_alpha_x;
 
 sym_info.fp_opt.k_pre_all = k_pre_all;
 sym_info.fp_opt.k_post_all = k_post_all;

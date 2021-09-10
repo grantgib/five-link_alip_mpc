@@ -24,7 +24,7 @@ u_io_traj = traj_info.u_io_traj;
 w_io_traj = traj_info.w_io_traj;
 
 % foot placement
-ufp_abs_traj = traj_info.ufp_abs_traj;
+ufp_world_traj = traj_info.ufp_world_traj;
 ufp_rel_traj = traj_info.ufp_rel_traj;
 ufp_sol_traj = traj_info.ufp_sol_traj;
 xlip_sol_traj = traj_info.xlip_sol_traj;
@@ -48,8 +48,8 @@ y_dot_traj = traj_info.y_dot_traj;
 y_ddot_traj = traj_info.y_ddot_traj;
 
 % foot trajectories
-p_sw_abs_traj = traj_info.pos_sw_abs_traj;
-p_st_abs_traj = traj_info.pos_st_abs_traj;
+p_sw_world_traj = traj_info.pos_sw_world_traj;
+p_st_world_traj = traj_info.pos_st_world_traj;
 p_sw_rel_traj = traj_info.pos_sw_rel_traj;
 p_st_rel_traj = traj_info.pos_st_rel_traj;
 
@@ -150,11 +150,11 @@ if plot_info.fp
     for i = 1:2
         figure
         hold on;
-        scatter(time_traj,ufp_abs_traj(i,:));
-        scatter(time_traj,p_st_abs_traj(i,:),'filled');
-        plot(time_traj,p_sw_abs_traj(i,:),'LineWidth',4);
+        scatter(time_traj,ufp_world_traj(i,:));
+        scatter(time_traj,p_st_world_traj(i,:),'filled');
+        plot(time_traj,p_sw_world_traj(i,:),'LineWidth',4);
         legend('desired fp','stance','swing');
-        title_string = "Absolute Foot placement " + fp_headers(i);
+        title_string = "worldolute Foot placement " + fp_headers(i);
         title(title_string);
     end
     for i = 1:2

@@ -1,4 +1,4 @@
-function [sym_info] = formulate_vc_io(sym_info)
+function [sym_info] = formulate_vc_io_slope(sym_info)
 import casadi.*
 %% Extract Input
 n_q = sym_info.dim.n_q;
@@ -34,13 +34,12 @@ sdot_func = 1/t_period;
 
 %
 kx = SX.sym('kx');
-ground_height_init = SX.sym('ground_height_init');
 
 %% Intermediate Functions
 pos_com_world = f_pos_com_world(x)';
 pos_st_world = f_pos_st(x)';
 pos_sw_world = f_pos_sw(x)';
-pos_ground = [pos_com_world(1); kx*pos_com_world(1) + ground_height_init];
+pos_ground = [pos_com_world(1); kx*pos_com_world(1) + p_st_world(1)];
 
 pos_st_com = pos_com_world - pos_st_world;
 pos_sw_com = pos_com_world - pos_sw_world;
