@@ -94,6 +94,7 @@ p_mu = opti_LS.parameter(1,1); % friction coefficient
 p_Lz_est = opti_LS.parameter(1,1);
 p_stanceLeg = opti_LS.parameter(1,1); % left_stance = -1
 p_leg_width = opti_LS.parameter(1,1);
+p_Lx_offset = opti_LS.parameter(1,1);
 
 % Intermediate parameters
 l = sqrt(g/p_z_H);
@@ -109,7 +110,7 @@ for i = 1:N_fp
     % Left Stance: yc = -W/2, Lx = + 0.5*m*H*W*l*tanh(Ts*l/2)
     % Right Stance: yc = W/2, Ly = - 0.5*m*H*W*l*tanh(Ts*l/2)
     yc_des_traj{i} = stance_sign * -p_leg_width / 2;
-    Lx_des_traj{i} = stance_sign * 0.5*m*p_z_H*p_leg_width*l*tanh(0.5*t_step_period*l);
+    Lx_des_traj{i} = p_Lx_offset + stance_sign * (0.5*m*p_z_H*p_leg_width*l*tanh(0.5*t_step_period*l));
     stance_sign = -stance_sign;
 end
 
@@ -268,7 +269,7 @@ if sol_type == "qrqp"
             "_" + intg_opt +...
             "_" + "dt" + extractAfter(string(dt_opt),"."));
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
+        f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
         cg_options = struct();
         cg = CodeGenerator(name_cg_LS,cg_options);
         cg.add(f_opti_LS);
@@ -285,7 +286,7 @@ if sol_type == "qrqp"
             "_" + intg_opt +...
             "_" + "dt" + extractAfter(string(dt_opt),"."));
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width},{optvars});
+        f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_Lz_est,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
         cg_options = struct();
         cg = CodeGenerator(name_cg_RS,cg_options);
         cg.add(f_opti_RS);
@@ -375,6 +376,7 @@ sym_info.fp_opt.p_mu = p_mu;
 sym_info.fp_opt.p_Lz_est = p_Lz_est;
 sym_info.fp_opt.p_stanceLeg = p_stanceLeg;
 sym_info.fp_opt.p_leg_width = p_leg_width;
+sym_info.fp_opt.p_Lx_offset = p_Lx_offset;
 
 sym_info.fp_opt.k_pre_all = k_pre_all;
 sym_info.fp_opt.k_post_all = k_post_all;

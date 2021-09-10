@@ -35,7 +35,7 @@ disp("Virtual Constraint Symbolics Loaded! (" + toc + " sec)");
 % Gait
 % Each leg link is 0.4 m (hip to knee)
 gait_info = struct(...
-    't_step_period',    0.1,... 
+    't_step_period',    0.3,... 
     'p_st_com_des',     0.6,...    % z_H
     's_cl',             3/4,...
     'z_cl',             0.1,...
@@ -45,7 +45,7 @@ gait_info = struct(...
     'leg_width',        0.3);
 xcdot_des = 1;
 ycdot_des = 0.02;
-gait_info.Lx_des = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
+gait_info.Lx_offset = - sym_info.params.m * gait_info.p_st_com_des * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.p_st_com_des * xcdot_des;
 
 % Simulation
@@ -73,7 +73,7 @@ sim_info = struct(...
     'dt_sim',               0.005);
 
 % Foot placement optimization 
-N_steps_ahead = 6;
+N_steps_ahead = 4;
 q = 1;
 for i = 1:N_steps_ahead
     if i > N_steps_ahead-1

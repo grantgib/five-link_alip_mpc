@@ -8,6 +8,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     
     % state
     xlip_init = p.xlip_init;
+    Lx_offset = p.Lx_offset;
     Ly_des = p.Ly_des;
     
     % control
@@ -47,6 +48,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
     p_Lz_est = p.p_Lz_est;
     p_stanceLeg = p.p_stanceLeg;
     p_leg_width = p.p_leg_width;
+    p_Lx_offset = p.p_Lx_offset;
     p_ufp_init = p.p_ufp_init;
     p_cos_alpha_x = p.p_cos_alpha_x;
     
@@ -75,6 +77,7 @@ function [ufp_sol,xlip_sol] = compute_fp(p)
         opti.set_value(p_Lz_est,Lz_est);
         opti.set_value(p_stanceLeg,stanceLeg);
         opti.set_value(p_leg_width,leg_width);
+        opti.set_value(p_Lx_offset,Lx_offset);
         
         % initial guess
         if p.iter == 1
