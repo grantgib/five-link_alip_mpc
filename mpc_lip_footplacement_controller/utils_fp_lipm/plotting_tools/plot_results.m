@@ -22,6 +22,7 @@ u_io_traj = traj_info.u_io_traj;
 
 % wrench
 w_io_traj = traj_info.w_io_traj;
+w_aligned_traj = traj_info.w_aligned_traj;
 
 % foot placement
 ufp_world_traj = traj_info.ufp_world_traj;
@@ -71,6 +72,9 @@ p_sw_com_yukai = traj_info.p_sw_com_yukai_traj;
 
 % Desired
 Ly_des_traj = traj_info.Ly_des_traj;
+
+% Friction coefficient
+mu_traj = traj_info.mu_traj;
 
 %% Initialize variables
 q_header = {'$\bar{x}$','$\bar{z}$','$\psi$','$q_{1R}$','$q_{2R}$','$q_{1L}$','$q_{2L}$'}';
@@ -142,6 +146,13 @@ if plot_info.w
         title(w_header{i},'interpreter','latex');
         grid on; set(gca,'FontSize',sz);
     end
+    
+    figure
+    hold on;
+    plot(time_traj,w_aligned_traj(1,:)./w_aligned_traj(2,:))
+    plot(time_traj,mu_traj,'--r');
+    plot(time_traj,-mu_traj,'--r');
+    legend('Friction cone estimate','friction coefficient');
 end
 
 %% Foot Placement
@@ -154,7 +165,7 @@ if plot_info.fp
         scatter(time_traj,p_st_world_traj(i,:),'filled');
         plot(time_traj,p_sw_world_traj(i,:),'LineWidth',4);
         legend('desired fp','stance','swing');
-        title_string = "worldolute Foot placement " + fp_headers(i);
+        title_string = "world absolute Foot placement " + fp_headers(i);
         title(title_string);
     end
     for i = 1:2
@@ -163,8 +174,8 @@ if plot_info.fp
         scatter(time_traj,ufp_rel_traj(i,:));
         scatter(time_traj,p_st_rel_traj(i,:),'filled');
         plot(time_traj,p_sw_rel_traj(i,:),'LineWidth',4);
-        plot(time_traj,ufp_stance_max_traj,'--r');
-        plot(time_traj,ufp_stance_min_traj,'--r');
+        plot(time_traj,ufp_stance_max_traj(1,:),'--r');
+        plot(time_traj,ufp_stance_min_traj(1,:),'--r');
         legend('desired fp','stance','swing');
         title_string = "Relative Foot placement " + fp_headers(i);
         title(title_string);
@@ -208,9 +219,11 @@ if plot_info.com_dyn
         if i == 1
             plot(time_traj,xc_slip_limit_traj,'--r');
             plot(time_traj,xc_mech_hip_limit_traj(1,:),'--m');
+            legend('p_st_to_com','xc_slip_limit','xc_mech_limit');
         end
         title_str = "com stance position " + com_headers{i};
         title(title_str);
+        
     end
     
     for i = 1:2

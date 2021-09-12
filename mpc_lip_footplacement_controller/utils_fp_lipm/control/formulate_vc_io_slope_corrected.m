@@ -49,12 +49,6 @@ pos_sw_com = pos_com_world - pos_sw_world;
 pos_ground_com = pos_com_world - pos_com_proj;
 
 %% Actual output
-% h_act = [
-%       torso pitch
-%       pos_z_st_com
-%       pos_x_sw_com
-%       pos_z_sw_com
-%     ]
 
 ha = [...
     q(3);
@@ -67,13 +61,7 @@ ha_dot = J_ha*qdot;
 J_ha_dot = jacobian(J_ha*qdot,q);
 ha_ddot = J_ha*qddot + J_ha_dot*qdot;
 
-%% Desired output
-% h_act = [
-%       torso pitch_des
-%       pos_z_st_com
-%       pos_x_sw_com
-%       pos_z_sw_com
-%     ]       
+%% Desired output    
 torso_pitch_des = SX.sym('torso_pitch_des');
 p_ground_com_des = SX.sym('p_ground_com_des');
 p_sw_com_init = SX.sym('px_sw_com_init',2,1);

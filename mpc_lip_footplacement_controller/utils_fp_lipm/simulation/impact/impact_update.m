@@ -13,7 +13,7 @@ f_relabel = impact_info.f_relabel;
 kx = impact_info.kx;
 ground_height_current = impact_info.ground_height_current;
 
-%% Root finding impact time
+%% Root finding impact time (could use bisection, might be faster...)
 % ground_height = kx*full(f_p_sw_x(f_rk4(x_init,u,delta_time))) + ground_current
 swingheight_error = @(delta_time) full(f_p_sw_z(f_rk4(x_init,u,delta_time))) - (kx*full(f_p_sw_x(f_rk4(x_init,u,delta_time))) + ground_height_current);
 dt_impact = fzero(swingheight_error, dt/2);     % Matlab root finding funcion

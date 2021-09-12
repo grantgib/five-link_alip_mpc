@@ -22,7 +22,7 @@ Bd = expm(A*Ts)*B;
 Q = diag([1 1 1 1]);
 R = diag([0 0]);
 
-[K,Pf,CLP] = dlqr(Ad,Bd,Q,R);
+[~,Pf,~] = dlqr(Ad,Bd,Q,R);
 
 end
 
