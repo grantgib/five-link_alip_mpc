@@ -125,8 +125,6 @@ k_post_all = [];    % iteratoin indices for all states "post" impact
 xc_mech_limit = p_ufp_stance_max(1) / 2;
 xc_slip_limit = f_xc_slip(p_z_H,p_mu,p_k(1));
 yc_slip_limit = f_yc_slip(p_z_H,p_mu,p_k(2));
-% xc_slip_limit = (p_mu + p_k(1))*p_z_H / (1 - p_mu*p_k(1));
-% yc_slip_limit = (p_mu + p_k(2))*p_z_H / (1 - p_mu*p_k(2));
 
 %% Inital Condition constraints
 % Initial condition constraint
@@ -265,14 +263,14 @@ if sol_type == "qrqp"
         "_" + string(1000*t_step_period) + "ms" + ...
         "_" + sol_type +...
         "_" + intg_opt +...
-        "_" + "dt" + extractAfter(string(dt_opt),"."));
+        "_" + "dt" + string(1000*dt_opt) + "ms");
     f_opti_LS = opti_LS.to_function(name_cg_LS,{X_traj,Ufp_traj,p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{X_traj,Ufp_traj});
     
     name_cg_RS = char("fp_RS_" + "N" + N_steps_ahead + ...
         "_" + string(1000*t_step_period) + "ms" + ...
         "_" + sol_type +...
         "_" + intg_opt +...
-        "_" + "dt" + extractAfter(string(dt_opt),"."));
+        "_" + "dt" + string(1000*dt_opt) + "ms");
     f_opti_RS = opti_RS.to_function(name_cg_RS,{X_traj,Ufp_traj,p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{X_traj,Ufp_traj});
     
     if sym_info.fp_opt.compile_src
@@ -297,12 +295,6 @@ if sol_type == "qrqp"
     end
     
     if sym_info.fp_opt.compile_mex
-        % code generation
-        name_cg_LS = char("fp_LS_" + "N" + N_steps_ahead + ...
-            "_" + string(1000*t_step_period) + "ms" + ...
-            "_" + sol_type +...
-            "_" + intg_opt +...
-            "_" + "dt" + extractAfter(string(dt_opt),".") + "_mex");
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
         f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
         cg_options = struct();
@@ -321,11 +313,6 @@ if sol_type == "qrqp"
         disp("Generation time = " + toc);
         
         % Right stance solver
-        name_cg_RS = char("fp_RS_" + "N" + N_steps_ahead + ...
-            "_" + string(1000*t_step_period) + "ms" + ...
-            "_" + sol_type +...
-            "_" + intg_opt +...
-            "_" + "dt" + extractAfter(string(dt_opt),".") + "_mex");
         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
         f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
         cg_options = struct();
