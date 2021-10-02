@@ -59,8 +59,8 @@ sim_info = struct(...
 
 % Gait info
 % Each leg link is 0.4 m (hip to knee)
-for_cassie = 0;
-with_torso = 0;
+for_cassie = 1;
+with_torso = 1;
 if for_cassie
     if with_torso
         z_H = 0.9;  % only needed in terminal cost. Could compute this matrix in real time and insert into formulation down the line
@@ -89,22 +89,24 @@ gait_info.Lx_offset = - sym_info.params.m * gait_info.z_H * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.z_H * xcdot_des;
 
 % Foot placement optimization 
-N_steps_ahead = 4;
+N_steps_ahead = 6;   % 2 steps makes the friction constraint get invalidated
 Q = 1*ones(N_steps_ahead,1);
 xc_max_hip = sqrt(sym_info.params.length_leg.^2 - gait_info.z_H.^2); % mechanical configuration max step related to hip. Opt still needs to relate to COM
 ratio_x = 1;
-ufp_y_max = 0.6;
-ufp_y_min = 0.1;
+ufp_y_max = 0.6;  % for cassie
+ufp_y_min = 0.1;  % for cassie
 sym_info.fp_opt = struct(...
     'qpsolver',         "qrqp",...     % ipopt, ipopt_ma57, qrqp
     'compile_src',      for_cassie,...
     'compile_mex',      false,...
-    'dt_opt',           0.03,...
+    'dt_opt',           0.01,...        % 0.05 invalidates friction constraint (too coarse)
     'intg_opt',         "eul",...       % rk4, eul
     'N_steps_ahead',    N_steps_ahead,...
     'ufp_stance_max',   [ratio_x*2*xc_max_hip; ufp_y_max],...
     'ufp_stance_min',   [-ratio_x*2*xc_max_hip; ufp_y_min],...
-    'Q',                Q);
+    'Q',                Q,...
+    'for_cassie',       for_cassie,...
+    'with_torso',       with_torso);
 
 %% Formulate LIP foot placement Optimization
 tic
@@ -112,36 +114,41 @@ tic
 disp("Formulated LIP-based FP Optimization (" + toc + " sec)");
 
 %% ************************** Run Simulation ******************************3disp("Begin simulation...");
-[traj_info] = simulate(sym_info,gait_info,sim_info);
-disp("Finished simulation!");
+if sym_info.fp_opt.for_cassie
+    disp("Solver Created for Cassie, don't run Rabbit simulation");
+    return;
+else
+    [traj_info] = simulate(sym_info,gait_info,sim_info);
+    disp("Finished simulation!");
 
-%% Save Simulation
-if false
-    save_results(ctrl_info,ref_info,constr_info,sym_info,traj_info);
+    %% Save Simulation
+    if false
+        save_results(ctrl_info,ref_info,constr_info,sym_info,traj_info);
+    end
+
+    %% Plot
+    close all;
+    set(0,'DefaultFigureWindowStyle','docked'); % docked,normal
+
+    plot_info = struct(...
+        'x',        0,...
+        'u',        0,...
+        'w',        1,...
+        'fp',       1,...
+        'com_dyn',  1,...
+        'vc',       0,...
+        's',        1,... 
+        'impact',   0);
+    plot_results(sym_info,traj_info,plot_info);
+    disp('Finished Plotting!');
+
+    %% Animation
+    animate_info = struct(...
+        'speed',        1);
+    sim_restart = true;
+    while sim_restart
+        sim_restart = animate_results_grant(sym_info,traj_info,animate_info);
+    end
+    % animate_results_FROST(traj_info,animate_info);
+    disp('Finished Animation!');
 end
-
-%% Plot
-close all;
-set(0,'DefaultFigureWindowStyle','docked'); % docked,normal
-
-plot_info = struct(...
-    'x',        0,...
-    'u',        0,...
-    'w',        1,...
-    'fp',       1,...
-    'com_dyn',  1,...
-    'vc',       0,...
-    's',        1,... 
-    'impact',   0);
-plot_results(sym_info,traj_info,plot_info);
-disp('Finished Plotting!');
-
-%% Animation
-animate_info = struct(...
-    'speed',        1);
-sim_restart = true;
-while sim_restart
-    sim_restart = animate_results_grant(sym_info,traj_info,animate_info);
-end
-% animate_results_FROST(traj_info,animate_info);
-disp('Finished Animation!');

@@ -188,7 +188,12 @@ for k = 1:N_k
     end
 end
 
-%% COM Position Constraints
+%% COM Position Constraints 
+% removed and added constraints only at the end and impact of each step to
+% eliminate constraints. ufp is uncontrollable during step so these are the
+% only constraints needed in the QP. For nonlinear solvers in the future it
+% might be useful to include some of these at increments throughout the
+% step to help the solver from deviating too much
 % for k = 1:N_k
 %     if k > 1    % dont constrain initial condition
 %         opti_LS.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
@@ -211,10 +216,10 @@ if mpc_method
     
     % cost function
     %     opti.minimize(opt_cost_L_total);  % Fails without terminal cost since
-    %     the final value is omitted "makes sense duhh"
+    %     the final value is omitted
     opti_LS.minimize(opt_cost_L_total + opt_cost_terminal);
     
-else % Yukai Method ( requires 1-step prediction horizon which is currently broken )
+else % Yukai Method ( requires 1-step prediction horizon which is currently broken due to FP constraints and lateral desired trajectory generation at the beginning)
     %     opti_LS.subject_to(X_traj(3,end) == Lx_des_traj{end});
     %     opti_LS.subject_to(X_traj(4,end) == p_Ly_des);
     %     opti_LS.minimize(1);
@@ -265,18 +270,29 @@ if sol_type == "qrqp"
     opti_RS.solver('sqpmethod',opts);
     
     % code generation
+    if sym_info.fp_opt.for_cassie
+        if sym_info.fp_opt.with_torso
+            robot_name = "CassieTorso";
+        else
+            robot_name = "Cassie";
+        end
+    else
+        robot_name = "Rabbit";
+    end
     name_cg_LS = char("fp_LS_" + "N" + N_steps_ahead + ...
         "_" + string(1000*t_step_period) + "ms" + ...
         "_" + sol_type +...
         "_" + intg_opt +...
-        "_" + "dt" + string(1000*dt_opt) + "ms");
+        "_dt" + string(1000*dt_opt) + "ms" + ...
+        "_" + robot_name);
     f_opti_LS = opti_LS.to_function(name_cg_LS,{X_traj,Ufp_traj,p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{X_traj,Ufp_traj});
     
     name_cg_RS = char("fp_RS_" + "N" + N_steps_ahead + ...
         "_" + string(1000*t_step_period) + "ms" + ...
         "_" + sol_type +...
         "_" + intg_opt +...
-        "_" + "dt" + string(1000*dt_opt) + "ms");
+        "_dt" + string(1000*dt_opt) + "ms" + ...
+        "_" + robot_name);
     f_opti_RS = opti_RS.to_function(name_cg_RS,{X_traj,Ufp_traj,p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{X_traj,Ufp_traj});
     
     if sym_info.fp_opt.compile_src
@@ -301,41 +317,41 @@ if sol_type == "qrqp"
     end
     
     if sym_info.fp_opt.compile_mex
-        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
-        cg_options = struct();
-        cg_options.mex = true; % must add!!!
-        cg = CodeGenerator(name_cg_LS,cg_options);
-        cg.add(f_opti_LS);
-        disp('Generating c code...');
-        tic
-        cg.generate()
-        movefile([name_cg_LS '.c'],['gen/opt_solvers/' name_cg_LS '.c'])
-        disp("Generation time = " + toc);
-        disp('Generating mex code...');
-        tic
-        cd gen/opt_solvers
-        mex [name_cg_LS '.c'] -largeArrayDims
-        disp("Generation time = " + toc);
-        
-        % Right stance solver
-        optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
-        f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
-        cg_options = struct();
-        cg_options.mex = true;
-        cg = CodeGenerator(name_cg_RS,cg_options);
-        cg.add(f_opti_RS);
-        disp('Generating mex code...');
-        tic
-        cg.generate()
-        movefile([name_cg_RS '.c'],['gen/opt_solvers/' name_cg_RS '.c'])
-        disp("Generation time = " + toc);
-        disp('Generating mex code...');
-        tic
-        mex [name_cg_RS '.c'] -largeArrayDims
-        disp("Generation time = " + toc);
-        
-        cd ../../
+%         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
+%         f_opti_LS = opti_LS.to_function(name_cg_LS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
+%         cg_options = struct();
+%         cg_options.mex = true; % must add!!!
+%         cg = CodeGenerator(name_cg_LS,cg_options);
+%         cg.add(f_opti_LS);
+%         disp('Generating c code...');
+%         tic
+%         cg.generate()
+%         movefile([name_cg_LS '.c'],['gen/opt_solvers/' name_cg_LS '.c'])
+%         disp("Generation time = " + toc);
+%         disp('Generating mex code...');
+%         tic
+%         cd gen/opt_solvers
+%         mex [name_cg_LS '.c'] -largeArrayDims
+%         disp("Generation time = " + toc);
+%         
+%         % Right stance solver
+%         optvars = [reshape(X_traj,n_x*N_k,1); reshape(Ufp_traj,n_ufp*N_fp,1)];
+%         f_opti_RS = opti_RS.to_function(name_cg_RS,{p_x_init,p_Ly_des,p_z_H,p_ufp_stance_max,p_ufp_stance_min,p_k,p_mu,p_stanceLeg,p_leg_width,p_Lx_offset},{optvars});
+%         cg_options = struct();
+%         cg_options.mex = true;
+%         cg = CodeGenerator(name_cg_RS,cg_options);
+%         cg.add(f_opti_RS);
+%         disp('Generating mex code...');
+%         tic
+%         cg.generate()
+%         movefile([name_cg_RS '.c'],['gen/opt_solvers/' name_cg_RS '.c'])
+%         disp("Generation time = " + toc);
+%         disp('Generating mex code...');
+%         tic
+%         mex [name_cg_RS '.c'] -largeArrayDims
+%         disp("Generation time = " + toc);
+%         
+%         cd ../../
     end
     
 elseif sol_type == "osqp"
