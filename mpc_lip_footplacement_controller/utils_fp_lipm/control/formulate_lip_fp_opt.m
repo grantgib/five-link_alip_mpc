@@ -139,6 +139,12 @@ for k = 1:N_k
         x_eos = [x_eos, {X_k}];
         k_pre_all = [k_pre_all, k_pre];  % store index
         
+        if n > 0 % only consider constraint at end or impact since ufp is uncontrollable during step
+            opti_LS.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
+            opti_LS.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
+            opti_LS.subject_to(-yc_slip_limit <= X_traj(2,k) <= yc_slip_limit);
+        end
+        
         % Foot placement impact
         if k < N_k
             Xk_impact = [...
@@ -148,7 +154,7 @@ for k = 1:N_k
                 X_k(4)];
             Xk_end = fd_lip(Xk_impact,p_z_H); % update
             
-            % Apply constraints at impact
+            % Apply constraints at impact (assume instantaneousely)
             opti_LS.subject_to(-xc_slip_limit <= Xk_impact(1) <= xc_slip_limit);   % GRF
             opti_LS.subject_to(-yc_slip_limit <= Xk_impact(2) <= yc_slip_limit);   % GRF
             opti_LS.subject_to(-xc_mech_limit <= Xk_impact(1) <= xc_mech_limit);   % mech
@@ -183,13 +189,13 @@ for k = 1:N_k
 end
 
 %% COM Position Constraints
-for k = 1:N_k
-    if k > 1    % dont constrain initial condition
-        opti_LS.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
-        opti_LS.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
-        opti_LS.subject_to(-yc_slip_limit <= X_traj(2,k) <= yc_slip_limit);   % GRF
-    end
-end
+% for k = 1:N_k
+%     if k > 1    % dont constrain initial condition
+%         opti_LS.subject_to(-xc_mech_limit <= X_traj(1,k) <= xc_mech_limit);
+%         opti_LS.subject_to(-xc_slip_limit <= X_traj(1,k) <= xc_slip_limit);   % GRF
+%         opti_LS.subject_to(-yc_slip_limit <= X_traj(2,k) <= yc_slip_limit);   % GRF
+%     end
+% end
 
 %% Cost
 mpc_method = true;
