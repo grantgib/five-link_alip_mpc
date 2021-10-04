@@ -150,8 +150,8 @@ if plot_info.w
     figure
     hold on;
     plot(time_traj,w_aligned_traj(1,:)./w_aligned_traj(2,:))
-    plot(time_traj,mu_traj,'--r');
-    plot(time_traj,-mu_traj,'--r');
+    plot(time_traj,mu_traj(1,:),'--r');
+    plot(time_traj,-mu_traj(1,:),'--r');
     legend('Friction cone estimate','friction coefficient');
 end
 

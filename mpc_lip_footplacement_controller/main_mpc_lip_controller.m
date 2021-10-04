@@ -81,7 +81,8 @@ gait_info = struct(...
     'torso_pitch_des',  0,...
     'angle_x',          deg2rad(0),...       % radians
     'angle_y',          deg2rad(0),...
-    'mu',               0.3,...
+    'mu_x',             0.3,...
+    'mu_y',             1,...
     'leg_width',        0.3);
 xcdot_des = 2;
 ycdot_des = 0;
@@ -89,7 +90,7 @@ gait_info.Lx_offset = - sym_info.params.m * gait_info.z_H * ycdot_des;
 gait_info.Ly_des = sym_info.params.m * gait_info.z_H * xcdot_des;
 
 % Foot placement optimization 
-N_steps_ahead = 6;   % 2 steps makes the friction constraint get invalidated
+N_steps_ahead = 4;   % 2 steps makes the friction constraint get invalidated
 Q = 1*ones(N_steps_ahead,1);
 xc_max_hip = sqrt(sym_info.params.length_leg.^2 - gait_info.z_H.^2); % mechanical configuration max step related to hip. Opt still needs to relate to COM
 ratio_x = 1;
@@ -111,6 +112,7 @@ sym_info.fp_opt = struct(...
 %% Formulate LIP foot placement Optimization
 tic
 [sym_info] = formulate_lip_fp_opt(sym_info,gait_info);
+% [sym_info] = formulate_lip_fp_opt_slopetraj(sym_info,gait_info);
 disp("Formulated LIP-based FP Optimization (" + toc + " sec)");
 
 %% ************************** Run Simulation ******************************3disp("Begin simulation...");

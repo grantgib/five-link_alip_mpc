@@ -87,7 +87,7 @@ p_z_H = opti_LS.parameter(1,1);        % nominal z height of com
 p_ufp_stance_max = opti_LS.parameter(n_ufp,1);
 p_ufp_stance_min = opti_LS.parameter(n_ufp,1);
 p_k = opti_LS.parameter(2,1); % [kx; ky]
-p_mu = opti_LS.parameter(1,1); % friction coefficient
+p_mu = opti_LS.parameter(2,1); % friction coefficient [mux,muy]
 p_stanceLeg = opti_LS.parameter(1,1); % left_stance = -1
 p_leg_width = opti_LS.parameter(1,1);
 p_Lx_offset = opti_LS.parameter(1,1);
@@ -123,8 +123,8 @@ k_post_all = [];    % iteratoin indices for all states "post" impact
 
 % constraint parameters
 xc_mech_limit = p_ufp_stance_max(1) / 2;
-xc_slip_limit = f_xc_slip(p_z_H,p_mu,p_k(1));
-yc_slip_limit = f_yc_slip(p_z_H,p_mu,p_k(2));
+xc_slip_limit = f_xc_slip(p_z_H,p_mu(1),p_k(1));
+yc_slip_limit = f_yc_slip(p_z_H,p_mu(2),p_k(2));
 
 %% Inital Condition constraints
 % Initial condition constraint

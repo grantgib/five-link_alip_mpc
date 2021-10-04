@@ -19,7 +19,8 @@ leg_width = p.leg_width;
 
 % terrain
 k = p.k;
-mu = p.mu;
+mu_x = p.mu_x;
+mu_y = p.mu_y;
 
 % mpc
 n_xlip = p.n_xlip;
@@ -66,7 +67,7 @@ end
 %% Foot Placement
 if p.use_function
     % Solve
-    [xlip_sol_temp,ufp_sol_temp] = f_opti(x_guess,ufp_guess,xlip_init,Ly_des,z_H,ufp_stance_max,ufp_stance_min,k,mu,stanceLeg,leg_width,Lx_offset);
+    [xlip_sol_temp,ufp_sol_temp] = f_opti(x_guess,ufp_guess,xlip_init,Ly_des,z_H,ufp_stance_max,ufp_stance_min,k,[mu_x;mu_y],stanceLeg,leg_width,Lx_offset);
 
     % Extract Solution
     xlip_sol = full(xlip_sol_temp);
@@ -79,7 +80,7 @@ else
     opti.set_value(p_ufp_stance_max,ufp_stance_max);
     opti.set_value(p_ufp_stance_min,ufp_stance_min);
     opti.set_value(p_k,k);
-    opti.set_value(p_mu,mu);
+    opti.set_value(p_mu,[mu_x;mu_y]);
     opti.set_value(p_stanceLeg,stanceLeg);
     opti.set_value(p_leg_width,leg_width);
     opti.set_value(p_Lx_offset,Lx_offset);

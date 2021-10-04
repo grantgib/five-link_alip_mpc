@@ -16,7 +16,8 @@ t_step_period = gait_info.t_step_period;
 Lx_offset = gait_info.Lx_offset;
 Ly_des = gait_info.Ly_des;
 torso_pitch_des = gait_info.torso_pitch_des;
-mu = gait_info.mu;
+mu_x = gait_info.mu_x;
+mu_y = gait_info.mu_y;
 z_H = gait_info.z_H;      % z_H
 z_cl = gait_info.z_cl;
 s_cl = gait_info.s_cl;
@@ -176,8 +177,8 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     ufp_stance_max_traj = [ufp_stance_max_traj, ufp_stance_max];
     ufp_stance_min_traj = [ufp_stance_min_traj, ufp_stance_min];
     
-    xc_slip_limit = full(f_xc_slip_limit(z_H,mu,kx));
-    yc_slip_limit = full(f_yc_slip_limit(z_H,mu,ky));
+    xc_slip_limit = full(f_xc_slip_limit(z_H,mu_x,kx));
+    yc_slip_limit = full(f_yc_slip_limit(z_H,mu_y,ky));
     xc_slip_limit_traj = [xc_slip_limit_traj, xc_slip_limit];
     yc_slip_limit_traj = [yc_slip_limit_traj, yc_slip_limit];
     
@@ -229,7 +230,8 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
         'ufp_stance_max',       ufp_stance_max,...
         'ufp_stance_min',       ufp_stance_min,...
         'k',                    [kx;ky],...
-        'mu',                   mu,...
+        'mu_x',                 mu_x,...
+        'mu_y',                 mu_y,...
         'stanceLeg',            1,...
         'leg_width',            gait_info.leg_width,...
         'N_steps',              N_steps_ahead,...
@@ -352,7 +354,7 @@ while(  ( N_impacts < num_steps && iter < max_iter ) ) %&& ctrl_info.iter < 500)
     v_st_to_sw_traj = [v_st_to_sw_traj, v_st_to_sw_current];
     v_st_to_st_traj = [v_st_to_st_traj, v_st_to_st_current];
     
-    mu_traj = [mu_traj, mu];
+    mu_traj = [mu_traj, [mu_x; mu_y]];
     
     update_info = struct(...
         'int_type', int_type,...
