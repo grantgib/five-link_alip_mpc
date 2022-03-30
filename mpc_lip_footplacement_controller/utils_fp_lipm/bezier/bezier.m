@@ -14,11 +14,11 @@ function [h,dhds,ddhds] = bezier(a,s,varargin)
 %      varargin{1} := degree of Bezier polynomial
 
 % Reshape vector into matrix if needed
-if any(size(a)==[1,1])
-    assert(~isempty(varargin{1}),'Need to specify number of bezier curves.')
-    assert(~isempty(varargin{2}),'Need to specify degree of bezier polynomial.')
-    a = reshape(a,varargin{1},varargin{2}-1);
-end
+% if any(size(a)==[1,1])
+%     assert(~isempty(varargin{1}),'Need to specify number of bezier curves.')
+%     assert(~isempty(varargin{2}),'Need to specify degree of bezier polynomial.')
+%     a = reshape(a,varargin{1},varargin{2}-1);
+% end
 [n_h,M_deg] = size(a);
 M_deg = M_deg-1;
 
