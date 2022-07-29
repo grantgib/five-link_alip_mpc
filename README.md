@@ -1,4 +1,7 @@
 # ALIP-Based Model Predictive Foot Placement Controller for Five Link Robot (RABBIT)
+* Author: Grant Gibson
+* Refence Paper: found [here](https://arxiv.org/abs/2109.14862)
+
 ![Alt Text](https://github.com/grantgib/five-link_alip_mpc/blob/master/media/fivelink_alip_mpc.gif)
 
 ### Prerequisites
